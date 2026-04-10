@@ -65,6 +65,9 @@ function deriveParams(project: ProjectInputs) {
   };
 }
 
+/** Round to 1 decimal place to avoid floating-point display artifacts */
+function r1(n: number): number { return Math.round(n * 10) / 10; }
+
 function scaleTimeSeries<T extends number>(series: TimeSeriesData<T>, factor: number): TimeSeriesData<T> {
   const result: Record<number, T> = {};
   for (const [year, value] of Object.entries(series)) {
@@ -120,21 +123,21 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
 
   const defaults = deriveParams(project);
 
-  const [peakRate, setPeakRate] = useState(defaults.peakGas > 0 ? defaults.peakGas : defaults.peakOil);
-  const [declineRate, setDeclineRate] = useState(defaults.declineRate * 100);
-  const [totalCapex, setTotalCapex] = useState(defaults.totalCapex / 1e6);
-  const [annualOpex, setAnnualOpex] = useState(defaults.avgOpexFixed / 1e6);
-  const [totalAbex, setTotalAbex] = useState(defaults.totalAbex / 1e6);
+  const [peakRate, setPeakRate] = useState(r1(defaults.peakGas > 0 ? defaults.peakGas : defaults.peakOil));
+  const [declineRate, setDeclineRate] = useState(r1(defaults.declineRate * 100));
+  const [totalCapex, setTotalCapex] = useState(r1(defaults.totalCapex / 1e6));
+  const [annualOpex, setAnnualOpex] = useState(r1(defaults.avgOpexFixed / 1e6));
+  const [totalAbex, setTotalAbex] = useState(r1(defaults.totalAbex / 1e6));
   const [modified, setModified] = useState(false);
 
   // Reset when project changes
   useEffect(() => {
     const d = deriveParams(project);
-    setPeakRate(d.peakGas > 0 ? d.peakGas : d.peakOil);
-    setDeclineRate(d.declineRate * 100);
-    setTotalCapex(d.totalCapex / 1e6);
-    setAnnualOpex(d.avgOpexFixed / 1e6);
-    setTotalAbex(d.totalAbex / 1e6);
+    setPeakRate(r1(d.peakGas > 0 ? d.peakGas : d.peakOil));
+    setDeclineRate(r1(d.declineRate * 100));
+    setTotalCapex(r1(d.totalCapex / 1e6));
+    setAnnualOpex(r1(d.avgOpexFixed / 1e6));
+    setTotalAbex(r1(d.totalAbex / 1e6));
     setModified(false);
   }, [project]);
 
@@ -145,11 +148,11 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
 
   const handleReset = useCallback(() => {
     const d = deriveParams(project);
-    setPeakRate(d.peakGas > 0 ? d.peakGas : d.peakOil);
-    setDeclineRate(d.declineRate * 100);
-    setTotalCapex(d.totalCapex / 1e6);
-    setAnnualOpex(d.avgOpexFixed / 1e6);
-    setTotalAbex(d.totalAbex / 1e6);
+    setPeakRate(r1(d.peakGas > 0 ? d.peakGas : d.peakOil));
+    setDeclineRate(r1(d.declineRate * 100));
+    setTotalCapex(r1(d.totalCapex / 1e6));
+    setAnnualOpex(r1(d.avgOpexFixed / 1e6));
+    setTotalAbex(r1(d.totalAbex / 1e6));
     setModified(false);
     // Reset overrides in store
     updateProjectOverrides(proj.id, null);

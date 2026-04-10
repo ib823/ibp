@@ -8,17 +8,20 @@ interface GovernmentTakeChartProps {
 const COLORS = ['#C0392B', '#1E3A5F'];
 
 export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: GovernmentTakeChartProps) {
-  const govtClamped = Math.max(0, governmentTakePct);
-  const contrClamped = Math.max(0, contractorTakePct);
-  const total = govtClamped + contrClamped;
+  const exceeds100 = governmentTakePct > 100;
+
+  // Cap donut visual at 100/0 when govt take exceeds 100%
+  const govtDisplay = exceeds100 ? 100 : Math.max(0, governmentTakePct);
+  const contrDisplay = exceeds100 ? 0 : Math.max(0, contractorTakePct);
+  const total = govtDisplay + contrDisplay;
 
   const data = [
-    { name: 'Government', value: govtClamped },
-    { name: 'Contractor', value: contrClamped },
+    { name: 'Government', value: govtDisplay },
+    { name: 'Contractor', value: contrDisplay },
   ];
 
-  // When one slice is very small (< 5%), use legend-only mode to avoid label overlap
-  const smallSlice = total > 0 && (govtClamped / total < 0.05 || contrClamped / total < 0.05);
+  // When one slice is very small (< 5%) or zero, use legend-only mode
+  const smallSlice = exceeds100 || (total > 0 && (govtDisplay / total < 0.05 || contrDisplay / total < 0.05));
 
   return (
     <div>
@@ -53,6 +56,11 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
           <span>Government: {governmentTakePct.toFixed(1)}%</span>
           <span>Contractor: {contractorTakePct.toFixed(1)}%</span>
         </div>
+      )}
+      {exceeds100 && (
+        <p className="text-[9px] text-text-muted text-center mt-1">
+          * Government take exceeds 100% — contractor returns are negative for this project under current assumptions.
+        </p>
       )}
     </div>
   );

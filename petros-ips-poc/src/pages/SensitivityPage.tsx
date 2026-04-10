@@ -119,11 +119,11 @@ export default function SensitivityPage() {
               <div className="flex items-center gap-6 mt-3 text-[10px] text-text-muted">
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-3 inline-block" style={{ backgroundColor: '#E07060' }} />
-                  Downside (−30%)
+                  Lower NPV
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-3 inline-block" style={{ backgroundColor: '#3B8DBD' }} />
-                  Upside (+30%)
+                  Higher NPV
                 </span>
               </div>
             </div>
