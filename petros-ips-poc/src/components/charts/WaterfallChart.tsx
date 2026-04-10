@@ -1,0 +1,190 @@
+import { useMemo } from 'react';
+import type { YearlyCashflow } from '@/engine/types';
+import { fmtDollarM } from '@/lib/format';
+
+interface WaterfallChartProps {
+  cashflows: readonly YearlyCashflow[];
+}
+
+interface WaterfallBar {
+  label: string;
+  value: number;
+  start: number;
+  end: number;
+  color: string;
+  isFinal?: boolean;
+}
+
+export function WaterfallChart({ cashflows }: WaterfallChartProps) {
+  const bars = useMemo(() => {
+    const totalRevenue = cashflows.reduce((s, cf) => s + (cf.totalGrossRevenue as number), 0);
+    const totalRoyalty = cashflows.reduce((s, cf) => s + (cf.royalty as number), 0);
+    const totalPetronasShare = cashflows.reduce((s, cf) => s + (cf.petronasProfitShare as number), 0);
+    const totalSP = cashflows.reduce((s, cf) => s + (cf.supplementaryPayment as number), 0);
+    const totalTax = cashflows.reduce((s, cf) => s + (cf.pitaTax as number), 0);
+    const totalNcf = cashflows.reduce((s, cf) => s + (cf.netCashFlow as number), 0);
+
+    // Waterfall: Revenue → deductions → NCF
+    const result: WaterfallBar[] = [];
+    let running = totalRevenue;
+
+    result.push({
+      label: 'Gross Revenue',
+      value: totalRevenue,
+      start: 0,
+      end: totalRevenue,
+      color: '#1E3A5F',
+    });
+
+    running -= totalRoyalty;
+    result.push({
+      label: 'Royalty',
+      value: -totalRoyalty,
+      start: running + totalRoyalty,
+      end: running,
+      color: '#C0392B',
+    });
+
+    running -= totalPetronasShare;
+    result.push({
+      label: 'PETRONAS Share',
+      value: -totalPetronasShare,
+      start: running + totalPetronasShare,
+      end: running,
+      color: '#E74C3C',
+    });
+
+    if (totalSP > 0) {
+      running -= totalSP;
+      result.push({
+        label: 'Supp. Payment',
+        value: -totalSP,
+        start: running + totalSP,
+        end: running,
+        color: '#D35400',
+      });
+    }
+
+    running -= totalTax;
+    result.push({
+      label: 'PITA Tax',
+      value: -totalTax,
+      start: running + totalTax,
+      end: running,
+      color: '#C0392B',
+    });
+
+    // Costs bar: CAPEX + OPEX + ABEX minus cost recovery received
+    const impliedCosts = totalRevenue - totalRoyalty - totalPetronasShare - totalSP - totalTax - totalNcf;
+    if (impliedCosts > 0) {
+      running -= impliedCosts;
+      result.push({
+        label: 'Net Costs',
+        value: -impliedCosts,
+        start: running + impliedCosts,
+        end: running,
+        color: '#8B4513',
+      });
+    }
+
+    result.push({
+      label: 'Contractor NCF',
+      value: totalNcf,
+      start: 0,
+      end: totalNcf,
+      color: totalNcf >= 0 ? '#2D8A4E' : '#C0392B',
+      isFinal: true,
+    });
+
+    return result;
+  }, [cashflows]);
+
+  if (bars.length === 0) return null;
+
+  const maxVal = Math.max(...bars.map((b) => Math.max(b.start, b.end)));
+  const minVal = Math.min(0, ...bars.map((b) => Math.min(b.start, b.end)));
+  const range = maxVal - minVal || 1;
+
+  const svgW = 700;
+  const svgH = 300;
+  const padL = 10;
+  const padR = 10;
+  const padT = 30;
+  const padB = 60;
+  const chartW = svgW - padL - padR;
+  const chartH = svgH - padT - padB;
+
+  const barWidth = Math.min(60, (chartW / bars.length) * 0.7);
+  const barGap = (chartW - barWidth * bars.length) / (bars.length + 1);
+
+  const scaleY = (v: number) => padT + chartH - ((v - minVal) / range) * chartH;
+  const zeroY = scaleY(0);
+
+  return (
+    <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full" style={{ maxHeight: 300 }}>
+      {/* Zero line */}
+      <line
+        x1={padL}
+        x2={svgW - padR}
+        y1={zeroY}
+        y2={zeroY}
+        stroke="#E2E5EA"
+        strokeWidth={1}
+      />
+
+      {bars.map((bar, i) => {
+        const x = padL + barGap + i * (barWidth + barGap);
+        const top = scaleY(Math.max(bar.start, bar.end));
+        const bottom = scaleY(Math.min(bar.start, bar.end));
+        const height = Math.max(1, bottom - top);
+
+        return (
+          <g key={i}>
+            {/* Bar */}
+            <rect
+              x={x}
+              y={top}
+              width={barWidth}
+              height={height}
+              fill={bar.color}
+              opacity={0.9}
+            />
+            {/* Connector line to next bar */}
+            {i < bars.length - 1 && !bars[i + 1]!.isFinal && (
+              <line
+                x1={x + barWidth}
+                x2={x + barWidth + barGap}
+                y1={scaleY(bar.end)}
+                y2={scaleY(bar.end)}
+                stroke="#9CA3AF"
+                strokeWidth={1}
+                strokeDasharray="3,2"
+              />
+            )}
+            {/* Value label */}
+            <text
+              x={x + barWidth / 2}
+              y={top - 6}
+              textAnchor="middle"
+              className="font-data"
+              fill="#1A1A2E"
+              fontSize={9}
+            >
+              {fmtDollarM(bar.value)}
+            </text>
+            {/* Bar label */}
+            <text
+              x={x + barWidth / 2}
+              y={svgH - padB + 14}
+              textAnchor="middle"
+              fill="#6B7280"
+              fontSize={8}
+            >
+              {bar.label}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}

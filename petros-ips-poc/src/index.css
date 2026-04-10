@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* ── PETROS IPS Theme ──────────────────────────────────────────────── */
+
+@theme {
+  /* PETROS custom palette */
+  --color-navy: #0A1628;
+  --color-navy-light: #0F2035;
+  --color-navy-border: #1A3050;
+  --color-petrol: #1E3A5F;
+  --color-petrol-light: #254A78;
+  --color-amber: #D4A843;
+  --color-amber-light: #E8C668;
+  --color-content: #FAFBFC;
+  --color-content-alt: #F0F2F5;
+  --color-success: #2D8A4E;
+  --color-danger: #C0392B;
+  --color-text-primary: #1A1A2E;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+
+  /* shadcn/ui semantic tokens — required for all UI components */
+  --color-background: #FAFBFC;
+  --color-foreground: #1A1A2E;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1A1A2E;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #1A1A2E;
+  --color-primary: #1E3A5F;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #F0F2F5;
+  --color-secondary-foreground: #1A1A2E;
+  --color-muted: #F0F2F5;
+  --color-muted-foreground: #6B7280;
+  --color-accent: #F0F2F5;
+  --color-accent-foreground: #1A1A2E;
+  --color-destructive: #C0392B;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #E2E5EA;
+  --color-input: #E2E5EA;
+  --color-ring: #1E3A5F;
+
+  /* Sidebar tokens */
+  --color-sidebar: #0A1628;
+  --color-sidebar-foreground: #FFFFFF;
+  --color-sidebar-accent: #1E3A5F;
+  --color-sidebar-accent-foreground: #FFFFFF;
+  --color-sidebar-border: #1A3050;
+
+  /* Chart tokens */
+  --color-chart-1: #1E3A5F;
+  --color-chart-2: #2D8A4E;
+  --color-chart-3: #D4A843;
+  --color-chart-4: #C0392B;
+  --color-chart-5: #8B5CF6;
+
+  /* Radius */
+  --radius: 0.25rem;
+
+  /* Typography */
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* ── Base styles ───────────────────────────────────────────────────── */
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar styling ─────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* ── Data number formatting ────────────────────────────────────────── */
+
+.font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

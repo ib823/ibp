@@ -1,0 +1,186 @@
+import { useState } from 'react';
+import { useProjectStore } from '@/store/project-store';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { FISCAL_REGIMES } from '@/data/fiscal-regimes';
+import { fmtPct } from '@/lib/format';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+
+export default function SettingsPage() {
+  const projects = useProjectStore((s) => s.projects);
+  const activeScenario = useProjectStore((s) => s.activeScenario);
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <div>
+        <h2 className="text-lg font-semibold text-text-primary">Settings & Reference</h2>
+        <p className="text-xs text-text-secondary mt-0.5">
+          Model configuration and fiscal regime reference data
+        </p>
+      </div>
+
+      {/* Model Parameters */}
+      <div className="border border-border bg-white p-4">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+          Model Parameters
+        </h4>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
+          <Row label="Discount Rate (NPV)" value="10.0%" />
+          <Row label="CAPEX Depreciation" value="5-year straight-line" />
+          <Row label="MIRR Finance Rate" value="8.0%" />
+          <Row label="MIRR Reinvest Rate" value="10.0%" />
+          <Row label="THV Oil Threshold" value="30 MMstb" />
+          <Row label="THV Gas Threshold" value="0.75 Tscf" />
+          <Row label="Supplementary Payment Rate" value="70%" />
+          <Row label="Decomm. Discount Rate" value="8.0%" />
+          <Row label="Gas Conversion" value="1 MMscf = 1,055 MMBtu" />
+          <Row label="BOE Conversion" value="6 Mscf = 1 BOE" />
+          <Row label="Active Scenario" value={activeScenario.charAt(0).toUpperCase() + activeScenario.slice(1)} />
+          <Row label="Projects Loaded" value={`${projects.length}`} />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Fiscal Regimes Reference */}
+      <div className="border border-border bg-white p-4">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+          Fiscal Regime Reference
+        </h4>
+        <div className="space-y-4">
+          {Object.entries(FISCAL_REGIMES).map(([key, regime]) => (
+            <div key={key} className="border border-border/50 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="outline" className="text-[10px] bg-petrol/10 text-petrol border-petrol/30">
+                  {regime.type.replace('_', ' ')}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-xs">
+                <Row label="Royalty" value={fmtPct(regime.royaltyRate, 0)} />
+                <Row label="PITA" value={fmtPct(regime.pitaRate, 0)} />
+                <Row label="Export Duty" value={fmtPct(regime.exportDutyRate, 0)} />
+                <Row label="Research Cess" value={fmtPct(regime.researchCessRate, 1)} />
+              </div>
+              {'tranches' in regime && (
+                <div className="mt-2">
+                  <span className="text-[10px] font-medium text-text-secondary">R/C Tranches:</span>
+                  <div className="grid grid-cols-5 gap-1 mt-1 text-[10px]">
+                    <span className="font-medium text-text-secondary">R/C Range</span>
+                    <span className="font-medium text-text-secondary text-right">Ceiling</span>
+                    <span className="font-medium text-text-secondary text-right">Contractor</span>
+                    <span className="font-medium text-text-secondary text-right">PETRONAS</span>
+                    <span />
+                    {regime.tranches.map((t, i) => (
+                      <div key={i} className="contents">
+                        <span className="font-data">{t.rcFloor.toFixed(1)} — {t.rcCeiling === Infinity ? '∞' : t.rcCeiling.toFixed(1)}</span>
+                        <span className="font-data text-right">{fmtPct(t.costRecoveryCeilingPct, 0)}</span>
+                        <span className="font-data text-right">{fmtPct(t.contractorProfitSharePct, 0)}</span>
+                        <span className="font-data text-right">{fmtPct(t.petronasProfitSharePct, 0)}</span>
+                        <span />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {'fixedCostRecoveryCeiling' in regime && (
+                <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                  <Row label="Cost Recovery Ceiling" value={fmtPct(regime.fixedCostRecoveryCeiling, 0)} />
+                  <Row label="PI Lower / Upper" value={`${regime.piLower} / ${regime.piUpper}`} />
+                  <Row label="Contractor @ Lower/Upper" value={`${fmtPct(regime.contractorShareAtLower, 0)} / ${fmtPct(regime.contractorShareAtUpper, 0)}`} />
+                </div>
+              )}
+              {'costRecoveryCeilingPct' in regime && !('tranches' in regime) && !('fixedCostRecoveryCeiling' in regime) && (
+                <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                  <Row label="Cost Recovery" value={fmtPct(regime.costRecoveryCeilingPct, 0)} />
+                  <Row label="Contractor Share" value={fmtPct(regime.contractorProfitSharePct, 0)} />
+                  <Row label="PETRONAS Share" value={fmtPct(regime.petronasProfitSharePct, 0)} />
+                </div>
+              )}
+              {'taxRate' in regime && (
+                <div className="mt-2 text-xs">
+                  <Row label="Corporate Tax Rate" value={fmtPct(regime.taxRate, 0)} />
+                </div>
+              )}
+            </div>
+          ))}
+          <div className="border border-border/50 p-3 bg-content-alt/30">
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant="outline" className="text-[10px]">RSC</Badge>
+              <span className="text-[10px] text-text-muted">(Risk Service Contract)</span>
+            </div>
+            <p className="text-[10px] text-text-secondary">
+              Simplified approximation in POC using corporate-tax model.
+              Full fee-based engine (fee-per-barrel, performance bonuses, cost reimbursement, reduced PITA 25%)
+              to be implemented in SAC production system.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* About */}
+      <div className="border border-border bg-white p-4">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+          About This POC
+        </h4>
+        <div className="text-xs text-text-secondary space-y-2">
+          <p>
+            PETROS Integrated Planning System (IPS) — Proof of Concept demonstrating domain logic
+            for petroleum economics evaluation across multiple fiscal regimes.
+          </p>
+          <p>
+            All fiscal parameters are illustrative, based on publicly available PETRONAS MPM descriptions.
+            Sample data is derived from Sarawak offshore analogues.
+          </p>
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="border border-border bg-white p-4">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+          Disclaimer
+        </h4>
+        <p className="text-xs text-text-secondary">
+          This POC uses illustrative data only. No actual PETROS project data, contract terms,
+          or production profiles are used. Fiscal parameters are based on publicly available
+          descriptions and may not reflect actual contractual obligations.
+        </p>
+      </div>
+
+      {/* Tech Stack (collapsible) */}
+      <TechStackSection />
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <>
+      <span className="text-text-secondary">{label}</span>
+      <span className="font-data font-medium text-text-primary text-right">{value}</span>
+    </>
+  );
+}
+
+function TechStackSection() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border border-border bg-white p-4">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-text-secondary w-full"
+      >
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        Technology Stack
+      </button>
+      {open && (
+        <div className="mt-3 text-xs text-text-muted space-y-1">
+          <p>React 19 + TypeScript 5.9 + Vite 6</p>
+          <p>Tailwind CSS 4 + shadcn/ui + Radix UI</p>
+          <p>Zustand 5 (state) + Recharts (charts) + TanStack Table</p>
+          <p>SheetJS xlsx (Excel export) + seedrandom (Monte Carlo PRNG)</p>
+          <p>Vitest + Testing Library (258 unit tests)</p>
+        </div>
+      )}
+    </div>
+  );
+}
