@@ -1,0 +1,20 @@
+PETROS IPS POC — Proof of Concept by ABeam Consulting Malaysia.
+
+Copyright © 2026 ABeam Consulting Malaysia. All rights reserved.
+
+This software is confidential and proprietary. It is a demonstration
+of domain logic for petroleum economics evaluation under Malaysian
+fiscal regimes (Production Sharing Contracts and related frameworks).
+
+Restrictions:
+  - Not licensed for public distribution, modification, or commercial use.
+  - No warranty is provided; this software is delivered "as-is".
+  - All fiscal parameters, production profiles, and project data are
+    illustrative and based on publicly available analogues. No actual
+    PETROS project data, contract terms, or confidential information
+    is embedded in this codebase.
+  - The production implementation will be built in SAP Analytics Cloud
+    integrated with SAP S/4HANA. This proof of concept demonstrates
+    calculation logic only and is not connected to any enterprise system.
+
+For inquiries, contact: ABeam Consulting Malaysia.

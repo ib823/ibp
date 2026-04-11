@@ -15,6 +15,7 @@ import { fmtPct } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
 import { getPageEntries } from '@/lib/educational-content';
+import { computeCosts } from '@/engine/fiscal/shared';
 import type { EconomicsResult } from '@/engine/types';
 
 const edu = getPageEntries('portfolio');
@@ -46,24 +47,48 @@ export default function PortfolioPage() {
   const { weightedIrr, totalGovtTake } = useMemo(() => {
     let capexWeightedIrr = 0;
     let totalCapex = 0;
-    let govtTakeWeighted = 0;
-    let totalRevenue = 0;
+    let totalGovtReceipts = 0;
+    let totalPreTaxCashFlow = 0;
 
     for (const id of portfolioSelection) {
       const r = projectResults.get(id);
+      const project = projects.find((p) => p.project.id === id);
       if (!r) continue;
       const capex = r.totalCapex as number;
       capexWeightedIrr += (r.irr ?? r.mirr) * capex;
       totalCapex += capex;
-      govtTakeWeighted += r.governmentTakePct * (r.totalRevenue as number);
-      totalRevenue += r.totalRevenue as number;
+
+      totalGovtReceipts += r.yearlyCashflows.reduce(
+        (sum, cf) =>
+          sum +
+          (cf.royalty as number) +
+          (cf.exportDuty as number) +
+          (cf.researchCess as number) +
+          (cf.petronasProfitShare as number) +
+          (cf.supplementaryPayment as number) +
+          (cf.pitaTax as number),
+        0,
+      );
+
+      if (project) {
+        const preTaxForProject =
+          (r.totalRevenue as number) -
+          r.yearlyCashflows.reduce((sum, cf) => {
+            const cost = computeCosts(project.costProfile, cf.year);
+            return sum + cost.totalCapex + cost.totalOpex + cost.abandonmentCost;
+          }, 0);
+        totalPreTaxCashFlow += preTaxForProject;
+      }
     }
 
     return {
       weightedIrr: totalCapex > 0 ? capexWeightedIrr / totalCapex : 0,
-      totalGovtTake: totalRevenue > 0 ? govtTakeWeighted / totalRevenue : 0,
+      totalGovtTake:
+        totalPreTaxCashFlow > 0
+          ? (totalGovtReceipts / totalPreTaxCashFlow) * 100
+          : 0,
     };
-  }, [portfolioSelection, projectResults]);
+  }, [portfolioSelection, projectResults, projects]);
 
   // Bubble chart data (active projects only)
   const bubbleData = useMemo(

@@ -17,6 +17,7 @@
 import * as XLSX from 'xlsx';
 import type { EconomicsResult, UnitConversion, YearlyCashflow } from '@/engine/types';
 import { convertSafe } from '@/lib/display-units';
+import { PROJECTS_BY_ID } from '@/data/projects';
 
 export interface ExportOptions {
   currency: string;
@@ -27,6 +28,44 @@ const DEFAULT_OPTIONS: ExportOptions = {
   currency: 'USD',
   conversions: [],
 };
+
+function getFiscalParameterRows(projectId: string): string[][] {
+  const project = PROJECTS_BY_ID[projectId];
+  if (!project) return [];
+
+  const regime = project.fiscalRegimeConfig;
+  const rows: string[][] = [
+    ['Fiscal Regime', regime.type],
+    ['Royalty Rate', `${(regime.royaltyRate * 100).toFixed(1)}%`],
+    ['Export Duty Rate', `${((regime.exportDutyRate ?? 0) * 100).toFixed(1)}%`],
+    ['Research Cess Rate', `${((regime.researchCessRate ?? 0) * 100).toFixed(1)}%`],
+  ];
+
+  if ('pitaRate' in regime) {
+    rows.push(['Tax Rate', `${(regime.pitaRate * 100).toFixed(1)}%`]);
+  }
+  if ('taxRate' in regime) {
+    rows.push(['Tax Rate', `${(regime.taxRate * 100).toFixed(1)}%`]);
+  }
+  if ('tranches' in regime) {
+    rows.push(['Tranche Count', String(regime.tranches.length)]);
+  }
+  if ('fixedCostRecoveryCeiling' in regime) {
+    rows.push(['Cost Recovery Ceiling', `${(regime.fixedCostRecoveryCeiling * 100).toFixed(1)}%`]);
+    rows.push(['PI Lower / Upper', `${regime.piLower.toFixed(2)} / ${regime.piUpper.toFixed(2)}`]);
+  }
+  if ('costRecoveryCeilingPct' in regime) {
+    rows.push(['Cost Recovery Ceiling', `${(regime.costRecoveryCeilingPct * 100).toFixed(1)}%`]);
+  }
+  if ('contractorProfitSharePct' in regime) {
+    rows.push(['Contractor Share', `${(regime.contractorProfitSharePct * 100).toFixed(1)}%`]);
+  }
+  if ('deepwaterAllowance' in regime) {
+    rows.push(['Deepwater Allowance', `${(regime.deepwaterAllowance * 100).toFixed(1)}%`]);
+  }
+
+  return rows;
+}
 
 /**
  * Build an in-memory Excel workbook from an `EconomicsResult`.
@@ -138,6 +177,8 @@ export function buildEconomicsWorkbook(
     ['Discount Rate', '10%'],
     [],
     ['DISCLAIMER: Illustrative fiscal parameters — not actual PETROS contract terms'],
+    [],
+    ...getFiscalParameterRows(result.projectId),
   ];
   const ws3 = XLSX.utils.aoa_to_sheet(assumptionsData);
   ws3['!cols'] = [{ wch: 22 }, { wch: 30 }];

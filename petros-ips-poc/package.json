@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:audit": "vitest run tests/engine/formula-audit.test.ts tests/engine/consistency-audit.test.ts",
+    "test:excel": "vite-node tests/validate-excel-export.ts",
+    "test:all": "vitest run && vite-node tests/validate-excel-export.ts"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
