@@ -3,50 +3,14 @@ import { useNavigate, useLocation } from 'react-router';
 import { TOUR_STEPS } from '@/data/guided-tour';
 import { Button } from '@/components/ui5/Ui5Button';
 import { X } from 'lucide-react';
+import {
+  isTourCompleted,
+  markTourCompleted,
+  subscribeToTourStart,
+} from '@/lib/tour-state';
 
-const STORAGE_KEY = 'petros_tour_completed';
-
-/** Check if the tour has been completed before */
-export function isTourCompleted(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-/** Mark the tour as completed */
-function markTourCompleted() {
-  try {
-    localStorage.setItem(STORAGE_KEY, 'true');
-  } catch {
-    // localStorage unavailable
-  }
-}
-
-/** Clear the tour completed flag */
-export function resetTourFlag() {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // localStorage unavailable
-  }
-}
-
-// ── Shared event bus for starting the tour from anywhere ─────────────
-
-type TourListener = () => void;
-const listeners: Set<TourListener> = new Set();
-
-export function startTour() {
-  listeners.forEach((fn) => fn());
-}
-
-function useOnTourStart(cb: TourListener) {
-  useEffect(() => {
-    listeners.add(cb);
-    return () => { listeners.delete(cb); };
-  }, [cb]);
+function useOnTourStart(cb: () => void) {
+  useEffect(() => subscribeToTourStart(cb), [cb]);
 }
 
 // ── Spotlight positioning ────────────────────────────────────────────

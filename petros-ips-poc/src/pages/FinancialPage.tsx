@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tabs } from '@/components/ui5/Ui5Tabs';
 import { Select } from '@/components/ui5/Ui5Select';
-import { useProjectStore, getActiveResult } from '@/store/project-store';
+import { useProjectStore, getActiveResult, useEffectiveActiveProject } from '@/store/project-store';
 import { FinancialTable } from '@/components/tables/FinancialTable';
 import { generateIncomeStatement } from '@/engine/financial/income-statement';
 import { generateBalanceSheet } from '@/engine/financial/balance-sheet';
@@ -22,7 +22,8 @@ export default function FinancialPage() {
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const result = useProjectStore((s) => getActiveResult(s));
 
-  const activeProject = projects.find((p) => p.project.id === activeProjectId);
+  // Use the override-merged project so what-if edits propagate to IS/BS/CF.
+  const activeProject = useEffectiveActiveProject() ?? projects.find((p) => p.project.id === activeProjectId);
 
   const statements = useMemo(() => {
     if (!result || !activeProject) return null;

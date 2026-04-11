@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { useProjectStore } from '@/store/project-store';
+import { useProjectStore, useEffectiveProjects } from '@/store/project-store';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { PortfolioProductionChart } from '@/components/charts/PortfolioProductionChart';
@@ -61,6 +61,9 @@ export default function DashboardPage() {
 
   const portfolioNpv = portfolioResult ? (portfolioResult.totalNpv as number) : 0;
   const u = useDisplayUnits();
+  // Charts below read productionProfile / costProfile directly — feed them
+  // override-merged projects so what-if edits propagate to the dashboard.
+  const effectiveProjects = useEffectiveProjects();
 
   return (
     <div className="space-y-5">
@@ -194,7 +197,7 @@ export default function DashboardPage() {
           </h4>
           <SectionHelp entry={edu['D-22']!} />
           <div className="min-h-[280px] sm:min-h-[320px]">
-            <PortfolioProductionChart projects={projects} activeIds={portfolioSelection} />
+            <PortfolioProductionChart projects={effectiveProjects} activeIds={portfolioSelection} />
           </div>
         </div>
         <div className="border border-border bg-white p-4">
@@ -203,7 +206,7 @@ export default function DashboardPage() {
           </h4>
           <SectionHelp entry={edu['D-23']!} />
           <div className="min-h-[280px] sm:min-h-[320px]">
-            <CapexTimelineChart projects={projects} activeIds={portfolioSelection} />
+            <CapexTimelineChart projects={effectiveProjects} activeIds={portfolioSelection} />
           </div>
         </div>
       </div>

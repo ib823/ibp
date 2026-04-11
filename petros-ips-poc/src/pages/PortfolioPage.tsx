@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { useProjectStore } from '@/store/project-store';
+import { useProjectStore, useEffectiveProjects } from '@/store/project-store';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { NpvBubbleChart } from '@/components/charts/NpvBubbleChart';
@@ -10,7 +10,7 @@ import { Switch } from '@ui5/webcomponents-react';
 import { Badge } from '@/components/ui5/Ui5Badge';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { EduTooltip } from '@/components/shared/EduTooltip';
-import { toast } from '@/components/ui5/Ui5Toast';
+import { toast } from '@/lib/toast';
 import { fmtPct } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,9 @@ export default function PortfolioPage() {
   const economicsResults = useProjectStore((s) => s.economicsResults);
   const activeScenario = useProjectStore((s) => s.activeScenario);
   const u = useDisplayUnits();
+  // PortfolioProductionChart + CapexTimelineChart read profiles directly
+  // from project objects, so they need override-merged values.
+  const effectiveProjects = useEffectiveProjects();
 
   // Get results for the active scenario per project
   const projectResults = useMemo(() => {
@@ -227,7 +230,7 @@ export default function PortfolioPage() {
           <SectionHelp entry={edu['P-10']!} />
           <div className="min-h-[280px]">
             <PortfolioProductionChart
-              projects={projects}
+              projects={effectiveProjects}
               activeIds={portfolioSelection}
             />
           </div>
@@ -240,7 +243,7 @@ export default function PortfolioPage() {
           <SectionHelp entry={edu['P-11']!} />
           <div className="min-h-[280px]">
             <CapexTimelineChart
-              projects={projects}
+              projects={effectiveProjects}
               activeIds={portfolioSelection}
             />
           </div>

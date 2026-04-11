@@ -208,6 +208,12 @@ export function EconomicsTable({ cashflows, fiscalRegimeType }: EconomicsTablePr
     [fiscalRegimeType, currencyLabel, moneyFormat],
   );
 
+  // The React Compiler lint rule flags `useReactTable` as incompatible
+  // because TanStack Table returns functions that it cannot memoize
+  // safely. The warning is library-level and there is no alternative API
+  // — this table is consumed locally in the render and its instance
+  // does not leak to memoized children.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

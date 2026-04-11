@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Select } from '@/components/ui5/Ui5Select';
 import { Button } from '@/components/ui5/Ui5Button';
 import { useProjectStore } from '@/store/project-store';
@@ -36,6 +36,14 @@ const PHASE_LABEL: Record<ProjectPhaseVersion, string> = {
 
 export function PhaseComparisonView() {
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
+  // key forces a full remount when the project changes, so the inner
+  // component's useState initializers re-derive the default phase pair
+  // (replaces a set-state-in-effect reset pattern).
+  return <PhaseComparisonViewInner key={activeProjectId ?? 'none'} />;
+}
+
+function PhaseComparisonViewInner() {
+  const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const projects = useProjectStore((s) => s.projects);
   const phaseData = useProjectStore((s) => s.phaseData);
   const phaseComparisonResult = useProjectStore((s) => s.phaseComparisonResult);
@@ -44,19 +52,12 @@ export function PhaseComparisonView() {
   const activeProject = projects.find((p) => p.project.id === activeProjectId);
   const phases = activeProjectId ? phaseData.get(activeProjectId) ?? [] : [];
 
-  const [phase1, setPhase1] = useState<ProjectPhaseVersion | ''>('');
-  const [phase2, setPhase2] = useState<ProjectPhaseVersion | ''>('');
-
-  // Auto-pick the first two phases when project changes
-  useEffect(() => {
-    if (phases.length >= 2) {
-      setPhase1(phases[0]!.phase);
-      setPhase2(phases[1]!.phase);
-    } else {
-      setPhase1('');
-      setPhase2('');
-    }
-  }, [activeProjectId, phases.length]);
+  const [phase1, setPhase1] = useState<ProjectPhaseVersion | ''>(
+    () => (phases.length >= 2 ? phases[0]!.phase : ''),
+  );
+  const [phase2, setPhase2] = useState<ProjectPhaseVersion | ''>(
+    () => (phases.length >= 2 ? phases[1]!.phase : ''),
+  );
 
   const handleCompare = useCallback(() => {
     if (!activeProjectId || !phase1 || !phase2) return;

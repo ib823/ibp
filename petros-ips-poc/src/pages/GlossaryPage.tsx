@@ -1,4 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+
+function resolveInitialOpenId(): string | null {
+  if (typeof window === 'undefined') return null;
+  const hash = window.location.hash.slice(1).toLowerCase();
+  if (!hash) return null;
+  // Use GLOSSARY_ENTRIES imported below; safe because module-scope imports
+  // are hoisted before this function executes.
+  return GLOSSARY_ENTRIES.find((e) => e.id === hash)?.id ?? null;
+}
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Input } from '@/components/ui5/Ui5Input';
 import { GLOSSARY_ENTRIES } from '@/data/glossary';
@@ -8,7 +17,7 @@ import { cn } from '@/lib/utils';
 export default function GlossaryPage() {
   usePageTitle('Glossary');
   const [search, setSearch] = useState('');
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(() => resolveInitialOpenId());
   const entryRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const sorted = useMemo(
@@ -26,18 +35,18 @@ export default function GlossaryPage() {
     );
   }, [search, sorted]);
 
-  // Handle hash navigation: /glossary#npv
+  // Scroll to the entry that was opened from a #hash URL. The state
+  // itself is initialized in useState above so this effect is
+  // side-effect-only (no setState inside an effect body).
   useEffect(() => {
-    const hash = window.location.hash.slice(1).toLowerCase();
-    if (!hash) return;
-    const entry = GLOSSARY_ENTRIES.find((e) => e.id === hash);
-    if (entry) {
-      setOpenId(entry.id);
-      // Scroll after render
-      requestAnimationFrame(() => {
-        entryRefs.current[entry.id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
-    }
+    if (!openId) return;
+    requestAnimationFrame(() => {
+      entryRefs.current[openId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    // Run once on mount — intentionally do not depend on openId so the
+    // scroll only fires for the initial hash, not every subsequent
+    // manual open/close.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleEntry = (id: string) => {

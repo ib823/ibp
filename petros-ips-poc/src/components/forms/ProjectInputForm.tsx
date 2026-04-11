@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Select } from '@/components/ui5/Ui5Select';
 import { Input } from '@/components/ui5/Ui5Input';
 import { Label } from '@ui5/webcomponents-react';
@@ -53,7 +53,7 @@ function deriveParams(project: ProjectInputs) {
   const totalAbex =
     Object.values(cp.abandonmentCost).reduce((s, v) => s + (v as number), 0);
   const abexYears = Object.entries(cp.abandonmentCost)
-    .filter(([_, v]) => (v as number) > 0)
+    .filter(([, v]) => (v as number) > 0)
     .map(([y]) => Number(y));
 
   return {
@@ -143,7 +143,15 @@ export function ProjectInputForm({ onCalculate }: ProjectInputFormProps) {
         />
       </div>
 
-      {activeProject && <EditableProjectFields project={activeProject} onCalculate={onCalculate} />}
+      {/* key forces remount on project switch — useState initializers
+          re-read the new project's defaults, avoiding a reset effect. */}
+      {activeProject && (
+        <EditableProjectFields
+          key={activeProject.project.id}
+          project={activeProject}
+          onCalculate={onCalculate}
+        />
+      )}
 
       {!activeProject && (
         <Button disabled className="w-full" icon="simulate">
@@ -169,16 +177,9 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
   const [totalAbex, setTotalAbex] = useState(r1(defaults.totalAbex / 1e6));
   const [modified, setModified] = useState(false);
 
-  // Reset when project changes
-  useEffect(() => {
-    const d = deriveParams(project);
-    setPeakRate(r1(d.peakGas > 0 ? d.peakGas : d.peakOil));
-    setDeclineRate(r1(d.declineRate * 100));
-    setTotalCapex(r1(d.totalCapex / 1e6));
-    setAnnualOpex(r1(d.avgOpexFixed / 1e6));
-    setTotalAbex(r1(d.totalAbex / 1e6));
-    setModified(false);
-  }, [project]);
+  // Note: no reset effect. The parent passes key={project.id} so this
+  // component remounts when the project changes, and the useState
+  // initializers above re-derive defaults from the new project.
 
   const handleChange = useCallback((setter: (v: number) => void, min = 0, max = 1_000_000) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;

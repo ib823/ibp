@@ -3,7 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui5/Ui5Button';
 import { ScenarioSelector } from '@/components/shared/ScenarioSelector';
 import { useProjectStore } from '@/store/project-store';
-import { startTour, resetTourFlag } from '@/components/shared/GuidedTour';
+import { startTour, resetTourFlag } from '@/lib/tour-state';
 
 export function Header() {
   const isCalculating = useProjectStore((s) => s.isCalculating);

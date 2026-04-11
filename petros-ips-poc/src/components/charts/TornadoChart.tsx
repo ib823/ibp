@@ -43,7 +43,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
     );
 
     const base = result.baseNpv as number;
-    const allVals = sorted.flatMap(([_, v]) => [v.low, v.high]);
+    const allVals = sorted.flatMap(([, v]) => [v.low, v.high]);
     allVals.push(base);
 
     return {

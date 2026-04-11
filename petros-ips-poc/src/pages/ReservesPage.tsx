@@ -17,6 +17,7 @@ import type { ReserveCategory } from '@/engine/types';
 
 const edu = getPageEntries('reserves');
 const YEARS = [2024, 2025, 2026];
+const SRMS_YEARS = [2030, 2031, 2032, 2033, 2034, 2035];
 
 export default function ReservesPage() {
   usePageTitle('Reserves');
@@ -223,14 +224,12 @@ export default function ReservesPage() {
 // ── CO2 Storage Resources Section ─────────────────────────────────────
 
 function SrmsSection({ projects }: { projects: readonly import('@/engine/types').ProjectInputs[] }) {
-  const srmsYears = [2030, 2031, 2032, 2033, 2034, 2035];
-
   const srmsData = useMemo(() => {
     const results: Array<{ resource: (typeof CO2_STORAGE_RESOURCES)[number]; movements: import('@/engine/types').CO2StorageReconciliation[] }> = [];
     for (const resource of CO2_STORAGE_RESOURCES) {
       const project = projects.find((p) => p.project.id === resource.projectId);
       if (!project) continue;
-      const movements = generateSrmsReconciliation({ resource, project, years: srmsYears });
+      const movements = generateSrmsReconciliation({ resource, project, years: SRMS_YEARS });
       results.push({ resource, movements });
     }
     return results;

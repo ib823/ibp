@@ -36,7 +36,6 @@ function warnOnce(key: string, message: string): void {
   if (warned.has(key)) return;
   warned.add(key);
   if (isDevEnvironment()) {
-    // eslint-disable-next-line no-console
     console.warn(message);
   }
 }

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useProjectStore, getActiveResult } from '@/store/project-store';
+import { useProjectStore, getActiveResult, useEffectiveActiveProject } from '@/store/project-store';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { ProjectInputForm } from '@/components/forms/ProjectInputForm';
 import { KpiCard } from '@/components/shared/KpiCard';
@@ -34,7 +34,12 @@ export default function EconomicsPage() {
   const activeTimeGranularity = useProjectStore((s) => s.activeTimeGranularity);
   const setTimeGranularity = useProjectStore((s) => s.setTimeGranularity);
 
-  const activeProject = projects.find((p) => p.project.id === activeProjectId);
+  // Base project for dropdown lookups + form reset semantics (form must
+  // reset to base defaults, not current override state).
+  const baseActiveProject = projects.find((p) => p.project.id === activeProjectId);
+  // Override-merged project for chart data reads so what-if edits
+  // propagate to the Production + Annual Cash Flow charts immediately.
+  const activeProject = useEffectiveActiveProject() ?? baseActiveProject;
   const u = useDisplayUnits();
 
   const handleCalculate = useCallback(() => {

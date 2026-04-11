@@ -7,7 +7,7 @@ import { Label } from '@ui5/webcomponents-react';
 import { Button } from '@/components/ui5/Ui5Button';
 import { Trash2, Pencil, Check, X, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/ui5/Ui5Toast';
+import { toast } from '@/lib/toast';
 import type { UnitConversion, UnitConversionCategory, UnitPreferences } from '@/engine/types';
 
 const CATEGORY_LABELS: Record<UnitConversionCategory, string> = {

@@ -4,7 +4,7 @@ import { calculateIncremental } from '@/engine/portfolio/incremental';
 import { backAllocate } from '@/engine/portfolio/back-allocation';
 import { calculateDownstreamEconomics } from '@/engine/portfolio/downstream-margin';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
-import { ALL_PROJECTS, SK410_INPUTS, SK612_INPUTS, BALINGIAN_INPUTS, TUKAU_INPUTS, M3_CCS_INPUTS } from '@/data/projects';
+import { ALL_PROJECTS } from '@/data/projects';
 import { BASE_PRICE_DECK } from '@/data/price-decks';
 import { PROJECT_HIERARCHY } from '@/data/hierarchy';
 import type { EconomicsResult, DownstreamInputs, USD } from '@/engine/types';

@@ -5,7 +5,7 @@ import { FISCAL_REGIMES } from '@/data/fiscal-regimes';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
-import { startTour, resetTourFlag } from '@/components/shared/GuidedTour';
+import { startTour, resetTourFlag } from '@/lib/tour-state';
 import { UnitConversionSection } from '@/components/settings/UnitConversionSection';
 import { Button } from '@/components/ui5/Ui5Button';
 import { fmtPct } from '@/lib/format';

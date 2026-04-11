@@ -45,6 +45,14 @@ function formatDate(iso: string): string {
 
 export function VersionComparisonView() {
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
+  // key forces a full remount on project switch so v1/v2 local state
+  // resets to the new project's defaults (and any stale comparison
+  // result that might still be cached is ignored on render).
+  return <VersionComparisonViewInner key={activeProjectId ?? 'none'} />;
+}
+
+function VersionComparisonViewInner() {
+  const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const projects = useProjectStore((s) => s.projects);
   const versionedData = useProjectStore((s) => s.versionedData);
   const versionComparisonResults = useProjectStore((s) => s.versionComparisonResults);

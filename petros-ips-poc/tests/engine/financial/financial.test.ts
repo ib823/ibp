@@ -7,7 +7,7 @@ import { generateInvestmentFinancingProgram } from '@/engine/financial/investmen
 import { generateReservesReconciliation } from '@/engine/reserves/reconciliation';
 import { calculateFiscalCashflows } from '@/engine/fiscal';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
-import { SK410_INPUTS, SK612_INPUTS, BALINGIAN_INPUTS, TUKAU_INPUTS, M3_CCS_INPUTS, ALL_PROJECTS } from '@/data/projects';
+import { SK410_INPUTS, ALL_PROJECTS } from '@/data/projects';
 import { BASE_PRICE_DECK } from '@/data/price-decks';
 import { computeCosts } from '@/engine/fiscal/shared';
 

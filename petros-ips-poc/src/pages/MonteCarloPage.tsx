@@ -24,7 +24,7 @@ import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { fmtNum } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
-import { toast } from '@/components/ui5/Ui5Toast';
+import { toast } from '@/lib/toast';
 import { getPageEntries } from '@/lib/educational-content';
 import type { MonteCarloConfig, MonteCarloResult } from '@/engine/types';
 

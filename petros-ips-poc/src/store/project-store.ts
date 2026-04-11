@@ -2,6 +2,7 @@
 // PETROS IPS — Global Application Store (Zustand)
 // ════════════════════════════════════════════════════════════════════════
 
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import type {
   ProjectInputs,
@@ -127,6 +128,72 @@ export function getActiveResult(state: ProjectStoreState): EconomicsResult | nul
   return projectResults?.get(state.activeScenario) ?? null;
 }
 
+// ── Helpers: effective projects (base + what-if overrides) ───────────
+//
+// What-if edits live in `projectOverrides`. Any code path that READS
+// project data for calculation or display must use these helpers so
+// overrides propagate everywhere — not just the per-scenario economics
+// the store action computed.
+//
+// These are pure functions over the relevant slice of state. The hooks
+// below wrap them in `useMemo` so consumers get stable references when
+// nothing relevant changed (otherwise Zustand's default Object.is
+// comparison would treat every render as fresh state and re-render).
+
+type OverrideSlice = Pick<ProjectStoreState, 'projects' | 'projectOverrides'>;
+
+export function getEffectiveProject(
+  state: OverrideSlice,
+  projectId: string | null,
+): ProjectInputs | null {
+  if (!projectId) return null;
+  const base = state.projects.find((p) => p.project.id === projectId);
+  if (!base) return null;
+  const overrides = state.projectOverrides.get(projectId);
+  if (!overrides) return base;
+  return {
+    ...base,
+    productionProfile: overrides.productionProfile,
+    costProfile: overrides.costProfile,
+  };
+}
+
+export function getEffectiveProjects(
+  state: OverrideSlice,
+): readonly ProjectInputs[] {
+  if (state.projectOverrides.size === 0) return state.projects;
+  return state.projects.map((base) => {
+    const overrides = state.projectOverrides.get(base.project.id);
+    if (!overrides) return base;
+    return {
+      ...base,
+      productionProfile: overrides.productionProfile,
+      costProfile: overrides.costProfile,
+    };
+  });
+}
+
+/** Hook — returns the override-merged active project, stable when state is unchanged. */
+export function useEffectiveActiveProject(): ProjectInputs | null {
+  const projects = useProjectStore((s) => s.projects);
+  const projectOverrides = useProjectStore((s) => s.projectOverrides);
+  const activeProjectId = useProjectStore((s) => s.activeProjectId);
+  return useMemo(
+    () => getEffectiveProject({ projects, projectOverrides }, activeProjectId),
+    [projects, projectOverrides, activeProjectId],
+  );
+}
+
+/** Hook — returns the override-merged project array. Stable when unchanged. */
+export function useEffectiveProjects(): readonly ProjectInputs[] {
+  const projects = useProjectStore((s) => s.projects);
+  const projectOverrides = useProjectStore((s) => s.projectOverrides);
+  return useMemo(
+    () => getEffectiveProjects({ projects, projectOverrides }),
+    [projects, projectOverrides],
+  );
+}
+
 // ── Store ─────────────────────────────────────────────────────────────
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -178,7 +245,17 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   setActiveProject: (id) => set({ activeProjectId: id }),
 
-  setActiveScenario: (version) => { set({ activeScenario: version }); get().recalculatePortfolio(); },
+  setActiveScenario: (version) => {
+    // Cached version/phase comparison results used the old scenario's
+    // price deck; drop them so the UI forces a fresh run under the new
+    // scenario instead of showing stale numbers.
+    set({
+      activeScenario: version,
+      versionComparisonResults: new Map(),
+      phaseComparisonResult: null,
+    });
+    get().recalculatePortfolio();
+  },
 
   toggleProjectInPortfolio: (id) => {
     const selection = new Set(get().portfolioSelection);
@@ -259,7 +336,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   runSensitivity: (projectId) => {
     const state = get();
-    const project = state.projects.find((p) => p.project.id === projectId);
+    const project = getEffectiveProject(state, projectId);
     if (!project) return;
 
     const result = calculateTornado(project, state.priceDecks[state.activeScenario]);
@@ -270,7 +347,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   runMonteCarlo: (projectId, config) => {
     const state = get();
-    const project = state.projects.find((p) => p.project.id === projectId);
+    const project = getEffectiveProject(state, projectId);
     if (!project) return;
 
     set({ isCalculating: true });
