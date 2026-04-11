@@ -1,4 +1,6 @@
 import type { HierarchyAggregation } from '@/engine/types';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { cn } from '@/lib/utils';
 
 interface HierarchyBarProps {
   aggregation: HierarchyAggregation;
@@ -11,6 +13,7 @@ const SECTOR_COLORS: Record<string, string> = {
 };
 
 export function HierarchyBar({ aggregation }: HierarchyBarProps) {
+  const u = useDisplayUnits();
   const totalNpv = aggregation.npv as number;
   if (totalNpv === 0) return null;
 
@@ -20,7 +23,10 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
       <div>
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-semibold text-text-primary">{aggregation.key}</span>
-          <span className="text-xs font-data font-medium">${(totalNpv / 1e6).toFixed(1)}M</span>
+          <span className={cn(
+            'text-xs font-data font-medium',
+            totalNpv < 0 ? 'text-danger' : 'text-text-primary',
+          )}>{u.money(totalNpv, { accounting: true })}</span>
         </div>
         <div className="h-6 bg-content-alt flex overflow-hidden">
           {aggregation.children.map((sector) => {
@@ -35,7 +41,7 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
                   width: `${pct}%`,
                   backgroundColor: SECTOR_COLORS[sector.key] ?? '#6B7280',
                 }}
-                title={`${sector.key}: $${(sectorNpv / 1e6).toFixed(1)}M`}
+                title={`${sector.key}: ${u.money(sectorNpv, { accounting: true })}`}
               >
                 {pct > 15 ? sector.key : ''}
               </div>
@@ -54,7 +60,10 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
           <div key={sector.key} className="pl-4 border-l-2" style={{ borderColor: color }}>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[11px] font-medium text-text-secondary">{sector.key}</span>
-              <span className="text-[11px] font-data">${(sectorNpv / 1e6).toFixed(1)}M</span>
+              <span className={cn(
+                'text-[11px] font-data',
+                sectorNpv < 0 ? 'text-danger' : 'text-text-primary',
+              )}>{u.money(sectorNpv, { accounting: true })}</span>
             </div>
             {sector.children.map((type) => (
               <div key={type.key} className="pl-3 space-y-0.5">
@@ -78,8 +87,11 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
                           }}
                         />
                       </div>
-                      <span className="text-[10px] font-data w-[60px] text-right">
-                        ${(projNpv / 1e6).toFixed(0)}M
+                      <span className={cn(
+                        'text-[10px] font-data w-[72px] text-right',
+                        projNpv < 0 ? 'text-danger' : 'text-text-primary',
+                      )}>
+                        {u.money(projNpv, { accounting: true })}
                       </span>
                     </div>
                   );

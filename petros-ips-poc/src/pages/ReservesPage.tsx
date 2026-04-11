@@ -1,26 +1,38 @@
 import { useState, useMemo } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { Select } from '@/components/ui5/Ui5Select';
 import { useProjectStore } from '@/store/project-store';
 import { PROJECT_RESERVES, gasBcfToMmboe } from '@/engine/reserves/prms';
 import { generateReservesReconciliation } from '@/engine/reserves/reconciliation';
 import { CO2_STORAGE_RESOURCES, generateSrmsReconciliation } from '@/engine/reserves/srms';
 import { ReservesWaterfall } from '@/components/charts/ReservesWaterfall';
+import { EduTooltip } from '@/components/shared/EduTooltip';
+import { InfoIcon } from '@/components/shared/InfoIcon';
+import { SectionHelp } from '@/components/shared/SectionHelp';
 import { cn } from '@/lib/utils';
+import { getPageEntries } from '@/lib/educational-content';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { convertSafe } from '@/lib/display-units';
 import type { ReserveCategory } from '@/engine/types';
 
+const edu = getPageEntries('reserves');
 const YEARS = [2024, 2025, 2026];
 
 export default function ReservesPage() {
+  usePageTitle('Reserves');
   const projects = useProjectStore((s) => s.projects);
+  const u = useDisplayUnits();
   const [selectedYear, setSelectedYear] = useState('2025');
   const [selectedCategory, setSelectedCategory] = useState<ReserveCategory>('2P');
+
+  // Reserves are stored in MMstb (oil) and Bcf (gas). `u.oilFactor`
+  // already converts bbl → user unit; since MMstb is dimensionally MM × bbl
+  // it applies unchanged. For gas we need Bcf → user unit, which is a
+  // different origin from u.gasFactor (which starts from MMscf).
+  const bcfFactor = useMemo(
+    () => convertSafe(1, 'Bcf', u.gasUnit, u.conversions),
+    [u.gasUnit, u.conversions],
+  );
 
   const reconciliation = useMemo(
     () => generateReservesReconciliation({ projects, years: YEARS }),
@@ -37,40 +49,47 @@ export default function ReservesPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-text-primary">Reserves</h2>
+      <div className="flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-text-primary">Reserves</h2>
+        <InfoIcon entry={edu['R-01']!} />
+      </div>
 
       {/* Summary Table */}
-      <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+      <div className="border border-border bg-white p-4" data-tour="reserves-table">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
           Reserves by Project (SPE PRMS Classification)
         </h4>
-        <ScrollArea className="w-full">
-          <table className="w-full border-collapse text-xs min-w-[600px]">
+        <SectionHelp entry={edu['R-02']!} />
+        <div className="overflow-x-auto w-full">
+          <table className="w-full border-collapse text-xs min-w-[700px] tabular-nums">
             <thead>
               <tr className="border-b border-border bg-content-alt">
                 <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5 w-[160px]">
                   Project
                 </th>
                 <th colSpan={3} className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5 border-l border-border">
-                  Oil (MMstb)
+                  <EduTooltip entryId="R-06"><span className="cursor-help">Oil (MM{u.oilUnit})</span></EduTooltip>
                 </th>
                 <th colSpan={3} className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5 border-l border-border">
-                  Gas (Bcf)
+                  <EduTooltip entryId="R-07"><span className="cursor-help">Gas ({u.gasUnit})</span></EduTooltip>
                 </th>
                 <th colSpan={3} className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5 border-l border-border">
-                  Total (MMboe)
+                  <EduTooltip entryId="R-08"><span className="cursor-help">Total (MMboe)</span></EduTooltip>
                 </th>
               </tr>
               <tr className="border-b border-border bg-content-alt">
                 <th />
-                {['1P', '2P', '3P', '1P', '2P', '3P', '1P', '2P', '3P'].map((c, i) => (
-                  <th key={i} className={cn(
-                    'text-right text-[10px] font-medium text-text-secondary px-2 py-1',
-                    i % 3 === 0 && 'border-l border-border',
-                  )}>
-                    {c}
-                  </th>
-                ))}
+                {(['1P', '2P', '3P', '1P', '2P', '3P', '1P', '2P', '3P'] as const).map((c, i) => {
+                  const tooltipId = c === '1P' ? 'R-03' : c === '2P' ? 'R-04' : 'R-05';
+                  return (
+                    <th key={i} className={cn(
+                      'text-right text-[10px] font-medium text-text-secondary px-2 py-1',
+                      i % 3 === 0 && 'border-l border-border',
+                    )}>
+                      <EduTooltip entryId={tooltipId}><span className="cursor-help">{c}</span></EduTooltip>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -81,16 +100,22 @@ export default function ReservesPage() {
                     <td className="px-3 py-1.5 text-text-primary font-medium">
                       {proj?.project.name ?? pr.projectId}
                     </td>
-                    {(['1P', '2P', '3P'] as const).map((c) => (
-                      <td key={`oil-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                        {pr.oil[c] > 0 ? pr.oil[c].toFixed(0) : '-'}
-                      </td>
-                    ))}
-                    {(['1P', '2P', '3P'] as const).map((c) => (
-                      <td key={`gas-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                        {pr.gas[c] > 0 ? pr.gas[c].toFixed(0) : '-'}
-                      </td>
-                    ))}
+                    {(['1P', '2P', '3P'] as const).map((c) => {
+                      const v = pr.oil[c] * u.oilFactor;
+                      return (
+                        <td key={`oil-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
+                          {v > 0 ? v.toFixed(v >= 10 ? 0 : 1) : '-'}
+                        </td>
+                      );
+                    })}
+                    {(['1P', '2P', '3P'] as const).map((c) => {
+                      const v = pr.gas[c] * bcfFactor;
+                      return (
+                        <td key={`gas-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
+                          {v > 0 ? v.toFixed(v >= 10 ? 0 : 1) : '-'}
+                        </td>
+                      );
+                    })}
                     {(['1P', '2P', '3P'] as const).map((c) => (
                       <td key={`boe-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
                         {(pr.oil[c] + gasBcfToMmboe(pr.gas[c])) > 0
@@ -104,16 +129,22 @@ export default function ReservesPage() {
               {/* Totals */}
               <tr className="border-t-2 border-border bg-content-alt font-semibold">
                 <td className="px-3 py-1.5 text-text-primary">Total</td>
-                {(['1P', '2P', '3P'] as const).map((c) => (
-                  <td key={`tot-oil-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                    {PROJECT_RESERVES.reduce((s, pr) => s + pr.oil[c], 0).toFixed(0)}
-                  </td>
-                ))}
-                {(['1P', '2P', '3P'] as const).map((c) => (
-                  <td key={`tot-gas-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                    {PROJECT_RESERVES.reduce((s, pr) => s + pr.gas[c], 0).toFixed(0)}
-                  </td>
-                ))}
+                {(['1P', '2P', '3P'] as const).map((c) => {
+                  const total = PROJECT_RESERVES.reduce((s, pr) => s + pr.oil[c], 0) * u.oilFactor;
+                  return (
+                    <td key={`tot-oil-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
+                      {total.toFixed(total >= 10 ? 0 : 1)}
+                    </td>
+                  );
+                })}
+                {(['1P', '2P', '3P'] as const).map((c) => {
+                  const total = PROJECT_RESERVES.reduce((s, pr) => s + pr.gas[c], 0) * bcfFactor;
+                  return (
+                    <td key={`tot-gas-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
+                      {total.toFixed(total >= 10 ? 0 : 1)}
+                    </td>
+                  );
+                })}
                 {(['1P', '2P', '3P'] as const).map((c) => {
                   const total = PROJECT_RESERVES.reduce(
                     (s, pr) => s + pr.oil[c] + gasBcfToMmboe(pr.gas[c]),
@@ -128,8 +159,7 @@ export default function ReservesPage() {
               </tr>
             </tbody>
           </table>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        </div>
       </div>
 
       {/* CO2 Storage Resources (SPE SRMS) */}
@@ -137,44 +167,53 @@ export default function ReservesPage() {
 
       {/* Reconciliation */}
       <div className="border border-border bg-white p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
             Reserves Reconciliation Waterfall
           </h4>
           <div className="flex items-center gap-2">
-            <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as ReserveCategory)}>
-              <SelectTrigger className="w-[80px] h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1P" className="text-xs">1P</SelectItem>
-                <SelectItem value="2P" className="text-xs">2P</SelectItem>
-                <SelectItem value="3P" className="text-xs">3P</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-[80px] h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {YEARS.map((y) => (
-                  <SelectItem key={y} value={y.toString()} className="text-xs">{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <EduTooltip entryId="R-16">
+              <Select
+                value={selectedCategory}
+                onValueChange={(v) => setSelectedCategory(v as ReserveCategory)}
+                options={[
+                  { value: '1P', label: '1P' },
+                  { value: '2P', label: '2P' },
+                  { value: '3P', label: '3P' },
+                ]}
+                className="w-[90px]"
+                aria-label="Reserve category"
+              />
+            </EduTooltip>
+            <EduTooltip entryId="R-17">
+              <Select
+                value={selectedYear}
+                onValueChange={setSelectedYear}
+                options={YEARS.map((y) => ({ value: y.toString(), label: y.toString() }))}
+                className="w-[90px]"
+                aria-label="Year"
+              />
+            </EduTooltip>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <ReservesWaterfall
-            movements={oilMovements}
-            title={`Oil ${selectedCategory} — ${selectedYear}`}
-            unit="MMstb"
-          />
-          <ReservesWaterfall
-            movements={gasMovements}
-            title={`Gas ${selectedCategory} — ${selectedYear}`}
-            unit="Bcf"
-          />
+        <SectionHelp entry={edu['R-15']!} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="min-h-[260px]">
+            <ReservesWaterfall
+              movements={oilMovements}
+              title={`Oil ${selectedCategory} — ${selectedYear}`}
+              unit={`MM${u.oilUnit}`}
+              valueFactor={u.oilFactor}
+            />
+          </div>
+          <div className="min-h-[260px]">
+            <ReservesWaterfall
+              movements={gasMovements}
+              title={`Gas ${selectedCategory} — ${selectedYear}`}
+              unit={u.gasUnit}
+              valueFactor={bcfFactor}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -201,20 +240,32 @@ function SrmsSection({ projects }: { projects: readonly import('@/engine/types')
 
   return (
     <div className="border border-border bg-white p-4">
-      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
         CO₂ Storage Resources (SPE SRMS 2025)
       </h4>
+      <SectionHelp entry={edu['R-09']!} />
 
       {/* Summary Table */}
-      <table className="w-full border-collapse text-xs mb-4">
+      <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-xs mb-4 min-w-[600px] tabular-nums">
         <thead>
           <tr className="border-b border-border bg-content-alt">
             <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5">Site</th>
-            <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">Low (MT)</th>
-            <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">Best (MT)</th>
-            <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">High (MT)</th>
-            <th className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">Class</th>
-            <th className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">Maturity</th>
+            <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <EduTooltip entryId="R-10"><span className="cursor-help">Low (MT)</span></EduTooltip>
+            </th>
+            <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <EduTooltip entryId="R-11"><span className="cursor-help">Best (MT)</span></EduTooltip>
+            </th>
+            <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <EduTooltip entryId="R-12"><span className="cursor-help">High (MT)</span></EduTooltip>
+            </th>
+            <th className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <EduTooltip entryId="R-13"><span className="cursor-help">Class</span></EduTooltip>
+            </th>
+            <th className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <EduTooltip entryId="R-14"><span className="cursor-help">Maturity</span></EduTooltip>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -230,14 +281,15 @@ function SrmsSection({ projects }: { projects: readonly import('@/engine/types')
           ))}
         </tbody>
       </table>
+      </div>
 
       {/* Reconciliation Table */}
       {srmsData.map(({ resource, movements }) => (
-        <div key={resource.projectId}>
-          <h5 className="text-[10px] font-semibold text-text-secondary mb-2">
+        <div key={resource.projectId} className="overflow-x-auto">
+          <h5 className="text-xs font-semibold text-text-secondary mb-2">
             {resource.siteName} — Capacity Reconciliation (Best Estimate)
           </h5>
-          <table className="w-full border-collapse text-xs mb-3">
+          <table className="w-full border-collapse text-xs mb-3 min-w-[500px] tabular-nums">
             <thead>
               <tr className="border-b border-border bg-content-alt">
                 <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-2 py-1">Year</th>

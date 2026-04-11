@@ -19,58 +19,125 @@
   --color-text-secondary: #6B7280;
   --color-text-muted: #9CA3AF;
 
-  /* shadcn/ui semantic tokens — required for all UI components */
+  /* Surfaces (used by Tailwind classes bg-background, bg-card, border-border) */
   --color-background: #FAFBFC;
   --color-foreground: #1A1A2E;
   --color-card: #FFFFFF;
-  --color-card-foreground: #1A1A2E;
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: #1A1A2E;
-  --color-primary: #1E3A5F;
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary: #F0F2F5;
-  --color-secondary-foreground: #1A1A2E;
-  --color-muted: #F0F2F5;
-  --color-muted-foreground: #6B7280;
-  --color-accent: #F0F2F5;
-  --color-accent-foreground: #1A1A2E;
-  --color-destructive: #C0392B;
-  --color-destructive-foreground: #FFFFFF;
   --color-border: #E2E5EA;
-  --color-input: #E2E5EA;
-  --color-ring: #1E3A5F;
 
-  /* Sidebar tokens */
-  --color-sidebar: #0A1628;
-  --color-sidebar-foreground: #FFFFFF;
-  --color-sidebar-accent: #1E3A5F;
-  --color-sidebar-accent-foreground: #FFFFFF;
-  --color-sidebar-border: #1A3050;
-
-  /* Chart tokens */
+  /* Chart palette (used by chart components that reference these tokens) */
   --color-chart-1: #1E3A5F;
   --color-chart-2: #2D8A4E;
   --color-chart-3: #D4A843;
   --color-chart-4: #C0392B;
   --color-chart-5: #8B5CF6;
 
-  /* Radius */
-  --radius: 0.25rem;
-
-  /* Typography */
-  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  /* Typography — SAP 72 (loaded by UI5 ThemeProvider) for SAC fidelity */
+  --font-sans: "72", "72full", "IBM Plex Sans", Arial, Helvetica, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* ── SAP Horizon Theme Bridge ──────────────────────────────────────── */
+/*
+ * Maps PETROS color tokens to SAP Fiori Horizon CSS variables.
+ * The var(--sapXxx, #fallback) pattern ensures the original PETROS colors
+ * are used if the SAP theme variables are not available (e.g. in tests).
+ * This lets every existing Tailwind class (bg-petrol, text-success, ...)
+ * automatically pick up SAP theme values when ThemeProvider is mounted.
+ */
+:root {
+  /* Brand / primary */
+  --color-petrol:       var(--sapBrandColor,                       #1E3A5F);
+  --color-petrol-light: var(--sapButton_Hover_Background,          #254A78);
+
+  /* Semantic */
+  --color-success: var(--sapPositiveColor, #2D8A4E);
+  --color-danger:  var(--sapNegativeColor, #C0392B);
+  --color-amber:   var(--sapCriticalColor, #D4A843);
+
+  /* Text */
+  --color-text-primary:   var(--sapTextColor,                        #1A1A2E);
+  --color-text-secondary: var(--sapContent_LabelColor,               #6B7280);
+  --color-text-muted:     var(--sapContent_NonInteractiveTextColor,  #9CA3AF);
+
+  /* Surfaces */
+  --color-background:  var(--sapBackgroundColor,        #FAFBFC);
+  --color-content-alt: var(--sapList_HeaderBackground,  #F0F2F5);
+  --color-border:      var(--sapGroup_ContentBorderColor, #E2E5EA);
+  --color-card:        var(--sapTile_Background,        #FFFFFF);
+
+  /* Shell / navigation */
+  --color-navy: var(--sapShell_Background, #0A1628);
+
+  /* Chart palette — SAP Horizon ordered colors */
+  --color-chart-1: var(--sapChart_OrderedColor_1, #3B82F6);
+  --color-chart-2: var(--sapChart_OrderedColor_2, #10B981);
+  --color-chart-3: var(--sapChart_OrderedColor_3, #F59E0B);
+  --color-chart-4: var(--sapChart_OrderedColor_4, #EF4444);
+  --color-chart-5: var(--sapChart_OrderedColor_5, #8B5CF6);
 }
 
 /* ── Base styles ───────────────────────────────────────────────────── */
 
-body {
-  font-family: var(--font-sans);
+:root, html, body, #root {
+  font-family: "72", "72full", "IBM Plex Sans", Arial, Helvetica, sans-serif !important;
   background-color: var(--color-background);
   color: var(--color-foreground);
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── UI5 Input: respect container width ─────────────────────────────── */
+/*
+ * UI5 Input has a large default min-width (~176px) that breaks CSS grid
+ * layouts — children overflow their cells because CSS grid auto-sizing
+ * respects intrinsic min-width. Force the custom element to fill its
+ * container and allow it to shrink to zero so grid cells stay bounded.
+ *
+ * Explicit Tailwind width classes like `w-[100px]` still override this
+ * because class selector specificity (0,1,0) beats the element selector
+ * specificity (0,0,1) used below.
+ */
+ui5-input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── UI5 Button: remove inner white focus outline ──────────────────── */
+/*
+ * UI5 Button (Emphasized design) renders a white inner outline on focus.
+ * This shows as a "double border" inside the button that breaks the
+ * clean Fiori look. Disable the outline on the button's internal part.
+ * The component still has hover/pressed feedback via background colour.
+ */
+ui5-button::part(button) {
+  outline: none;
+}
+ui5-button::part(button):focus,
+ui5-button::part(button):focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ── UI5 Dialog text-transform fix ────────────────────────────────── */
+/*
+ * The UI5 Dialog's slotted content renders in the light DOM, which means
+ * any `text-transform: uppercase` (including Tailwind `.uppercase`) on an
+ * ancestor inherits into the dialog body and turns educational text into
+ * unreadable ALL CAPS. Force `text-transform: none` at the dialog root.
+ */
+ui5-dialog,
+ui5-dialog * {
+  text-transform: none;
+}
+
+/* ── Dialog mobile sizing ──────────────────────────────────────────── */
+@media (max-width: 640px) {
+  ui5-dialog {
+    max-width: calc(100vw - 32px) !important;
+  }
 }
 
 /* ── Scrollbar styling ─────────────────────────────────────────────── */
@@ -98,4 +165,23 @@ body {
 .font-data {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* ── Table scroll indicator ────────────────────────────────────────── */
+/*
+ * Subtle gradient on the right edge of horizontally-scrollable wrappers
+ * to hint that more columns are available.
+ */
+.overflow-x-auto {
+  position: relative;
+}
+.overflow-x-auto::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.06));
+  pointer-events: none;
 }

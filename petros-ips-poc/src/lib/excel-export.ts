@@ -1,31 +1,58 @@
 // ════════════════════════════════════════════════════════════════════════
 // Excel Export — Economics and Financial Statements
 // ════════════════════════════════════════════════════════════════════════
+//
+// Split in two for testability:
+//   - `buildEconomicsWorkbook(...)` returns an in-memory XLSX.WorkBook so
+//     tests can inspect cells via `XLSX.utils.sheet_to_json` without
+//     mocking `writeFile`.
+//   - `exportEconomicsToExcel(...)` is a thin wrapper that calls the
+//     builder and writes to disk via `XLSX.writeFile`.
+//
+// All currency values respect the user's display-unit preferences: labels
+// carry the selected ISO code and cell values are pre-converted through
+// `convertSafe('USD', currency, conversions)` before writing.
+// ════════════════════════════════════════════════════════════════════════
 
 import * as XLSX from 'xlsx';
-import type { EconomicsResult, YearlyCashflow } from '@/engine/types';
+import type { EconomicsResult, UnitConversion, YearlyCashflow } from '@/engine/types';
+import { convertSafe } from '@/lib/display-units';
+
+export interface ExportOptions {
+  currency: string;
+  conversions: readonly UnitConversion[];
+}
+
+const DEFAULT_OPTIONS: ExportOptions = {
+  currency: 'USD',
+  conversions: [],
+};
 
 /**
- * Export project economics to an Excel workbook.
- * Generates: Summary sheet + Yearly Cash Flows sheet + Assumptions sheet.
+ * Build an in-memory Excel workbook from an `EconomicsResult`.
+ * Pure function — does NOT touch the filesystem. Use for tests.
  */
-export function exportEconomicsToExcel(
+export function buildEconomicsWorkbook(
   projectName: string,
   scenario: string,
   result: EconomicsResult,
-): void {
+  opts: ExportOptions = DEFAULT_OPTIONS,
+): XLSX.WorkBook {
   const wb = XLSX.utils.book_new();
   const cashflows = result.yearlyCashflows;
+  const { currency, conversions } = opts;
+  const convert = (v: number): number => convertSafe(v, 'USD', currency, conversions);
 
   // ── Sheet 1: Summary ────────────────────────────────────────────────
   const summaryData = [
     ['PETROS IPS POC — Economics Summary'],
     ['Project', projectName],
     ['Scenario', scenario],
+    ['Currency', currency],
     ['Date', new Date().toISOString().split('T')[0]],
     [],
     ['Key Metrics'],
-    ['NPV₁₀ ($)', result.npv10],
+    [`NPV₁₀ (${currency})`, convert(result.npv10 as number)],
     ['IRR (%)', result.irr !== null ? result.irr * 100 : 'N/A'],
     ['MIRR (%)', result.mirr * 100],
     ['Payback (years)', result.paybackYears],
@@ -33,58 +60,104 @@ export function exportEconomicsToExcel(
     ['Prof. Index', result.profitabilityIndex],
     ['Govt Take (%)', result.governmentTakePct],
     ['Contractor Take (%)', result.contractorTakePct],
-    ['Total CAPEX ($)', result.totalCapex],
-    ['Total OPEX ($)', result.totalOpex],
-    ['Total Revenue ($)', result.totalRevenue],
-    ['Peak Funding ($)', result.peakFunding],
+    [`Total CAPEX (${currency})`, convert(result.totalCapex as number)],
+    [`Total OPEX (${currency})`, convert(result.totalOpex as number)],
+    [`Total Revenue (${currency})`, convert(result.totalRevenue as number)],
+    [`Peak Funding (${currency})`, convert(result.peakFunding as number)],
     [],
     ['DISCLAIMER: Sample data — not actual PETROS project data'],
   ];
   const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
-  ws1['!cols'] = [{ wch: 22 }, { wch: 18 }];
+  ws1['!cols'] = [{ wch: 26 }, { wch: 22 }];
   XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
 
   // ── Sheet 2: Yearly Cash Flows ──────────────────────────────────────
   const cfHeaders = [
-    'Year', 'Oil Rev ($)', 'Gas Rev ($)', 'Cond Rev ($)',
-    'Total Revenue ($)', 'Royalty ($)', 'Rev After Royalty ($)',
-    'Cost Recovery Ceiling ($)', 'Cost Recovery ($)', 'Unrecovered CF ($)',
-    'Profit Oil/Gas ($)', 'Contractor Profit Share ($)', 'PETRONAS Share ($)',
-    'Suppl Payment ($)', 'Contractor Entitlement ($)',
-    'Capital Allowance ($)', 'Taxable Income ($)', 'PITA Tax ($)',
-    'NCF ($)', 'Cum NCF ($)', 'DCF ($)', 'Cum DCF ($)',
-    'R/C Index', 'Prof. Index', 'Cum Production (boe)',
+    'Year',
+    `Oil Rev (${currency})`,
+    `Gas Rev (${currency})`,
+    `Cond Rev (${currency})`,
+    `Total Revenue (${currency})`,
+    `Royalty (${currency})`,
+    `Rev After Royalty (${currency})`,
+    `Cost Recovery Ceiling (${currency})`,
+    `Cost Recovery (${currency})`,
+    `Unrecovered CF (${currency})`,
+    `Profit Oil/Gas (${currency})`,
+    `Contractor Profit Share (${currency})`,
+    `PETRONAS Share (${currency})`,
+    `Suppl Payment (${currency})`,
+    `Contractor Entitlement (${currency})`,
+    `Capital Allowance (${currency})`,
+    `Taxable Income (${currency})`,
+    `PITA Tax (${currency})`,
+    `NCF (${currency})`,
+    `Cum NCF (${currency})`,
+    `DCF (${currency})`,
+    `Cum DCF (${currency})`,
+    'R/C Index',
+    'Prof. Index',
+    'Cum Production (boe)',
   ];
   const cfRows = cashflows.map((cf: YearlyCashflow) => [
     cf.year,
-    cf.grossRevenueOil, cf.grossRevenueGas, cf.grossRevenueCond,
-    cf.totalGrossRevenue, cf.royalty, cf.revenueAfterRoyalty,
-    cf.costRecoveryCeiling, cf.costRecoveryAmount, cf.unrecoveredCostCF,
-    cf.profitOilGas, cf.contractorProfitShare, cf.petronasProfitShare,
-    cf.supplementaryPayment, cf.contractorEntitlement,
-    cf.capitalAllowance, cf.taxableIncome, cf.pitaTax,
-    cf.netCashFlow, cf.cumulativeCashFlow,
-    cf.discountedCashFlow, cf.cumulativeDiscountedCF,
-    cf.rcIndex, cf.profitabilityIndex, cf.cumulativeProduction,
+    convert(cf.grossRevenueOil as number),
+    convert(cf.grossRevenueGas as number),
+    convert(cf.grossRevenueCond as number),
+    convert(cf.totalGrossRevenue as number),
+    convert(cf.royalty as number),
+    convert(cf.revenueAfterRoyalty as number),
+    convert(cf.costRecoveryCeiling as number),
+    convert(cf.costRecoveryAmount as number),
+    convert(cf.unrecoveredCostCF as number),
+    convert(cf.profitOilGas as number),
+    convert(cf.contractorProfitShare as number),
+    convert(cf.petronasProfitShare as number),
+    convert(cf.supplementaryPayment as number),
+    convert(cf.contractorEntitlement as number),
+    convert(cf.capitalAllowance as number),
+    convert(cf.taxableIncome as number),
+    convert(cf.pitaTax as number),
+    convert(cf.netCashFlow as number),
+    convert(cf.cumulativeCashFlow as number),
+    convert(cf.discountedCashFlow as number),
+    convert(cf.cumulativeDiscountedCF as number),
+    cf.rcIndex,
+    cf.profitabilityIndex,
+    cf.cumulativeProduction,
   ]);
   const ws2 = XLSX.utils.aoa_to_sheet([cfHeaders, ...cfRows]);
-  ws2['!cols'] = cfHeaders.map(() => ({ wch: 18 }));
+  ws2['!cols'] = cfHeaders.map(() => ({ wch: 20 }));
   XLSX.utils.book_append_sheet(wb, ws2, 'Cash Flows');
 
   // ── Sheet 3: Assumptions ────────────────────────────────────────────
   const assumptionsData = [
     ['Assumptions'],
     ['Project ID', result.projectId],
+    ['Display Currency', currency],
     ['Discount Rate', '10%'],
     [],
     ['DISCLAIMER: Illustrative fiscal parameters — not actual PETROS contract terms'],
   ];
   const ws3 = XLSX.utils.aoa_to_sheet(assumptionsData);
-  ws3['!cols'] = [{ wch: 20 }, { wch: 30 }];
+  ws3['!cols'] = [{ wch: 22 }, { wch: 30 }];
   XLSX.utils.book_append_sheet(wb, ws3, 'Assumptions');
 
-  // ── Write file ──────────────────────────────────────────────────────
+  return wb;
+}
+
+/**
+ * Build the workbook and write it to disk via `XLSX.writeFile`.
+ * Used by the Export button in the Economics page.
+ */
+export function exportEconomicsToExcel(
+  projectName: string,
+  scenario: string,
+  result: EconomicsResult,
+  opts: ExportOptions = DEFAULT_OPTIONS,
+): void {
+  const wb = buildEconomicsWorkbook(projectName, scenario, result, opts);
   const safeName = projectName.replace(/[^a-zA-Z0-9_-]/g, '_');
-  const filename = `${safeName}_Economics_${scenario}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  const filename = `${safeName}_Economics_${scenario}_${opts.currency}_${new Date().toISOString().split('T')[0]}.xlsx`;
   XLSX.writeFile(wb, filename);
 }

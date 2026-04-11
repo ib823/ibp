@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import type { SpiderResult } from '@/engine/sensitivity/spider';
 import type { SensitivityVariable } from '@/engine/types';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 
 
 interface SpiderDiagramChartProps {
@@ -35,21 +36,21 @@ const VARIABLE_LABELS: Record<SensitivityVariable, string> = {
 };
 
 export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
+  const u = useDisplayUnits();
   const data = useMemo(() => {
     if (result.lines.length === 0) return [];
 
-    // All lines have the same x-axis points
     const firstLine = result.lines[0]!;
     return firstLine.points.map((pt, idx) => {
       const row: Record<string, number> = {
         pctChange: pt.percentChange * 100,
       };
       for (const line of result.lines) {
-        row[line.variable] = (line.points[idx]!.npv as number) / 1e6;
+        row[line.variable] = ((line.points[idx]!.npv as number) * u.currencyFactor) / 1e6;
       }
       return row;
     });
-  }, [result]);
+  }, [result, u.currencyFactor]);
 
   return (
     <ResponsiveContainer width="100%" height={350}>
@@ -65,12 +66,12 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
         <YAxis
           tick={{ fontSize: 10, fill: '#6B7280' }}
           tickLine={false}
-          tickFormatter={(v: number) => `$${v.toFixed(0)}M`}
-          label={{ value: 'NPV ($M)', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#9CA3AF' }}
+          tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`}
+          label={{ value: `NPV (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 10, fill: '#9CA3AF' }}
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [`$${v.toFixed(1)}M`, undefined]}
+          formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, undefined]}
           labelFormatter={(v: number) => `${v > 0 ? '+' : ''}${v}% change`}
         />
         <Legend

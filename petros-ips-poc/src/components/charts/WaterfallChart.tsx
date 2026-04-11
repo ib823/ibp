@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { YearlyCashflow } from '@/engine/types';
-import { fmtDollarM } from '@/lib/format';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 
 interface WaterfallChartProps {
   cashflows: readonly YearlyCashflow[];
@@ -16,6 +16,7 @@ interface WaterfallBar {
 }
 
 export function WaterfallChart({ cashflows }: WaterfallChartProps) {
+  const u = useDisplayUnits();
   const bars = useMemo(() => {
     const totalRevenue = cashflows.reduce((s, cf) => s + (cf.totalGrossRevenue as number), 0);
     const totalRoyalty = cashflows.reduce((s, cf) => s + (cf.royalty as number), 0);
@@ -170,7 +171,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
               fill="#1A1A2E"
               fontSize={9}
             >
-              {fmtDollarM(bar.value)}
+              {u.money(bar.value)}
             </text>
             {/* Bar label */}
             <text

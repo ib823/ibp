@@ -11,6 +11,11 @@ import type {
 
 export const DISCOUNT_RATE = 0.10;
 export const CAPEX_DEPRECIATION_YEARS = 5;
+// NOTE: This constant is ALSO exposed in the editable Display Unit
+// conversion table as the `mmscf-mmbtu` row. The table row is **display
+// only** — the gas revenue math in `grossRevenueGas` hardcodes 1.055 and
+// will not respond to user edits. The UnitConversionSection UI flags the
+// corresponding row with a warning badge.
 export const MSCF_TO_MMBTU = 1.055; // 1 Mscf ≈ 1.055 MMBtu
 
 export function usd(n: number): USD {

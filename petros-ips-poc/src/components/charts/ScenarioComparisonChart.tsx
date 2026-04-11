@@ -10,6 +10,7 @@ import {
   Cell,
 } from 'recharts';
 import type { EconomicsResult, ScenarioVersion } from '@/engine/types';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 
 interface ScenarioBarChartProps {
   results: Record<ScenarioVersion, EconomicsResult>;
@@ -30,13 +31,14 @@ const SCENARIO_LABELS: Record<ScenarioVersion, string> = {
 };
 
 export function ScenarioBarChart({ results }: ScenarioBarChartProps) {
+  const u = useDisplayUnits();
   const data = useMemo(() => {
     return (['high', 'base', 'low', 'stress'] as const).map((s) => ({
       scenario: SCENARIO_LABELS[s],
       scenarioKey: s,
-      npv: (results[s].npv10 as number) / 1e6,
+      npv: ((results[s].npv10 as number) * u.currencyFactor) / 1e6,
     }));
-  }, [results]);
+  }, [results, u.currencyFactor]);
 
   return (
     <ResponsiveContainer width="100%" height={250}>
@@ -50,11 +52,11 @@ export function ScenarioBarChart({ results }: ScenarioBarChartProps) {
         <YAxis
           tick={{ fontSize: 10, fill: '#6B7280' }}
           tickLine={false}
-          tickFormatter={(v: number) => `$${v.toFixed(0)}M`}
+          tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`}
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [`$${v.toFixed(1)}M`, 'NPV₁₀']}
+          formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, 'NPV₁₀']}
         />
         <Bar dataKey="npv" radius={[2, 2, 0, 0]}>
           {data.map((d) => (

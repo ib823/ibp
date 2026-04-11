@@ -131,7 +131,24 @@ export function runMonteCarlo(
 
     const modified = applyFactors(project, priceDeck, factors);
     const result = calculateProjectEconomics(modified.project, modified.priceDeck);
-    npvValues.push(result.npv10 as number);
+    const npv = result.npv10 as number;
+    // Defense in depth: drop any non-finite NPVs so a single pathological
+    // sample can't corrupt percentiles, mean, stdDev, or the histogram.
+    if (Number.isFinite(npv)) npvValues.push(npv);
+  }
+
+  // Degenerate case: no finite samples survived. Return a zeroed result
+  // rather than NaN-propagating through percentile/histogram math.
+  if (npvValues.length === 0) {
+    return {
+      npvValues: [],
+      p10: usd(0),
+      p50: usd(0),
+      p90: usd(0),
+      mean: usd(0),
+      stdDev: 0,
+      histogram: [],
+    };
   }
 
   // Sort for percentile calculation

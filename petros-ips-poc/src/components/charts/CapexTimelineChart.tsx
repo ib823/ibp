@@ -13,6 +13,7 @@ import {
 import type { ProjectInputs } from '@/engine/types';
 import { computeCosts } from '@/engine/fiscal/shared';
 import { fmtNum } from '@/lib/format';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 
 interface CapexTimelineChartProps {
   projects: readonly ProjectInputs[];
@@ -24,6 +25,7 @@ const PROJECT_COLORS = [
 ];
 
 export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartProps) {
+  const u = useDisplayUnits();
   const { data, activeProjects } = useMemo(() => {
     const active = projects.filter((p) => activeIds.has(p.project.id));
     const minYear = Math.min(...active.map((p) => p.project.startYear));
@@ -36,7 +38,7 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
       let yearTotal = 0;
       for (const proj of active) {
         const cost = computeCosts(proj.costProfile, y);
-        const capexM = cost.totalCapex / 1e6;
+        const capexM = (cost.totalCapex * u.currencyFactor) / 1e6;
         row[proj.project.id] = Math.round(capexM * 10) / 10;
         yearTotal += capexM;
       }
@@ -45,7 +47,7 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
       rows.push(row);
     }
     return { data: rows, activeProjects: active };
-  }, [projects, activeIds]);
+  }, [projects, activeIds, u.currencyFactor]);
 
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -56,18 +58,18 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
           yAxisId="left"
           tick={{ fontSize: 10, fill: '#6B7280' }}
           tickLine={false}
-          tickFormatter={(v: number) => `$${fmtNum(v)}M`}
+          tickFormatter={(v: number) => `${u.currencySymbol}${fmtNum(v)}M`}
         />
         <YAxis
           yAxisId="right"
           orientation="right"
           tick={{ fontSize: 10, fill: '#6B7280' }}
           tickLine={false}
-          tickFormatter={(v: number) => `$${fmtNum(v)}M`}
+          tickFormatter={(v: number) => `${u.currencySymbol}${fmtNum(v)}M`}
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [`$${v.toFixed(1)}M`, undefined]}
+          formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, undefined]}
         />
         <Legend wrapperStyle={{ fontSize: 10 }} />
         {activeProjects.map((proj, i) => (

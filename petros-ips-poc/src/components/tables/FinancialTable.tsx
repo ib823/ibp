@@ -1,11 +1,16 @@
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { InfoIcon } from '@/components/shared/InfoIcon';
+import { EduTooltip } from '@/components/shared/EduTooltip';
+import { getEntry } from '@/lib/educational-content';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 
-interface FinancialRow {
+export interface FinancialRow {
   label: string;
   values: number[];
   isSubtotal?: boolean;
   isTotal?: boolean;
+  eduEntryId?: string;
 }
 
 interface FinancialTableProps {
@@ -13,30 +18,56 @@ interface FinancialTableProps {
   rows: FinancialRow[];
 }
 
-function fmtCell(value: number): string {
-  const m = value / 1e6;
-  if (Math.abs(m) < 0.05) return '-';
-  if (m < 0) {
-    return '(' + Math.abs(m).toLocaleString('en-US', {
+function makeCellFormatter(currencyFactor: number): (value: number) => string {
+  return (value: number) => {
+    const m = (value * currencyFactor) / 1e6;
+    const normalized = m === 0 ? 0 : m;
+    if (Math.abs(normalized) < 0.05) return '-';
+    if (normalized < 0) {
+      return '(' + Math.abs(normalized).toLocaleString('en-US', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }) + ')';
+    }
+    return normalized.toLocaleString('en-US', {
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,
-    }) + ')';
-  }
-  return m.toLocaleString('en-US', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
+    });
+  };
+}
+
+function RowLabel({ label, eduEntryId }: { label: string; eduEntryId?: string }) {
+  if (!eduEntryId) return <>{label}</>;
+
+  const entry = getEntry(eduEntryId);
+  if (!entry) return <>{label}</>;
+
+  const hasInfo = entry.infoPanel != null;
+
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {entry.tooltip ? (
+        <EduTooltip entry={entry}><span className="cursor-help">{label}</span></EduTooltip>
+      ) : (
+        label
+      )}
+      {hasInfo && <InfoIcon entry={entry} size={10} className="w-3.5 h-3.5" />}
+    </span>
+  );
 }
 
 export function FinancialTable({ years, rows }: FinancialTableProps) {
+  const u = useDisplayUnits();
+  const fmtCell = useMemo(() => makeCellFormatter(u.currencyFactor), [u.currencyFactor]);
+
   return (
-    <ScrollArea className="w-full">
+    <div className="overflow-x-auto w-full">
       <div className="min-w-max">
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="border-b border-border bg-content-alt">
               <th className="text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider px-3 py-1.5 sticky left-0 bg-content-alt w-[180px] min-w-[180px]">
-                $M
+                {u.currencySymbol}M
               </th>
               {years.map((y) => (
                 <th
@@ -65,7 +96,7 @@ export function FinancialTable({ years, rows }: FinancialTableProps) {
                     row.isTotal && 'bg-content-alt',
                   )}
                 >
-                  {row.label}
+                  <RowLabel label={row.label} eduEntryId={row.eduEntryId} />
                 </td>
                 {row.values.map((v, vi) => (
                   <td
@@ -84,7 +115,6 @@ export function FinancialTable({ years, rows }: FinancialTableProps) {
           </tbody>
         </table>
       </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    </div>
   );
 }

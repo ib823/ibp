@@ -1,27 +1,29 @@
 import { useState, useCallback } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { Tabs } from '@/components/ui5/Ui5Tabs';
+import { Select } from '@/components/ui5/Ui5Select';
+import { Button } from '@/components/ui5/Ui5Button';
 import { useProjectStore } from '@/store/project-store';
 import { TornadoChart } from '@/components/charts/TornadoChart';
 import { SpiderDiagramChart } from '@/components/charts/SpiderDiagramChart';
 import { ScenarioBarChart } from '@/components/charts/ScenarioComparisonChart';
 import { ScenarioCashFlowOverlay } from '@/components/charts/ScenarioCashFlowOverlay';
+import { EduTooltip } from '@/components/shared/EduTooltip';
+import { InfoIcon } from '@/components/shared/InfoIcon';
+import { SectionHelp } from '@/components/shared/SectionHelp';
 import { calculateSpider } from '@/engine/sensitivity/spider';
 import { compareScenarios } from '@/engine/sensitivity/scenario';
-import { BarChart3, Activity, Layers } from 'lucide-react';
-import { fmtM, fmtPct, fmtYears } from '@/lib/format';
+import { fmtPct, fmtYears } from '@/lib/format';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
+import { getPageEntries } from '@/lib/educational-content';
 import type { EconomicsResult, ScenarioVersion } from '@/engine/types';
 import type { SpiderResult } from '@/engine/sensitivity/spider';
 
+const edu = getPageEntries('sensitivity');
+
 export default function SensitivityPage() {
+  usePageTitle('Sensitivity Analysis');
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
@@ -60,128 +62,143 @@ export default function SensitivityPage() {
   }, [activeProjectId, activeProject, runSensitivity, priceDecks, activeScenario]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="sensitivity-page">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-text-primary">Sensitivity Analysis</h2>
-        <div className="flex items-center gap-3">
-          <Select
-            value={activeProjectId ?? ''}
-            onValueChange={(v) => setActiveProject(v)}
-          >
-            <SelectTrigger className="w-[220px] h-8 text-xs">
-              <SelectValue placeholder="Select project..." />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((p) => (
-                <SelectItem key={p.project.id} value={p.project.id} className="text-xs">
-                  {p.project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            size="sm"
-            onClick={handleRunAll}
-            disabled={!activeProjectId || isRunning}
-            className="bg-petrol hover:bg-petrol-light text-white text-xs"
-          >
-            <BarChart3 size={14} className="mr-1.5" />
-            Run Sensitivity
-          </Button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-text-primary">Sensitivity Analysis</h2>
+          <InfoIcon entry={edu['S-01']!} />
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <EduTooltip entryId="S-02">
+            <Select
+              value={activeProjectId ?? ''}
+              onValueChange={(v) => setActiveProject(v)}
+              options={projects.map((p) => ({ value: p.project.id, label: p.project.name }))}
+              placeholder="Select project..."
+              className="flex-1 sm:w-[220px] sm:flex-none"
+              aria-label="Select project"
+            />
+          </EduTooltip>
+          <EduTooltip entryId="S-03">
+            <Button
+              size="sm"
+              onClick={handleRunAll}
+              disabled={!activeProjectId || isRunning}
+              icon="horizontal-bar-chart"
+              className="text-xs h-10 sm:h-9 shrink-0"
+            >
+              Run Sensitivity
+            </Button>
+          </EduTooltip>
         </div>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="tornado" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="tornado" className="text-xs gap-1.5">
-            <BarChart3 size={14} /> Tornado
-          </TabsTrigger>
-          <TabsTrigger value="spider" className="text-xs gap-1.5">
-            <Activity size={14} /> Spider
-          </TabsTrigger>
-          <TabsTrigger value="scenario" className="text-xs gap-1.5">
-            <Layers size={14} /> Scenario Comparison
-          </TabsTrigger>
-        </TabsList>
-
-        {/* TORNADO TAB */}
-        <TabsContent value="tornado">
-          {!tornadoResult ? (
-            <EmptyState message="Click 'Run Sensitivity' to generate tornado chart" />
-          ) : (
-            <div className="border border-border bg-white p-5">
-              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-4">
-                Tornado Chart — NPV Sensitivity at ±30%
-              </h4>
-              <TornadoChart result={tornadoResult} />
-              <div className="flex items-center gap-6 mt-3 text-[10px] text-text-muted">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 inline-block" style={{ backgroundColor: '#E07060' }} />
-                  Lower NPV
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 inline-block" style={{ backgroundColor: '#3B8DBD' }} />
-                  Higher NPV
-                </span>
-              </div>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* SPIDER TAB */}
-        <TabsContent value="spider">
-          {!spiderResult ? (
-            <EmptyState message="Click 'Run Sensitivity' to generate spider diagram" />
-          ) : (
-            <div className="border border-border bg-white p-5">
-              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-4">
-                Spider Diagram — NPV vs % Change
-              </h4>
-              <SpiderDiagramChart result={spiderResult} />
-              <p className="text-[10px] text-text-muted mt-2">
-                Steeper lines indicate higher sensitivity. The intersection at 0% marks the base case NPV.
-              </p>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* SCENARIO TAB */}
-        <TabsContent value="scenario">
-          {!scenarioResults ? (
-            <EmptyState message="Click 'Run Sensitivity' to compare scenarios" />
-          ) : (
-            <div className="space-y-4">
-              {/* KPI Comparison Table */}
-              <div className="border border-border bg-white p-4">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
-                  Key Metrics by Scenario
+      <Tabs
+        defaultTab="tornado"
+        tabs={[
+          {
+            key: 'tornado',
+            label: 'Tornado',
+            icon: 'horizontal-bar-chart',
+            content: !tornadoResult ? (
+              <EmptyState message="Click 'Run Sensitivity' to generate tornado chart" />
+            ) : (
+              <div className="border border-border bg-white p-5">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+                  Tornado Chart — NPV Sensitivity at ±30%
                 </h4>
-                <ScenarioKpiTable results={scenarioResults} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {/* NPV Bar Chart */}
-                <div className="border border-border bg-white p-4">
-                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
-                    NPV₁₀ by Scenario
-                  </h4>
-                  <ScenarioBarChart results={scenarioResults} />
+                <SectionHelp entry={edu['S-07']!} />
+                <div className="min-h-[300px] sm:min-h-[350px]">
+                  <TornadoChart result={tornadoResult} />
                 </div>
-
-                {/* Cumulative NCF Overlay */}
-                <div className="border border-border bg-white p-4">
-                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
-                    Cumulative Cash Flow Overlay
-                  </h4>
-                  <ScenarioCashFlowOverlay results={scenarioResults} />
+                <div className="flex items-center gap-6 mt-3 text-[10px] text-text-muted">
+                  <EduTooltip entryId="S-08">
+                    <span className="flex items-center gap-1.5 cursor-help">
+                      <span className="w-3 h-3 inline-block" style={{ backgroundColor: '#E07060' }} />
+                      Lower NPV
+                    </span>
+                  </EduTooltip>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 inline-block" style={{ backgroundColor: '#3B8DBD' }} />
+                    Higher NPV
+                  </span>
                 </div>
               </div>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            ),
+          },
+          {
+            key: 'spider',
+            label: 'Spider',
+            icon: 'line-chart',
+            content: !spiderResult ? (
+              <EmptyState message="Click 'Run Sensitivity' to generate spider diagram" />
+            ) : (
+              <div className="border border-border bg-white p-5">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+                  Spider Diagram — NPV vs % Change
+                </h4>
+                <SectionHelp entry={edu['S-09']!} />
+                <div className="min-h-[300px] sm:min-h-[350px]">
+                  <SpiderDiagramChart result={spiderResult} />
+                </div>
+                <EduTooltip entryId="S-10">
+                  <p className="text-[10px] text-text-muted mt-2 cursor-help">
+                    Steeper lines indicate higher sensitivity. The intersection at 0% marks the base case NPV.
+                  </p>
+                </EduTooltip>
+              </div>
+            ),
+          },
+          {
+            key: 'scenario',
+            label: 'Scenario Comparison',
+            icon: 'compare',
+            content: !scenarioResults ? (
+              <EmptyState message="Click 'Run Sensitivity' to compare scenarios" />
+            ) : (
+              <div className="space-y-4">
+                <div className="border border-border bg-white p-4">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+                      Key Metrics by Scenario
+                    </h4>
+                  </div>
+                  <SectionHelp entry={edu['S-11']!} />
+                  <div className="overflow-x-auto -mx-4 px-4">
+                    <ScenarioKpiTable results={scenarioResults} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="border border-border bg-white p-4">
+                    <EduTooltip entryId="S-12">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3 cursor-help">
+                        NPV₁₀ by Scenario
+                      </h4>
+                    </EduTooltip>
+                    <div className="min-h-[280px]">
+                      <ScenarioBarChart results={scenarioResults} />
+                    </div>
+                  </div>
+
+                  <div className="border border-border bg-white p-4">
+                    <EduTooltip entryId="S-13">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3 cursor-help">
+                        Cumulative Cash Flow Overlay
+                      </h4>
+                    </EduTooltip>
+                    <div className="min-h-[280px]">
+                      <ScenarioCashFlowOverlay results={scenarioResults} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }
@@ -195,6 +212,7 @@ function EmptyState({ message }: { message: string }) {
 }
 
 function ScenarioKpiTable({ results }: { results: Record<ScenarioVersion, EconomicsResult> }) {
+  const u = useDisplayUnits();
   const scenarios: ScenarioVersion[] = ['high', 'base', 'low', 'stress'];
   const labels: Record<ScenarioVersion, string> = {
     high: 'High',
@@ -210,17 +228,19 @@ function ScenarioKpiTable({ results }: { results: Record<ScenarioVersion, Econom
   type HighlightType = 'best' | 'worst' | undefined;
   interface CellVal { text: string; highlight?: HighlightType }
 
-  const rows: { label: string; values: CellVal[] }[] = [
+  const rows: { label: string; values: CellVal[]; tooltipId?: string }[] = [
     {
-      label: 'NPV₁₀ ($M)',
+      label: `NPV₁₀ (${u.currencySymbol}M)`,
+      tooltipId: 'S-15',
       values: scenarios.map((s) => ({
-        text: fmtM(results[s].npv10 as number),
+        text: u.money(results[s].npv10 as number, { accounting: true }),
         highlight: (results[s].npv10 as number) === maxNpv ? 'best' as const :
                    (results[s].npv10 as number) === minNpv ? 'worst' as const : undefined,
       })),
     },
     {
       label: 'IRR',
+      tooltipId: 'S-16',
       values: scenarios.map((s) => ({
         text: results[s].isNonInvestmentPattern
           ? fmtPct(results[s].mirr) + ' (MIRR)'
@@ -229,27 +249,30 @@ function ScenarioKpiTable({ results }: { results: Record<ScenarioVersion, Econom
     },
     {
       label: 'Payback (yrs)',
+      tooltipId: 'S-17',
       values: scenarios.map((s) => ({ text: fmtYears(results[s].paybackYears) })),
     },
     {
       label: 'PI',
+      tooltipId: 'S-18',
       values: scenarios.map((s) => ({ text: results[s].profitabilityIndex.toFixed(2) })),
     },
     {
       label: 'Govt Take',
+      tooltipId: 'S-19',
       values: scenarios.map((s) => ({ text: results[s].governmentTakePct.toFixed(1) + '%' })),
     },
   ];
 
   return (
-    <table className="w-full border-collapse">
+    <table className="w-full border-collapse tabular-nums min-w-[500px]">
       <thead>
         <tr className="border-b border-border">
-          <th className="text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider px-3 py-2 w-[140px]">
+          <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wider px-3 py-2 w-[140px]">
             Metric
           </th>
           {scenarios.map((s) => (
-            <th key={s} className="text-right text-[10px] font-semibold text-text-secondary uppercase tracking-wider px-3 py-2">
+            <th key={s} className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wider px-3 py-2">
               {labels[s]}
             </th>
           ))}
@@ -258,7 +281,11 @@ function ScenarioKpiTable({ results }: { results: Record<ScenarioVersion, Econom
       <tbody>
         {rows.map((row) => (
           <tr key={row.label} className="border-b border-border/50">
-            <td className="text-xs text-text-secondary px-3 py-2">{row.label}</td>
+            <td className="text-xs text-text-secondary px-3 py-2">
+              {row.tooltipId ? (
+                <EduTooltip entryId={row.tooltipId}><span className="cursor-help">{row.label}</span></EduTooltip>
+              ) : row.label}
+            </td>
             {row.values.map((v, i) => (
               <td
                 key={i}

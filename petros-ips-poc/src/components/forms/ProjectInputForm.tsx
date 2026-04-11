@@ -1,19 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Calculator, RotateCcw } from 'lucide-react';
+import { Select } from '@/components/ui5/Ui5Select';
+import { Input } from '@/components/ui5/Ui5Input';
+import { Label } from '@ui5/webcomponents-react';
+import { Button } from '@/components/ui5/Ui5Button';
+import { Badge } from '@/components/ui5/Ui5Badge';
+import { RotateCcw } from 'lucide-react';
 import { useProjectStore } from '@/store/project-store';
+import { EduTooltip } from '@/components/shared/EduTooltip';
+import { InfoIcon } from '@/components/shared/InfoIcon';
+import { getPageEntries } from '@/lib/educational-content';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import type { ProjectInputs, CostProfile, ProductionProfile, TimeSeriesData } from '@/engine/types';
+
+const edu = getPageEntries('economics');
 
 interface ProjectInputFormProps {
   onCalculate: () => void;
@@ -76,6 +75,50 @@ function scaleTimeSeries<T extends number>(series: TimeSeriesData<T>, factor: nu
   return result;
 }
 
+/**
+ * Rebuild a production series using a NEW decline rate while preserving
+ * the original ramp-up, plateau rate, plateau duration, and total year
+ * range. Uses exponential decline q(t) = q_plateau × e^(-D × (t − tEnd)).
+ *
+ * If the series is empty or has no plateau, returns it unchanged.
+ */
+function rebuildWithDecline<T extends number>(
+  series: TimeSeriesData<T>,
+  newDeclineRate: number,
+): TimeSeriesData<T> {
+  const entries = Object.entries(series)
+    .map(([y, v]) => [Number(y), v as number] as [number, number])
+    .sort((a, b) => a[0] - b[0]);
+  if (entries.length === 0) return series;
+
+  const peakVal = Math.max(0, ...entries.map(([, v]) => v));
+  if (peakVal === 0) return series;
+
+  // Find the LAST year that still sits at plateau (peak) — that's the
+  // last year before decline begins.
+  let plateauEndYear: number | null = null;
+  for (let i = 0; i < entries.length; i++) {
+    if (entries[i]![1] >= peakVal - 1e-9) {
+      plateauEndYear = entries[i]![0];
+    } else if (plateauEndYear !== null) {
+      break;
+    }
+  }
+  if (plateauEndYear === null) return series;
+
+  const out: Record<number, T> = {};
+  for (const [year, original] of entries) {
+    if (year <= plateauEndYear) {
+      // Ramp-up and plateau years keep their original values
+      out[year] = original as T;
+    } else {
+      const t = year - plateauEndYear;
+      out[year] = (Math.round(peakVal * Math.exp(-newDeclineRate * t) * 100) / 100) as T;
+    }
+  }
+  return out;
+}
+
 // ── Component ─────────────────────────────────────────────────────────
 
 export function ProjectInputForm({ onCalculate }: ProjectInputFormProps) {
@@ -91,25 +134,20 @@ export function ProjectInputForm({ onCalculate }: ProjectInputFormProps) {
         <Label className="text-[11px] uppercase tracking-wider text-text-muted mb-1.5 block">
           Select Project
         </Label>
-        <Select value={activeProjectId ?? ''} onValueChange={(v) => setActiveProject(v)}>
-          <SelectTrigger className="h-9 text-sm">
-            <SelectValue placeholder="Select project..." />
-          </SelectTrigger>
-          <SelectContent>
-            {projects.map((p) => (
-              <SelectItem key={p.project.id} value={p.project.id} className="text-sm">
-                {p.project.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Select
+          value={activeProjectId ?? ''}
+          onValueChange={(v) => setActiveProject(v)}
+          options={projects.map((p) => ({ value: p.project.id, label: p.project.name }))}
+          placeholder="Select project..."
+          aria-label="Select project"
+        />
       </div>
 
       {activeProject && <EditableProjectFields project={activeProject} onCalculate={onCalculate} />}
 
       {!activeProject && (
-        <Button disabled className="w-full bg-petrol text-white">
-          <Calculator size={16} className="mr-2" /> Calculate
+        <Button disabled className="w-full" icon="simulate">
+          Calculate
         </Button>
       )}
     </div>
@@ -120,6 +158,7 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
   const { project: proj, fiscalRegimeConfig } = project;
   const isCalculating = useProjectStore((s) => s.isCalculating);
   const updateProjectOverrides = useProjectStore((s) => s.updateProjectOverrides);
+  const u = useDisplayUnits();
 
   const defaults = deriveParams(project);
 
@@ -141,8 +180,19 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
     setModified(false);
   }, [project]);
 
-  const handleChange = useCallback((setter: (v: number) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setter(Number(e.target.value));
+  const handleChange = useCallback((setter: (v: number) => void, min = 0, max = 1_000_000) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    // Allow empty string temporarily (user clearing input); treat as 0
+    if (raw === '' || raw === '-') {
+      setter(0);
+      setModified(true);
+      return;
+    }
+    const parsed = Number(raw);
+    // Reject NaN, Infinity, and out-of-range
+    if (!Number.isFinite(parsed)) return;
+    const clamped = Math.min(Math.max(parsed, min), max);
+    setter(clamped);
     setModified(true);
   }, []);
 
@@ -167,6 +217,12 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
       const opexFactor = d.avgOpexFixed > 0 ? (annualOpex * 1e6) / d.avgOpexFixed : 1;
       const abexFactor = d.totalAbex > 0 ? (totalAbex * 1e6) / d.totalAbex : 1;
 
+      // Decline rate is entered as %/yr in the form; engine uses a fraction.
+      const newDecline = declineRate / 100;
+      // Only rebuild curves if the user changed the decline rate materially
+      // (floating-point-safe threshold).
+      const declineChanged = Math.abs(newDecline - d.declineRate) > 1e-6;
+
       const newCosts: CostProfile = {
         capexDrilling: scaleTimeSeries(project.costProfile.capexDrilling, capexFactor),
         capexFacilities: scaleTimeSeries(project.costProfile.capexFacilities, capexFactor),
@@ -177,19 +233,58 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
         abandonmentCost: scaleTimeSeries(project.costProfile.abandonmentCost, abexFactor),
       };
 
+      // Rebuild production curves with the new decline rate (if changed),
+      // then apply the peak-rate scaling factor.
+      const rebuildAndScale = <T extends number>(
+        original: TimeSeriesData<T>,
+      ): TimeSeriesData<T> => {
+        const withDecline = declineChanged
+          ? rebuildWithDecline(original, newDecline)
+          : original;
+        return scaleTimeSeries(withDecline, prodFactor);
+      };
+
       const newProd: ProductionProfile = {
-        oil: scaleTimeSeries(project.productionProfile.oil, prodFactor),
-        gas: scaleTimeSeries(project.productionProfile.gas, prodFactor),
-        condensate: scaleTimeSeries(project.productionProfile.condensate, prodFactor),
+        oil: rebuildAndScale(project.productionProfile.oil),
+        gas: rebuildAndScale(project.productionProfile.gas),
+        condensate: rebuildAndScale(project.productionProfile.condensate),
         water: project.productionProfile.water,
       };
 
       updateProjectOverrides(proj.id, { productionProfile: newProd, costProfile: newCosts });
     }
     onCalculate();
-  }, [modified, project, proj.id, peakRate, totalCapex, annualOpex, totalAbex, updateProjectOverrides, onCalculate]);
+  }, [modified, project, proj.id, peakRate, declineRate, totalCapex, annualOpex, totalAbex, updateProjectOverrides, onCalculate]);
 
   const isGasProject = defaults.peakGas > 0;
+
+  // The form keeps state in internal base units (bpd / MMscfd / USD millions)
+  // so handleCalculate's scaling math stays unchanged. We only convert at
+  // the display boundary: input.value multiplies by the display factor,
+  // and the onChange handler reverse-divides before clamping and storing.
+  const rateFactor = isGasProject ? u.gasFactor : u.oilFactor;
+  const peakRateUnitLabel = isGasProject ? `${u.gasUnit}/d` : `${u.oilUnit}/d`;
+  const currencyLabel = `${u.currencySymbol}M`;
+
+  const handleChangeConverted = useCallback(
+    (setter: (v: number) => void, factor: number, min = 0, max = 1_000_000) =>
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const raw = e.target.value;
+        if (raw === '' || raw === '-') {
+          setter(0);
+          setModified(true);
+          return;
+        }
+        const parsed = Number(raw);
+        if (!Number.isFinite(parsed)) return;
+        // User types in display units; convert back to base before clamping.
+        const base = factor !== 0 ? parsed / factor : parsed;
+        const clamped = Math.min(Math.max(base, min), max);
+        setter(clamped);
+        setModified(true);
+      },
+    [],
+  );
 
   return (
     <div className="space-y-4">
@@ -206,51 +301,85 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
       {/* Production */}
       <Section title="Production Assumptions">
         <EditField
-          label={isGasProject ? 'Peak Gas (MMscfd)' : 'Peak Oil (bpd)'}
-          value={peakRate}
-          onChange={handleChange(setPeakRate)}
+          label={isGasProject ? `Peak Gas (${peakRateUnitLabel})` : `Peak Oil (${peakRateUnitLabel})`}
+          value={Number((peakRate * rateFactor).toFixed(rateFactor === 1 ? 0 : 2))}
+          onChange={handleChangeConverted(setPeakRate, rateFactor, 0, isGasProject ? 10_000 : 1_000_000)}
           step={isGasProject ? 1 : 100}
+          eduEntryId="E-02"
         />
-        <EditField label="Decline Rate (%/yr)" value={declineRate} onChange={handleChange(setDeclineRate)} step={0.5} min={0} max={30} />
+        <EditField label="Decline Rate (%/yr)" value={declineRate} onChange={handleChange(setDeclineRate, 0, 50)} step={0.5} min={0} max={50} eduEntryId="E-03" />
         {defaults.peakCond > 0 && (
-          <ReadOnlyField label="Peak Condensate" value={`${defaults.peakCond.toLocaleString()} bpd`} />
+          <ReadOnlyField
+            label="Peak Condensate"
+            value={`${(defaults.peakCond * u.oilFactor).toLocaleString('en-US', { maximumFractionDigits: u.oilFactor === 1 ? 0 : 1 })} ${u.oilUnit}/d`}
+            eduEntryId="E-04"
+          />
         )}
-        <ReadOnlyField label="Field Life" value={`${proj.startYear} — ${proj.endYear}`} />
+        <ReadOnlyField label="Field Life" value={`${proj.startYear} — ${proj.endYear}`} eduEntryId="E-05" />
       </Section>
 
-      <Separator />
+      <hr className="border-border my-4" />
 
       {/* Costs */}
       <Section title="Cost Assumptions">
-        <EditField label="Total CAPEX ($M)" value={totalCapex} onChange={handleChange(setTotalCapex)} step={10} min={0} />
-        <EditField label="Annual OPEX Fixed ($M/yr)" value={annualOpex} onChange={handleChange(setAnnualOpex)} step={1} min={0} />
-        <EditField label="Abandonment Cost ($M)" value={totalAbex} onChange={handleChange(setTotalAbex)} step={1} min={0} />
+        <EditField
+          label={`Total CAPEX (${currencyLabel})`}
+          value={Number((totalCapex * u.currencyFactor).toFixed(1))}
+          onChange={handleChangeConverted(setTotalCapex, u.currencyFactor, 0, 50_000)}
+          step={10}
+          min={0}
+          max={50_000}
+          eduEntryId="E-06"
+        />
+        <EditField
+          label={`Annual OPEX Fixed (${currencyLabel}/yr)`}
+          value={Number((annualOpex * u.currencyFactor).toFixed(1))}
+          onChange={handleChangeConverted(setAnnualOpex, u.currencyFactor, 0, 5_000)}
+          step={1}
+          min={0}
+          max={5_000}
+          eduEntryId="E-07"
+        />
+        <EditField
+          label={`Abandonment Cost (${currencyLabel})`}
+          value={Number((totalAbex * u.currencyFactor).toFixed(1))}
+          onChange={handleChangeConverted(setTotalAbex, u.currencyFactor, 0, 10_000)}
+          step={1}
+          min={0}
+          max={10_000}
+          eduEntryId="E-08"
+        />
         {defaults.abexStart < proj.endYear && (
-          <ReadOnlyField label="Decomm. Period" value={`${defaults.abexStart}–${defaults.abexEnd}`} />
+          <ReadOnlyField label="Decomm. Period" value={`${defaults.abexStart}–${defaults.abexEnd}`} eduEntryId="E-09" />
         )}
-        <ReadOnlyField label="Equity Share" value={`${(proj.equityShare * 100).toFixed(0)}%`} />
+        <ReadOnlyField label="Equity Share" value={`${(proj.equityShare * 100).toFixed(0)}%`} eduEntryId="E-10" />
       </Section>
 
-      <Separator />
+      <hr className="border-border my-4" />
 
       {/* Fiscal */}
       <Section title="Fiscal Regime">
         <div className="flex items-center gap-2 mb-2">
-          <Badge variant="outline" className="text-[10px] bg-petrol/10 text-petrol border-petrol/30">
-            {fiscalRegimeConfig.type.replace('_', ' ')}
-          </Badge>
-          <Badge variant="outline" className="text-[10px]">{proj.status}</Badge>
+          <EduTooltip entryId="E-11">
+            <Badge variant="outline" className="text-[10px] bg-petrol/10 text-petrol border-petrol/30 cursor-help">
+              {fiscalRegimeConfig.type.replace('_', ' ')}
+            </Badge>
+          </EduTooltip>
+          <EduTooltip entryId="E-12">
+            <Badge variant="outline" className="text-[10px] cursor-help">{proj.status}</Badge>
+          </EduTooltip>
+          <InfoIcon entry={edu['E-11']!} />
         </div>
-        <ReadOnlyField label="Royalty Rate" value={`${(fiscalRegimeConfig.royaltyRate * 100).toFixed(0)}%`} />
-        <ReadOnlyField label="PITA Rate" value={`${(fiscalRegimeConfig.pitaRate * 100).toFixed(0)}%`} />
+        <ReadOnlyField label="Royalty Rate" value={`${(fiscalRegimeConfig.royaltyRate * 100).toFixed(0)}%`} eduEntryId="E-13" />
+        <ReadOnlyField label="PITA Rate" value={`${(fiscalRegimeConfig.pitaRate * 100).toFixed(0)}%`} eduEntryId="E-14" />
       </Section>
 
       <Button
         onClick={handleCalculate}
         disabled={isCalculating}
-        className="w-full bg-petrol hover:bg-petrol-light text-white"
+        className="w-full"
+        icon="simulate"
       >
-        <Calculator size={16} className="mr-2" />
         {isCalculating ? 'Calculating...' : 'Calculate'}
       </Button>
     </div>
@@ -266,14 +395,23 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function EditField({ label, value, onChange, step, min, max }: {
+function EditField({ label, value, onChange, step, min, max, eduEntryId }: {
   label: string; value: number;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   step?: number; min?: number; max?: number;
+  eduEntryId?: string;
 }) {
+  const entry = eduEntryId ? edu[eduEntryId] : undefined;
   return (
     <div className="flex items-center justify-between gap-2">
-      <Label className="text-xs text-text-secondary whitespace-nowrap">{label}</Label>
+      <div className="flex items-center gap-1">
+        {entry?.tooltip ? (
+          <EduTooltip entry={entry}><Label className="text-xs text-text-secondary whitespace-nowrap cursor-help">{label}</Label></EduTooltip>
+        ) : (
+          <Label className="text-xs text-text-secondary whitespace-nowrap">{label}</Label>
+        )}
+        {entry?.infoPanel && <InfoIcon entry={entry} />}
+      </div>
       <Input
         type="number"
         value={value}
@@ -287,10 +425,18 @@ function EditField({ label, value, onChange, step, min, max }: {
   );
 }
 
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
+function ReadOnlyField({ label, value, eduEntryId }: { label: string; value: string; eduEntryId?: string }) {
+  const entry = eduEntryId ? edu[eduEntryId] : undefined;
   return (
     <div className="flex items-center justify-between">
-      <span className="text-xs text-text-secondary">{label}</span>
+      <span className="text-xs text-text-secondary flex items-center gap-1">
+        {entry?.tooltip ? (
+          <EduTooltip entry={entry}><span className="cursor-help">{label}</span></EduTooltip>
+        ) : (
+          label
+        )}
+        {entry?.infoPanel && <InfoIcon entry={entry} />}
+      </span>
       <span className="text-xs font-data font-medium text-text-primary">{value}</span>
     </div>
   );

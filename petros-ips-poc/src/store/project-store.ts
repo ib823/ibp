@@ -15,14 +15,34 @@ import type {
   MonteCarloConfig,
   PortfolioResult,
   OrgHierarchy,
+  DataVersion,
+  VersionedProjectData,
+  VersionComparisonResult,
+  UnitConversion,
+  UnitPreferences,
+  TimeGranularity,
+  PhaseVersionData,
+  PhaseComparisonResult,
+  ProjectPhaseVersion,
 } from '@/engine/types';
 import { ALL_PROJECTS } from '@/data/projects';
 import { PRICE_DECKS } from '@/data/price-decks';
 import { PROJECT_HIERARCHY } from '@/data/hierarchy';
+import { buildVersionedDataRegistry } from '@/data/versioned-data';
+import { buildPhaseDataRegistry } from '@/data/phase-data';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
+import { compareVersions as engineCompareVersions } from '@/engine/economics/version-comparison';
+import { comparePhases as engineComparePhases } from '@/engine/economics/phase-comparison';
 import { calculateTornado } from '@/engine/sensitivity/tornado';
 import { runMonteCarlo } from '@/engine/montecarlo/simulation';
 import { aggregatePortfolio } from '@/engine/portfolio/aggregation';
+import {
+  DEFAULT_CONVERSIONS,
+  addConversion as engineAddConv,
+  updateConversion as engineUpdateConv,
+  removeConversion as engineRemoveConv,
+  type NewConversionInput,
+} from '@/engine/utils/unit-conversion';
 
 // ── State Shape ───────────────────────────────────────────────────────
 
@@ -37,6 +57,7 @@ interface ProjectStoreState {
   activeScenario: ScenarioVersion;
   portfolioSelection: Set<string>;
   sidebarCollapsed: boolean;
+  mobileSidebarOpen: boolean;
   isCalculating: boolean;
 
   // Overrides for what-if analysis
@@ -47,6 +68,22 @@ interface ProjectStoreState {
   sensitivityResults: Map<string, TornadoResult>;
   monteCarloResults: Map<string, MonteCarloResult>;
   portfolioResult: PortfolioResult | null;
+
+  // ── Feature 1: Multi-version data management ────────────────────────
+  versionedData: Map<string, Map<DataVersion, VersionedProjectData>>;
+  activeDataVersion: DataVersion;
+  versionComparisonResults: Map<string, VersionComparisonResult>;
+
+  // ── Feature 2: Configurable unit conversion ─────────────────────────
+  unitConversions: UnitConversion[];
+  unitPreferences: UnitPreferences;
+
+  // ── Feature 3: Time granularity ─────────────────────────────────────
+  activeTimeGranularity: TimeGranularity;
+
+  // ── Feature 4: Phase comparison ─────────────────────────────────────
+  phaseData: Map<string, PhaseVersionData[]>;
+  phaseComparisonResult: PhaseComparisonResult | null;
 }
 
 interface ProjectStoreActions {
@@ -54,6 +91,7 @@ interface ProjectStoreActions {
   setActiveScenario: (version: ScenarioVersion) => void;
   toggleProjectInPortfolio: (id: string) => void;
   toggleSidebar: () => void;
+  setMobileSidebarOpen: (open: boolean) => void;
   runProjectEconomics: (projectId: string, scenario: ScenarioVersion) => void;
   runAllProjectEconomics: () => void;
   runSensitivity: (projectId: string) => void;
@@ -61,6 +99,22 @@ interface ProjectStoreActions {
   updateProjectOverrides: (projectId: string, overrides: { productionProfile: ProductionProfile; costProfile: CostProfile } | null) => void;
   recalculatePortfolio: () => void;
   initialize: () => void;
+
+  // ── Feature 1: Versioned data ───────────────────────────────────────
+  setActiveDataVersion: (version: DataVersion) => void;
+  compareVersions: (projectId: string, v1: DataVersion, v2: DataVersion) => void;
+
+  // ── Feature 2: Unit conversion ──────────────────────────────────────
+  addUnitConversion: (input: NewConversionInput) => void;
+  updateUnitConversion: (id: string, factor: number) => void;
+  removeUnitConversion: (id: string) => void;
+  setUnitPreference: (category: keyof UnitPreferences, unit: string) => void;
+
+  // ── Feature 3: Time granularity ─────────────────────────────────────
+  setTimeGranularity: (g: TimeGranularity) => void;
+
+  // ── Feature 4: Phase comparison ─────────────────────────────────────
+  comparePhases: (projectId: string, phase1: ProjectPhaseVersion, phase2: ProjectPhaseVersion) => void;
 }
 
 type ProjectStore = ProjectStoreState & ProjectStoreActions;
@@ -86,6 +140,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   activeScenario: 'base',
   portfolioSelection: new Set(ALL_PROJECTS.map((p) => p.project.id)),
   sidebarCollapsed: false,
+  mobileSidebarOpen: false,
   isCalculating: false,
 
   // Overrides
@@ -96,6 +151,28 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   sensitivityResults: new Map(),
   monteCarloResults: new Map(),
   portfolioResult: null,
+
+  // Feature 1: versioned data registry
+  versionedData: buildVersionedDataRegistry(),
+  activeDataVersion: 'budget' as DataVersion,
+  versionComparisonResults: new Map(),
+
+  // Feature 2: unit conversions and preferences
+  unitConversions: [...DEFAULT_CONVERSIONS],
+  unitPreferences: {
+    oilVolume: 'bbl',
+    gasVolume: 'MMscf',
+    mass: 'tonne',
+    currency: 'USD',
+    energy: 'MMBtu',
+  },
+
+  // Feature 3: time granularity
+  activeTimeGranularity: 'yearly' as TimeGranularity,
+
+  // Feature 4: phase data
+  phaseData: buildPhaseDataRegistry(),
+  phaseComparisonResult: null,
 
   // ── Actions ─────────────────────────────────────────────────────────
 
@@ -115,6 +192,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   },
 
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+
+  setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
 
   updateProjectOverrides: (projectId, overrides) => {
     const updated = new Map(get().projectOverrides);
@@ -153,7 +232,19 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const state = get();
     const allResults = new Map<string, Map<ScenarioVersion, EconomicsResult>>();
 
-    for (const project of state.projects) {
+    for (const baseProject of state.projects) {
+      // Apply any what-if overrides the user has set on the Economics page
+      // so Recalculate All refreshes every scenario consistently with the
+      // per-project Calculate button.
+      const overrides = state.projectOverrides.get(baseProject.project.id);
+      const project: ProjectInputs = overrides
+        ? {
+            ...baseProject,
+            productionProfile: overrides.productionProfile,
+            costProfile: overrides.costProfile,
+          }
+        : baseProject;
+
       const projectResults = new Map<ScenarioVersion, EconomicsResult>();
       for (const scenario of ['base', 'high', 'low', 'stress'] as const) {
         const priceDeck = state.priceDecks[scenario];
@@ -209,5 +300,89 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   initialize: () => {
     get().runAllProjectEconomics();
+  },
+
+  // ── Feature 1: Versioned data actions ──────────────────────────────
+
+  setActiveDataVersion: (version) => {
+    set({ activeDataVersion: version });
+    // Re-run economics for the active project under the new data version's
+    // production/cost profile.
+    const state = get();
+    if (state.activeProjectId) {
+      const projVersions = state.versionedData.get(state.activeProjectId);
+      const data = projVersions?.get(version);
+      if (data) {
+        state.updateProjectOverrides(state.activeProjectId, {
+          productionProfile: data.productionProfile,
+          costProfile: data.costProfile,
+        });
+        state.runProjectEconomics(state.activeProjectId, state.activeScenario);
+      }
+    }
+  },
+
+  compareVersions: (projectId, v1, v2) => {
+    const state = get();
+    const projVersions = state.versionedData.get(projectId);
+    if (!projVersions) return;
+    const d1 = projVersions.get(v1);
+    const d2 = projVersions.get(v2);
+    if (!d1 || !d2) return;
+    const baseProject = state.projects.find((p) => p.project.id === projectId);
+    if (!baseProject) return;
+
+    const result = engineCompareVersions(
+      baseProject,
+      state.priceDecks[state.activeScenario],
+      d1,
+      d2,
+    );
+    const updated = new Map(state.versionComparisonResults);
+    updated.set(projectId, result);
+    set({ versionComparisonResults: updated });
+  },
+
+  // ── Feature 2: Unit conversion actions ─────────────────────────────
+
+  addUnitConversion: (input) => {
+    set((s) => ({ unitConversions: engineAddConv(s.unitConversions, input) }));
+  },
+
+  updateUnitConversion: (id, factor) => {
+    set((s) => ({ unitConversions: engineUpdateConv(s.unitConversions, id, factor) }));
+  },
+
+  removeUnitConversion: (id) => {
+    set((s) => ({ unitConversions: engineRemoveConv(s.unitConversions, id) }));
+  },
+
+  setUnitPreference: (category, unit) => {
+    set((s) => ({ unitPreferences: { ...s.unitPreferences, [category]: unit } }));
+  },
+
+  // ── Feature 3: Time granularity action ─────────────────────────────
+
+  setTimeGranularity: (g) => set({ activeTimeGranularity: g }),
+
+  // ── Feature 4: Phase comparison action ─────────────────────────────
+
+  comparePhases: (projectId, phase1, phase2) => {
+    const state = get();
+    const phases = state.phaseData.get(projectId);
+    if (!phases) return;
+    const p1 = phases.find((p) => p.phase === phase1);
+    const p2 = phases.find((p) => p.phase === phase2);
+    if (!p1 || !p2) return;
+    const baseProject = state.projects.find((p) => p.project.id === projectId);
+    if (!baseProject) return;
+
+    const result = engineComparePhases(
+      baseProject,
+      state.priceDecks[state.activeScenario],
+      p1,
+      p2,
+    );
+    set({ phaseComparisonResult: result });
   },
 }));

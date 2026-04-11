@@ -1,87 +1,93 @@
-import { Link, useLocation } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import {
-  LayoutDashboard,
-  Calculator,
-  BarChart3,
-  PieChart,
-  FileText,
-  Database,
-  Dice5,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+  SideNavigation,
+  SideNavigationItem,
+} from '@ui5/webcomponents-react';
+import type { SideNavigationPropTypes } from '@ui5/webcomponents-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/store/project-store';
 
+// SAP Horizon icon names for each nav route
 const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/economics', label: 'Economics', icon: Calculator },
-  { path: '/sensitivity', label: 'Sensitivity', icon: BarChart3 },
-  { path: '/portfolio', label: 'Portfolio', icon: PieChart },
-  { path: '/financial', label: 'Financial', icon: FileText },
-  { path: '/reserves', label: 'Reserves', icon: Database },
-  { path: '/monte-carlo', label: 'Monte Carlo', icon: Dice5 },
-  { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/',            icon: 'home',                text: 'Dashboard' },
+  { path: '/economics',   icon: 'simulate',            text: 'Economics' },
+  { path: '/sensitivity', icon: 'horizontal-bar-chart',text: 'Sensitivity' },
+  { path: '/portfolio',   icon: 'chain-link',          text: 'Portfolio' },
+  { path: '/financial',   icon: 'payment-approval',    text: 'Financial' },
+  { path: '/reserves',    icon: 'database',            text: 'Reserves' },
+  { path: '/monte-carlo', icon: 'bar-chart',           text: 'Monte Carlo' },
+  { path: '/settings',    icon: 'action-settings',     text: 'Settings' },
+  { path: '/glossary',    icon: 'learning-assistant',  text: 'Glossary' },
 ] as const;
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const collapsed = useProjectStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useProjectStore((s) => s.toggleSidebar);
+  const mobileSidebarOpen = useProjectStore((s) => s.mobileSidebarOpen);
+  const setMobileSidebarOpen = useProjectStore((s) => s.setMobileSidebarOpen);
+
+  const handleSelectionChange: SideNavigationPropTypes['onSelectionChange'] = (e) => {
+    const item = e.detail.item as HTMLElement | undefined;
+    const path = item?.getAttribute('data-path');
+    if (path) {
+      navigate(path);
+      setMobileSidebarOpen(false);
+    }
+  };
 
   return (
     <aside
       className={cn(
-        'flex flex-col bg-navy text-white border-r border-navy-border transition-all duration-200 shrink-0',
-        collapsed ? 'w-[60px]' : 'w-[240px]',
+        'flex flex-col bg-white border-r border-border transition-all duration-200',
+        // Mobile: fixed overlay, slide in from left
+        'fixed inset-y-0 left-0 z-40 w-[240px]',
+        mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        // Desktop: static, in-flow
+        'lg:static lg:translate-x-0 lg:shrink-0',
+        collapsed ? 'lg:w-[60px]' : 'lg:w-[240px]',
       )}
     >
-      {/* Logo */}
-      <div className="flex items-center h-14 px-4 border-b border-navy-border">
-        {!collapsed && (
-          <span className="text-sm font-semibold tracking-widest text-amber uppercase">
-            PETROS IPS
-          </span>
-        )}
-        {collapsed && (
-          <span className="text-sm font-bold text-amber mx-auto">P</span>
-        )}
+      {/* Mobile close button */}
+      <div className="lg:hidden flex items-center justify-end h-14 px-2 border-b border-border">
+        <button
+          onClick={() => setMobileSidebarOpen(false)}
+          className="p-2 min-w-[44px] min-h-[44px] text-text-muted hover:text-text-primary"
+          aria-label="Close sidebar"
+        >
+          <X size={18} />
+        </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-2 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            item.path === '/'
-              ? location.pathname === '/'
-              : location.pathname.startsWith(item.path);
-
-          return (
-            <Link
+      {/* UI5 SideNavigation */}
+      <div className="flex-1 overflow-y-auto">
+        <SideNavigation
+          collapsed={collapsed && !mobileSidebarOpen}
+          onSelectionChange={handleSelectionChange}
+        >
+          {NAV_ITEMS.map((item) => (
+            <SideNavigationItem
               key={item.path}
-              to={item.path}
-              className={cn(
-                'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors relative',
-                isActive
-                  ? 'bg-petrol/40 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-navy-light',
-              )}
-            >
-              {isActive && (
-                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber" />
-              )}
-              <item.icon size={18} className="shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
-      </nav>
+              data-path={item.path}
+              icon={item.icon}
+              text={item.text}
+              selected={
+                item.path === '/'
+                  ? location.pathname === '/'
+                  : location.pathname.startsWith(item.path)
+              }
+            />
+          ))}
+        </SideNavigation>
+      </div>
 
-      {/* Collapse toggle */}
+      {/* Collapse toggle — desktop only */}
       <button
         onClick={toggleSidebar}
-        className="flex items-center justify-center h-10 border-t border-navy-border text-gray-500 hover:text-white transition-colors"
+        className="hidden lg:flex items-center justify-center h-10 border-t border-border text-text-muted hover:text-text-primary transition-colors"
+        aria-label="Toggle sidebar collapse"
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>

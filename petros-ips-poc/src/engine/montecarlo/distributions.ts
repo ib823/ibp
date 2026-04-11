@@ -5,6 +5,11 @@
 /**
  * Sample from a triangular distribution using inverse transform.
  * All values guaranteed within [min, max].
+ *
+ * Degenerate inputs are handled defensively: when `min === max` (zero
+ * spread) the sampler returns `min` rather than dividing by zero, and
+ * `mode` is clamped into [min, max] so a malformed config cannot
+ * produce NaN that would contaminate downstream percentile math.
  */
 export function sampleTriangular(
   prng: () => number,
@@ -12,13 +17,15 @@ export function sampleTriangular(
   mode: number,
   max: number,
 ): number {
+  if (!(max > min)) return min;
+  const safeMode = mode < min ? min : mode > max ? max : mode;
   const u = prng();
-  const fc = (mode - min) / (max - min);
+  const fc = (safeMode - min) / (max - min);
 
   if (u < fc) {
-    return min + Math.sqrt(u * (max - min) * (mode - min));
+    return min + Math.sqrt(u * (max - min) * (safeMode - min));
   } else {
-    return max - Math.sqrt((1 - u) * (max - min) * (max - mode));
+    return max - Math.sqrt((1 - u) * (max - min) * (max - safeMode));
   }
 }
 

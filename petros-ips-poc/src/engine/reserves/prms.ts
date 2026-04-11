@@ -48,7 +48,14 @@ export function getProjectReserves(projectId: string): ProjectReserves | undefin
   return PROJECT_RESERVES.find((r) => r.projectId === projectId);
 }
 
-/** Convert gas Bcf to oil-equivalent MMboe (6 Mscf/boe → 1 Bcf = 0.1667 MMboe) */
+/**
+ * Convert gas Bcf to oil-equivalent MMboe (6 Mscf/boe → 1 Bcf = 0.1667 MMboe).
+ *
+ * NOTE: The `mscf-boe` row in the editable Display Unit conversion table
+ * also carries the 6:1 ratio but is **display only** — this function
+ * hardcodes the divisor and will not respond to user edits. The
+ * UnitConversionSection UI flags the corresponding row with a warning badge.
+ */
 export function gasBcfToMmboe(bcf: number): number {
   return bcf / 6;
 }

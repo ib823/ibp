@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { TornadoResult, SensitivityVariable } from '@/engine/types';
-import { fmtDollarM } from '@/lib/format';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 
 interface TornadoChartProps {
   result: TornadoResult;
@@ -18,6 +18,7 @@ const NEG_COLOR = '#E07060';
 const POS_COLOR = '#3B8DBD';
 
 export function TornadoChart({ result }: TornadoChartProps) {
+  const u = useDisplayUnits();
   const { bars, minNpv, maxNpv, baseNpv } = useMemo(() => {
     // Group by variable, pick ±30% (largest) or widest available
     const byVariable = new Map<SensitivityVariable, { low: number; high: number }>();
@@ -72,13 +73,13 @@ export function TornadoChart({ result }: TornadoChartProps) {
     <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full" style={{ maxHeight: 360 }}>
       {/* Header labels */}
       <text x={padL} y={14} fontSize={9} fill="#9CA3AF">
-        {fmtDollarM(minNpv)}
+        {u.money(minNpv)}
       </text>
       <text x={svgW - padR} y={14} fontSize={9} fill="#9CA3AF" textAnchor="end">
-        {fmtDollarM(maxNpv)}
+        {u.money(maxNpv)}
       </text>
       <text x={baseLine} y={14} fontSize={9} fill="#1A1A2E" textAnchor="middle" fontWeight={600}>
-        Base: {fmtDollarM(baseNpv)}
+        Base: {u.money(baseNpv)}
       </text>
 
       {/* Base case vertical line */}
@@ -156,7 +157,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
               fill="#6B7280"
               className="font-data"
             >
-              {fmtDollarM(downside)}
+              {u.money(downside)}
             </text>
             <text
               x={xUp + 4}
@@ -166,7 +167,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
               fill="#6B7280"
               className="font-data"
             >
-              {fmtDollarM(upside)}
+              {u.money(upside)}
             </text>
           </g>
         );

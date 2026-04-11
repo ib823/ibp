@@ -11,6 +11,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import type { EconomicsResult, ScenarioVersion } from '@/engine/types';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 
 interface ScenarioCashFlowOverlayProps {
   results: Record<ScenarioVersion, EconomicsResult>;
@@ -24,18 +25,20 @@ const SCENARIO_COLORS: Record<ScenarioVersion, string> = {
 };
 
 export function ScenarioCashFlowOverlay({ results }: ScenarioCashFlowOverlayProps) {
+  const u = useDisplayUnits();
   const data = useMemo(() => {
-    // Use base case years as x-axis
     const baseCfs = results.base.yearlyCashflows;
     return baseCfs.map((cf, idx) => {
       const row: Record<string, number> = { year: cf.year };
       for (const s of ['high', 'base', 'low', 'stress'] as const) {
         const scenarioCf = results[s].yearlyCashflows[idx];
-        row[s] = scenarioCf ? (scenarioCf.cumulativeCashFlow as number) / 1e6 : 0;
+        row[s] = scenarioCf
+          ? ((scenarioCf.cumulativeCashFlow as number) * u.currencyFactor) / 1e6
+          : 0;
       }
       return row;
     });
-  }, [results]);
+  }, [results, u.currencyFactor]);
 
   return (
     <ResponsiveContainer width="100%" height={280}>
@@ -49,12 +52,12 @@ export function ScenarioCashFlowOverlay({ results }: ScenarioCashFlowOverlayProp
         <YAxis
           tick={{ fontSize: 10, fill: '#6B7280' }}
           tickLine={false}
-          tickFormatter={(v: number) => `$${v.toFixed(0)}M`}
-          label={{ value: 'Cumulative NCF ($M)', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#9CA3AF' }}
+          tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`}
+          label={{ value: `Cumulative NCF (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 10, fill: '#9CA3AF' }}
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [`$${v.toFixed(1)}M`, undefined]}
+          formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, undefined]}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         <ReferenceLine y={0} stroke="#9CA3AF" strokeWidth={1} strokeDasharray="3,3" />

@@ -1,15 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { Select } from '@/components/ui5/Ui5Select';
+import { Input } from '@/components/ui5/Ui5Input';
+import { Label } from '@ui5/webcomponents-react';
+import { Button } from '@/components/ui5/Ui5Button';
 import {
   BarChart,
   Bar,
@@ -23,13 +17,37 @@ import {
   ReferenceLine,
   Cell,
 } from 'recharts';
-import { Dice5 } from 'lucide-react';
 import { useProjectStore } from '@/store/project-store';
 import { KpiCard } from '@/components/shared/KpiCard';
-import { fmtM, fmtNum } from '@/lib/format';
+import { EduTooltip } from '@/components/shared/EduTooltip';
+import { InfoIcon } from '@/components/shared/InfoIcon';
+import { SectionHelp } from '@/components/shared/SectionHelp';
+import { fmtNum } from '@/lib/format';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { toast } from '@/components/ui5/Ui5Toast';
+import { getPageEntries } from '@/lib/educational-content';
 import type { MonteCarloConfig, MonteCarloResult } from '@/engine/types';
 
+const edu = getPageEntries('monteCarlo');
+
+/**
+ * Accept a raw input string and call `setter` only when the value parses
+ * to a finite number. Empty string and lone "-" are treated as 0 so the
+ * user can clear the field while typing. NaN / "abc" / Infinity are
+ * silently ignored so state can never hold a non-finite value.
+ */
+function safeSetNumber(setter: (v: number) => void, raw: string) {
+  if (raw === '' || raw === '-') {
+    setter(0);
+    return;
+  }
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return;
+  setter(parsed);
+}
+
 export default function MonteCarloPage() {
+  usePageTitle('Monte Carlo');
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
@@ -56,6 +74,51 @@ export default function MonteCarloPage() {
 
   const handleRun = useCallback(() => {
     if (!activeProjectId) return;
+    // Guard against invalid iteration counts (NaN, 0, negative, non-finite)
+    if (!Number.isFinite(iterations) || iterations < 1) {
+      toast.error('Iterations must be at least 1');
+      return;
+    }
+
+    // Triangular: require min < max AND min ≤ mode ≤ max. Degenerate
+    // distributions (min === max) would divide by zero in the sampler.
+    const triChecks: Array<[string, number, number, number]> = [
+      ['Oil Price', oilMin, oilMode, oilMax],
+      ['Gas Price', gasMin, gasMode, gasMax],
+    ];
+    for (const [name, min, mode, max] of triChecks) {
+      if (!(Number.isFinite(min) && Number.isFinite(mode) && Number.isFinite(max))) {
+        toast.error(`${name}: values must be finite numbers`);
+        return;
+      }
+      if (min >= max) {
+        toast.error(`${name}: Min must be less than Max`);
+        return;
+      }
+      if (mode < min || mode > max) {
+        toast.error(`${name}: Mode must be between Min and Max`);
+        return;
+      }
+    }
+
+    // Normal / lognormal: sigma ≥ 0. Negative spreads are meaningless and
+    // would produce mirrored samples with the Box-Muller transform.
+    const spreadChecks: Array<[string, number]> = [
+      ['Production Sigma', prodSigma],
+      ['CAPEX StdDev', capexStd],
+      ['OPEX StdDev', opexStd],
+    ];
+    for (const [name, v] of spreadChecks) {
+      if (!Number.isFinite(v) || v < 0) {
+        toast.error(`${name} must be ≥ 0`);
+        return;
+      }
+    }
+    if (!Number.isFinite(prodMu) || !Number.isFinite(capexMean) || !Number.isFinite(opexMean)) {
+      toast.error('Distribution means must be finite numbers');
+      return;
+    }
+
     const config: MonteCarloConfig = {
       iterations,
       seed,
@@ -72,51 +135,72 @@ export default function MonteCarloPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-text-primary">Monte Carlo Simulation</h2>
-        <Select value={activeProjectId ?? ''} onValueChange={(v) => setActiveProject(v)}>
-          <SelectTrigger className="w-[220px] h-8 text-xs">
-            <SelectValue placeholder="Select project..." />
-          </SelectTrigger>
-          <SelectContent>
-            {projects.map((p) => (
-              <SelectItem key={p.project.id} value={p.project.id} className="text-xs">
-                {p.project.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-text-primary">Monte Carlo Simulation</h2>
+          <InfoIcon entry={edu['MC-01']!} />
+        </div>
+        <Select
+          value={activeProjectId ?? ''}
+          onValueChange={(v) => setActiveProject(v)}
+          options={projects.map((p) => ({ value: p.project.id, label: p.project.name }))}
+          placeholder="Select project..."
+          className="w-full sm:w-[220px]"
+          aria-label="Select project"
+        />
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col lg:flex-row gap-4">
         {/* Config panel */}
-        <div className="w-[280px] shrink-0 border border-border bg-white p-4 space-y-3">
+        <div className="w-full lg:w-[280px] lg:shrink-0 border border-border bg-white p-4 space-y-3" data-tour="montecarlo-config">
           <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
             Simulation Config
           </h4>
+          <SectionHelp entry={edu['MC-03']!} />
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-[10px]">Iterations</Label>
-              <Input type="number" value={iterations} onChange={(e) => setIterations(Number(e.target.value))} className="h-7 text-xs font-data" />
+              <EduTooltip entryId="MC-04">
+                <Label className="text-[10px] cursor-help">Iterations</Label>
+              </EduTooltip>
+              <Input
+                type="number"
+                min={1}
+                max={100000}
+                value={iterations}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (!Number.isFinite(v)) return;
+                  setIterations(Math.max(1, Math.min(100000, Math.floor(v))));
+                }}
+                className="h-7 text-xs font-data"
+              />
             </div>
             <div>
-              <Label className="text-[10px]">Seed</Label>
+              <EduTooltip entryId="MC-05">
+                <Label className="text-[10px] cursor-help">Seed</Label>
+              </EduTooltip>
               <Input value={seed} onChange={(e) => setSeed(e.target.value)} className="h-7 text-xs font-data" />
             </div>
           </div>
 
-          <Separator />
-          <DistRow label="Oil Price (Tri)" v1={oilMin} v2={oilMode} v3={oilMax} s1={setOilMin} s2={setOilMode} s3={setOilMax} h1="Min" h2="Mode" h3="Max" />
-          <DistRow label="Gas Price (Tri)" v1={gasMin} v2={gasMode} v3={gasMax} s1={setGasMin} s2={setGasMode} s3={setGasMax} h1="Min" h2="Mode" h3="Max" />
-          <DistRow label="Production (LN)" v1={prodMu} v2={prodSigma} s1={setProdMu} s2={setProdSigma} h1="Mu" h2="Sigma" />
-          <DistRow label="CAPEX (Norm)" v1={capexMean} v2={capexStd} s1={setCapexMean} s2={setCapexStd} h1="Mean" h2="StdDev" />
-          <DistRow label="OPEX (Norm)" v1={opexMean} v2={opexStd} s1={setOpexMean} s2={setOpexStd} h1="Mean" h2="StdDev" />
+          <hr className="border-border my-2" />
+          <DistRow label="Oil Price (Tri)" tooltipId="MC-06" v1={oilMin} v2={oilMode} v3={oilMax} s1={setOilMin} s2={setOilMode} s3={setOilMax} h1="Min" h2="Mode" h3="Max" />
+          <DistRow label="Gas Price (Tri)" tooltipId="MC-07" v1={gasMin} v2={gasMode} v3={gasMax} s1={setGasMin} s2={setGasMode} s3={setGasMax} h1="Min" h2="Mode" h3="Max" />
+          <DistRow label="Production (LN)" tooltipId="MC-08" v1={prodMu} v2={prodSigma} s1={setProdMu} s2={setProdSigma} h1="Mu" h2="Sigma" />
+          <DistRow label="CAPEX (Norm)" tooltipId="MC-09" v1={capexMean} v2={capexStd} s1={setCapexMean} s2={setCapexStd} h1="Mean" h2="StdDev" />
+          <DistRow label="OPEX (Norm)" tooltipId="MC-10" v1={opexMean} v2={opexStd} s1={setOpexMean} s2={setOpexStd} h1="Mean" h2="StdDev" />
 
-          <Button onClick={handleRun} disabled={!activeProjectId || isCalculating} className="w-full bg-petrol hover:bg-petrol-light text-white text-xs">
-            <Dice5 size={14} className="mr-1.5" />
-            {isCalculating ? `Running ${iterations} iterations...` : 'Run Simulation'}
-          </Button>
+          <EduTooltip entryId="MC-11">
+            <Button
+              onClick={handleRun}
+              disabled={!activeProjectId || isCalculating}
+              icon="simulate"
+              className="w-full text-xs h-10 sm:h-9"
+            >
+              {isCalculating ? `Running ${iterations} iterations...` : 'Run Simulation'}
+            </Button>
+          </EduTooltip>
         </div>
 
         {/* Results */}
@@ -134,28 +218,35 @@ export default function MonteCarloPage() {
   );
 }
 
-function DistRow({ label, v1, v2, v3, s1, s2, s3, h1, h2, h3 }: {
+function DistRow({ label, tooltipId, v1, v2, v3, s1, s2, s3, h1, h2, h3 }: {
   label: string;
+  tooltipId?: string;
   v1: number; v2: number; v3?: number;
   s1: (v: number) => void; s2: (v: number) => void; s3?: (v: number) => void;
   h1: string; h2: string; h3?: string;
 }) {
   return (
     <div>
-      <Label className="text-[10px] font-medium text-text-secondary">{label}</Label>
+      {tooltipId ? (
+        <EduTooltip entryId={tooltipId}>
+          <Label className="text-[10px] font-medium text-text-secondary cursor-help">{label}</Label>
+        </EduTooltip>
+      ) : (
+        <Label className="text-[10px] font-medium text-text-secondary">{label}</Label>
+      )}
       <div className="grid grid-cols-3 gap-1 mt-0.5">
-        <div>
+        <div className="min-w-0">
           <span className="text-[8px] text-text-muted">{h1}</span>
-          <Input type="number" step="0.01" value={v1} onChange={(e) => s1(Number(e.target.value))} className="h-6 text-[10px] font-data px-1" />
+          <Input type="number" step="0.01" value={v1} onChange={(e) => safeSetNumber(s1, e.target.value)} className="text-[10px] font-data" />
         </div>
-        <div>
+        <div className="min-w-0">
           <span className="text-[8px] text-text-muted">{h2}</span>
-          <Input type="number" step="0.01" value={v2} onChange={(e) => s2(Number(e.target.value))} className="h-6 text-[10px] font-data px-1" />
+          <Input type="number" step="0.01" value={v2} onChange={(e) => safeSetNumber(s2, e.target.value)} className="text-[10px] font-data" />
         </div>
         {v3 !== undefined && s3 && h3 && (
-          <div>
+          <div className="min-w-0">
             <span className="text-[8px] text-text-muted">{h3}</span>
-            <Input type="number" step="0.01" value={v3} onChange={(e) => s3(Number(e.target.value))} className="h-6 text-[10px] font-data px-1" />
+            <Input type="number" step="0.01" value={v3} onChange={(e) => safeSetNumber(s3, e.target.value)} className="text-[10px] font-data" />
           </div>
         )}
       </div>
@@ -165,30 +256,40 @@ function DistRow({ label, v1, v2, v3, s1, s2, s3, h1, h2, h3 }: {
 
 function MCResults({ result }: { result: MonteCarloResult }) {
   const [speConvention, setSpeConvention] = useState(false);
-  // Histogram data
+  const u = useDisplayUnits();
+
+  // Histogram data — bin edges are raw USD; pre-scale to display-currency
+  // millions so the XAxis tickFormatter, Tooltip labelFormatter, and
+  // ReferenceLine x-values all share one coordinate space.
   const histData = useMemo(
     () => result.histogram.map((bin) => ({
-      npv: ((bin.edgeLow + bin.edgeHigh) / 2) / 1e6,
+      npv: (((bin.edgeLow + bin.edgeHigh) / 2) * u.currencyFactor) / 1e6,
       count: bin.count,
       isAboveP50: ((bin.edgeLow + bin.edgeHigh) / 2) >= (result.p50 as number),
     })),
-    [result],
+    [result, u.currencyFactor],
   );
 
-  // S-Curve data
+  // Percentile positions in chart coordinate space (display-M). MUST use
+  // the same scaling as histData above or reference lines drift off-bar.
+  const p10Display = ((result.p10 as number) * u.currencyFactor) / 1e6;
+  const p50Display = ((result.p50 as number) * u.currencyFactor) / 1e6;
+  const p90Display = ((result.p90 as number) * u.currencyFactor) / 1e6;
+
+  // S-Curve data — same pre-scaling as histogram so axes match.
   const sCurveData = useMemo(() => {
     const sorted = [...result.npvValues].map((v) => v as number).sort((a, b) => a - b);
     const n = sorted.length;
     const step = Math.max(1, Math.floor(n / 200));
     const points = [];
     for (let i = 0; i < n; i += step) {
-      points.push({ npv: sorted[i]! / 1e6, prob: ((i + 1) / n) * 100 });
+      points.push({ npv: (sorted[i]! * u.currencyFactor) / 1e6, prob: ((i + 1) / n) * 100 });
     }
     if (points.length > 0 && points[points.length - 1]!.prob < 100) {
-      points.push({ npv: sorted[n - 1]! / 1e6, prob: 100 });
+      points.push({ npv: (sorted[n - 1]! * u.currencyFactor) / 1e6, prob: 100 });
     }
     return points;
-  }, [result]);
+  }, [result, u.currencyFactor]);
 
   // Statistics
   const npvArray = result.npvValues.map((v) => v as number);
@@ -199,7 +300,8 @@ function MCResults({ result }: { result: MonteCarloResult }) {
   return (
     <>
       {/* Convention toggle + KPI Cards */}
-      <div className="flex items-center justify-end mb-1">
+      <div className="flex items-center justify-end mb-1 gap-2">
+        <InfoIcon entry={edu['MC-15']!} />
         <label className="flex items-center gap-2 text-[10px] text-text-secondary cursor-pointer">
           <input
             type="checkbox"
@@ -210,34 +312,43 @@ function MCResults({ result }: { result: MonteCarloResult }) {
           SPE/PRMS convention (P10 = optimistic)
         </label>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiCard
           label={speConvention ? 'P90 (Pessimistic)' : 'P10 (Low Case)'}
-          value={fmtM(result.p10 as number)} unit="$M"
+          value={u.money(result.p10 as number, { accounting: true })}
           className="border-l-2 border-l-danger"
+          eduEntry={edu['MC-12']}
         />
-        <KpiCard label="P50 (Median)" value={fmtM(result.p50 as number)} unit="$M" className="border-l-2 border-l-petrol" />
+        <KpiCard
+          label="P50 (Median)"
+          value={u.money(result.p50 as number, { accounting: true })}
+          className="border-l-2 border-l-petrol"
+          eduEntry={edu['MC-13']}
+        />
         <KpiCard
           label={speConvention ? 'P10 (Optimistic)' : 'P90 (High Case)'}
-          value={fmtM(result.p90 as number)} unit="$M"
+          value={u.money(result.p90 as number, { accounting: true })}
           className="border-l-2 border-l-success"
+          eduEntry={edu['MC-14']}
         />
       </div>
 
       {/* Histogram */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
-          NPV Distribution ({fmtNum(result.npvValues.length)} iterations)
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">
+          NPV Distribution ({fmtNum(result.npvValues.length)} {result.npvValues.length === 1 ? 'iteration' : 'iterations'})
         </h4>
-        <ResponsiveContainer width="100%" height={250}>
+        <SectionHelp entry={edu['MC-16']!} />
+        <div className="min-h-[260px]">
+        <ResponsiveContainer width="100%" height={260}>
           <BarChart data={histData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-            <XAxis dataKey="npv" tick={{ fontSize: 9, fill: '#6B7280' }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
+            <XAxis dataKey="npv" tick={{ fontSize: 9, fill: '#6B7280' }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
             <YAxis tick={{ fontSize: 9, fill: '#6B7280' }} />
-            <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [v, 'Count']} labelFormatter={(v: number) => `NPV: $${v.toFixed(0)}M`} />
-            <ReferenceLine x={(result.p10 as number) / 1e6} stroke="#C0392B" strokeDasharray="4,3" label={{ value: 'P10', fontSize: 9, fill: '#C0392B' }} />
-            <ReferenceLine x={(result.p50 as number) / 1e6} stroke="#1E3A5F" strokeDasharray="4,3" label={{ value: 'P50', fontSize: 9, fill: '#1E3A5F' }} />
-            <ReferenceLine x={(result.p90 as number) / 1e6} stroke="#2D8A4E" strokeDasharray="4,3" label={{ value: 'P90', fontSize: 9, fill: '#2D8A4E' }} />
+            <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [v, 'Count']} labelFormatter={(v: number) => `NPV: ${u.currencySymbol}${v.toFixed(0)}M`} />
+            <ReferenceLine x={p10Display} stroke="#C0392B" strokeDasharray="4,3" label={{ value: 'P10', fontSize: 9, fill: '#C0392B' }} />
+            <ReferenceLine x={p50Display} stroke="#1E3A5F" strokeDasharray="4,3" label={{ value: 'P50', fontSize: 9, fill: '#1E3A5F' }} />
+            <ReferenceLine x={p90Display} stroke="#2D8A4E" strokeDasharray="4,3" label={{ value: 'P90', fontSize: 9, fill: '#2D8A4E' }} />
             <Bar dataKey="count" name="Frequency">
               {histData.map((d, i) => (
                 <Cell key={i} fill={d.isAboveP50 ? '#3B8DBD' : '#E07060'} opacity={0.8} />
@@ -245,48 +356,57 @@ function MCResults({ result }: { result: MonteCarloResult }) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* S-Curve */}
         <div className="border border-border bg-white p-4">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">
             Cumulative Probability (S-Curve)
           </h4>
-          <ResponsiveContainer width="100%" height={220}>
+          <SectionHelp entry={edu['MC-17']!} />
+          <div className="min-h-[260px]">
+          <ResponsiveContainer width="100%" height={260}>
             <LineChart data={sCurveData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-              <XAxis dataKey="npv" tick={{ fontSize: 9, fill: '#6B7280' }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
+              <XAxis dataKey="npv" tick={{ fontSize: 9, fill: '#6B7280' }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
               <YAxis tick={{ fontSize: 9, fill: '#6B7280' }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
-              <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [`${v.toFixed(1)}%`, 'Probability']} labelFormatter={(v: number) => `NPV: $${v.toFixed(0)}M`} />
+              <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [`${v.toFixed(1)}%`, 'Probability']} labelFormatter={(v: number) => `NPV: ${u.currencySymbol}${v.toFixed(0)}M`} />
               <ReferenceLine y={10} stroke="#C0392B" strokeDasharray="3,3" />
               <ReferenceLine y={50} stroke="#1E3A5F" strokeDasharray="3,3" />
               <ReferenceLine y={90} stroke="#2D8A4E" strokeDasharray="3,3" />
               <Line type="monotone" dataKey="prob" stroke="#1E3A5F" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Statistics */}
         <div className="border border-border bg-white p-4">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">
             Statistics Summary
           </h4>
-          <table className="w-full text-xs">
+          <SectionHelp entry={edu['MC-18']!} />
+          <table className="w-full text-xs tabular-nums">
             <tbody>
               {[
-                ['Mean NPV', `$${fmtM(result.mean as number)}M`],
-                ['Median (P50)', `$${fmtM(result.p50 as number)}M`],
-                ['Std Deviation', `$${fmtM(result.stdDev)}M`],
-                ['P10', `$${fmtM(result.p10 as number)}M`],
-                ['P90', `$${fmtM(result.p90 as number)}M`],
-                ['Minimum', `$${fmtM(minNpv)}M`],
-                ['Maximum', `$${fmtM(maxNpv)}M`],
-                ['P(NPV > 0)', `${probPositive.toFixed(1)}%`],
-                ['Iterations', fmtNum(result.npvValues.length)],
-              ].map(([label, value]) => (
+                ['Mean NPV', u.money(result.mean as number, { accounting: true }), 'MC-19'],
+                ['Median (P50)', u.money(result.p50 as number, { accounting: true }), undefined],
+                ['Std Deviation', u.money(result.stdDev, { accounting: true }), 'MC-20'],
+                ['P10', u.money(result.p10 as number, { accounting: true }), undefined],
+                ['P90', u.money(result.p90 as number, { accounting: true }), undefined],
+                ['Minimum', u.money(minNpv, { accounting: true }), undefined],
+                ['Maximum', u.money(maxNpv, { accounting: true }), undefined],
+                ['P(NPV > 0)', `${probPositive.toFixed(1)}%`, 'MC-21'],
+                ['Iterations', fmtNum(result.npvValues.length), undefined],
+              ].map(([label, value, tooltipId]) => (
                 <tr key={label} className="border-b border-border/30">
-                  <td className="py-1.5 text-text-secondary">{label}</td>
+                  <td className="py-1.5 text-text-secondary">
+                    {tooltipId ? (
+                      <EduTooltip entryId={tooltipId as string}><span className="cursor-help">{label}</span></EduTooltip>
+                    ) : label}
+                  </td>
                   <td className="py-1.5 text-right font-data font-medium text-text-primary">{value}</td>
                 </tr>
               ))}

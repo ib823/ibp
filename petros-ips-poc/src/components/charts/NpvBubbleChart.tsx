@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import type { EconomicsResult, FiscalRegimeType } from '@/engine/types';
 import { fmtPct } from '@/lib/format';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 
 interface NpvBubbleChartProps {
   projects: Array<{
@@ -45,19 +46,20 @@ interface BubbleDataPoint {
 }
 
 export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
+  const u = useDisplayUnits();
   const data = useMemo<BubbleDataPoint[]>(() =>
     projects.map((p) => {
       const lastCf = p.result.yearlyCashflows[p.result.yearlyCashflows.length - 1];
       return {
         name: p.name,
-        capex: (p.result.totalCapex as number) / 1e6,
-        npv: (p.result.npv10 as number) / 1e6,
+        capex: ((p.result.totalCapex as number) * u.currencyFactor) / 1e6,
+        npv: ((p.result.npv10 as number) * u.currencyFactor) / 1e6,
         production: lastCf ? lastCf.cumulativeProduction / 1e6 : 0,
         irr: p.result.irr ?? p.result.mirr,
         regime: p.regime,
       };
     }),
-    [projects],
+    [projects, u.currencyFactor],
   );
 
   return (
@@ -70,7 +72,7 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
           name="CAPEX"
           tick={{ fontSize: 10, fill: '#6B7280' }}
           tickLine={false}
-          label={{ value: 'Total CAPEX ($M)', position: 'insideBottom', offset: -5, fontSize: 10, fill: '#9CA3AF' }}
+          label={{ value: `Total CAPEX (${u.currencyCode} M)`, position: 'insideBottom', offset: -5, fontSize: 10, fill: '#9CA3AF' }}
         />
         <YAxis
           dataKey="npv"
@@ -78,7 +80,7 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
           name="NPV"
           tick={{ fontSize: 10, fill: '#6B7280' }}
           tickLine={false}
-          label={{ value: 'NPV₁₀ ($M)', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#9CA3AF' }}
+          label={{ value: `NPV₁₀ (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 10, fill: '#9CA3AF' }}
         />
         <ZAxis
           dataKey="production"
@@ -94,8 +96,8 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
             return (
               <div className="bg-white border border-border p-2 text-xs shadow-sm">
                 <div className="font-semibold mb-1">{d.name}</div>
-                <div>NPV: <span className="font-data">${d.npv.toFixed(1)}M</span></div>
-                <div>CAPEX: <span className="font-data">${d.capex.toFixed(0)}M</span></div>
+                <div>NPV: <span className="font-data">{u.currencySymbol}{d.npv.toFixed(1)}M</span></div>
+                <div>CAPEX: <span className="font-data">{u.currencySymbol}{d.capex.toFixed(0)}M</span></div>
                 <div>IRR: <span className="font-data">{fmtPct(d.irr)}</span></div>
                 <div>Regime: <span className="font-medium">{d.regime.replace('_', ' ')}</span></div>
               </div>

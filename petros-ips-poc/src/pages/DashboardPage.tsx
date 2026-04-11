@@ -1,12 +1,17 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { useProjectStore } from '@/store/project-store';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { PortfolioProductionChart } from '@/components/charts/PortfolioProductionChart';
 import { CapexTimelineChart } from '@/components/charts/CapexTimelineChart';
-import { Badge } from '@/components/ui/badge';
-import { fmtM, fmtPct } from '@/lib/format';
+import { Badge } from '@/components/ui5/Ui5Badge';
+import { EduTooltip } from '@/components/shared/EduTooltip';
+import { SectionHelp } from '@/components/shared/SectionHelp';
+import { fmtPct } from '@/lib/format';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
+import { getPageEntries } from '@/lib/educational-content';
 import {
   Calculator,
   BarChart3,
@@ -16,7 +21,10 @@ import {
 } from 'lucide-react';
 import type { EconomicsResult } from '@/engine/types';
 
+const edu = getPageEntries('dashboard');
+
 export default function DashboardPage() {
+  usePageTitle('Dashboard');
   const projects = useProjectStore((s) => s.projects);
   const economicsResults = useProjectStore((s) => s.economicsResults);
   const activeScenario = useProjectStore((s) => s.activeScenario);
@@ -52,6 +60,7 @@ export default function DashboardPage() {
   }, [projectResults, portfolioSelection]);
 
   const portfolioNpv = portfolioResult ? (portfolioResult.totalNpv as number) : 0;
+  const u = useDisplayUnits();
 
   return (
     <div className="space-y-5">
@@ -64,106 +73,143 @@ export default function DashboardPage() {
       </div>
 
       {/* Top KPIs */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" data-tour="dashboard-kpis">
         <KpiCard
           label="Portfolio NPV₁₀"
-          value={fmtM(portfolioNpv)}
-          unit="$M"
+          value={u.money(portfolioNpv, { accounting: true })}
           className="border-l-2 border-l-petrol"
+          eduEntry={edu['D-01']}
         />
         <KpiCard
           label="Total CAPEX"
-          value={fmtM(totalCapex)}
-          unit="$M"
+          value={u.money(totalCapex, { accounting: true })}
+          eduEntry={edu['D-02']}
         />
         <KpiCard
           label="Weighted IRR"
           value={fmtPct(weightedIrr)}
           className={weightedIrr >= 0.10 ? 'border-l-2 border-l-success' : 'border-l-2 border-l-danger'}
+          eduEntry={edu['D-03']}
         />
         <KpiCard
           label="Active Projects"
           value={totalProjects.toString()}
           unit={`of ${projects.length}`}
+          eduEntry={edu['D-04']}
         />
       </div>
 
       {/* Project summary table */}
       <div className="border border-border bg-white p-4">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
             Project Summary
           </h4>
-          <Link to="/economics" className="text-[11px] text-petrol hover:underline flex items-center gap-1">
+          <Link to="/economics" className="text-xs text-petrol hover:underline flex items-center gap-1">
             View details <ArrowRight size={12} />
           </Link>
         </div>
-        <table className="w-full border-collapse text-xs">
+        <div className="overflow-x-auto -mx-4 px-4">
+        <table className="w-full border-collapse text-xs min-w-[640px] tabular-nums">
           <thead>
             <tr className="border-b border-border bg-content-alt">
-              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5">Project</th>
-              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">Regime</th>
+              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5">
+                <EduTooltip entryId="D-07"><span className="cursor-help">Project</span></EduTooltip>
+              </th>
+              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+                <EduTooltip entryId="D-08"><span className="cursor-help">Regime</span></EduTooltip>
+              </th>
               <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">Status</th>
-              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">NPV ($M)</th>
-              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">IRR</th>
-              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">CAPEX ($M)</th>
-              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">Payback</th>
+              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+                <EduTooltip entryId="D-10"><span className="cursor-help">NPV ({u.currencySymbol}M)</span></EduTooltip>
+              </th>
+              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+                <EduTooltip entryId="D-11"><span className="cursor-help">IRR</span></EduTooltip>
+              </th>
+              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+                <EduTooltip entryId="D-12"><span className="cursor-help">CAPEX ({u.currencySymbol}M)</span></EduTooltip>
+              </th>
+              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+                <EduTooltip entryId="D-13"><span className="cursor-help">Payback</span></EduTooltip>
+              </th>
             </tr>
           </thead>
           <tbody>
             {projects.map((p) => {
               const r = projectResults.get(p.project.id);
               if (!r) return null;
-              const npv = (r.npv10 as number) / 1e6;
+              const npvRaw = r.npv10 as number;
+              const regimeLabel = p.project.businessSector === 'CCS' ? 'CCS' : p.fiscalRegimeConfig.type.replace('_', ' ');
+              const regimeTooltipId = p.project.businessSector === 'CCS' ? 'D-18'
+                : p.fiscalRegimeConfig.type === 'PSC_RC' ? 'D-14'
+                : p.fiscalRegimeConfig.type === 'PSC_DW' ? 'D-15'
+                : p.fiscalRegimeConfig.type === 'PSC_EPT' ? 'D-16'
+                : p.fiscalRegimeConfig.type === 'PSC_SFA' ? 'D-17'
+                : undefined;
+              const statusTooltipId = p.project.status === 'active' ? 'D-09a'
+                : p.project.status === 'pre-fid' ? 'D-09b'
+                : p.project.status === 'producing' ? 'D-09c'
+                : undefined;
               return (
                 <tr key={p.project.id} className="border-b border-border/30 hover:bg-content-alt/50">
                   <td className="px-3 py-2 font-medium text-text-primary">{p.project.name}</td>
                   <td className="px-2 py-2">
-                    <Badge variant="outline" className="text-[8px] py-0 px-1">
-                      {p.project.businessSector === 'CCS' ? 'CCS' : p.fiscalRegimeConfig.type.replace('_', ' ')}
-                    </Badge>
+                    <EduTooltip entryId={regimeTooltipId}>
+                      <Badge variant="outline" className="text-[8px] py-0 px-1 cursor-help">
+                        {regimeLabel}
+                      </Badge>
+                    </EduTooltip>
                   </td>
                   <td className="px-2 py-2">
-                    <Badge variant="outline" className={cn(
-                      'text-[8px] py-0 px-1',
-                      p.project.status === 'producing' && 'bg-success/10 text-success border-success/30',
-                      p.project.status === 'active' && 'bg-petrol/10 text-petrol border-petrol/30',
-                      p.project.status === 'pre-fid' && 'bg-amber/10 text-amber border-amber/30',
-                    )}>
-                      {p.project.status}
-                    </Badge>
+                    <EduTooltip entryId={statusTooltipId}>
+                      <Badge variant="outline" className={cn(
+                        'text-[8px] py-0 px-1 cursor-help',
+                        p.project.status === 'producing' && 'bg-success/10 text-success border-success/30',
+                        p.project.status === 'active' && 'bg-petrol/10 text-petrol border-petrol/30',
+                        p.project.status === 'pre-fid' && 'bg-amber/10 text-amber border-amber/30',
+                      )}>
+                        {p.project.status}
+                      </Badge>
+                    </EduTooltip>
                   </td>
-                  <td className={cn('px-2 py-2 text-right font-data font-medium', npv >= 0 ? 'text-success' : 'text-danger')}>
-                    {npv.toFixed(1)}
+                  <td className={cn('px-2 py-2 text-right font-data font-medium', npvRaw >= 0 ? 'text-success' : 'text-danger')}>
+                    {u.money(npvRaw, { accounting: true })}
                   </td>
                   <td className="px-2 py-2 text-right font-data">{fmtPct(r.isNonInvestmentPattern ? r.mirr : (r.irr ?? 0))}</td>
-                  <td className="px-2 py-2 text-right font-data">{fmtM(r.totalCapex as number)}</td>
+                  <td className="px-2 py-2 text-right font-data">{u.money(r.totalCapex as number, { accounting: true })}</td>
                   <td className="px-2 py-2 text-right font-data">{r.paybackYears.toFixed(1)} yr</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Charts row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="border border-border bg-white p-4">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">
             Portfolio Production Forecast
           </h4>
-          <PortfolioProductionChart projects={projects} activeIds={portfolioSelection} />
+          <SectionHelp entry={edu['D-22']!} />
+          <div className="min-h-[280px] sm:min-h-[320px]">
+            <PortfolioProductionChart projects={projects} activeIds={portfolioSelection} />
+          </div>
         </div>
         <div className="border border-border bg-white p-4">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">
             CAPEX Timeline
           </h4>
-          <CapexTimelineChart projects={projects} activeIds={portfolioSelection} />
+          <SectionHelp entry={edu['D-23']!} />
+          <div className="min-h-[280px] sm:min-h-[320px]">
+            <CapexTimelineChart projects={projects} activeIds={portfolioSelection} />
+          </div>
         </div>
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { to: '/economics', label: 'Economics', desc: 'Project-level cashflows', icon: Calculator },
           { to: '/sensitivity', label: 'Sensitivity', desc: 'Tornado & scenarios', icon: BarChart3 },

@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui5/Ui5Badge';
 import type { DataStatus } from '@/engine/types';
 import { cn } from '@/lib/utils';
 

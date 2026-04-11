@@ -602,3 +602,167 @@ export interface DownstreamResult {
   readonly breakEvenFeedstockPrice: USD;
   readonly breakEvenProductPrice: USD;
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// FEATURE 1: Multi-Version Data Management (FM-04)
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * Lifecycle state of a planning data submission.
+ * Distinct from `ScenarioVersion` which represents price scenarios.
+ */
+export type DataVersion =
+  | 'actuals'    // Historical actuals (would come from SAP S/4HANA)
+  | 'budget'     // Approved annual budget
+  | 'forecast'   // Mid-year re-forecast
+  | 'submitted'  // Submitted for review (not yet approved)
+  | 'approved'   // Approved plan
+  | 'working';   // Scratch space for planners
+
+export interface VersionedProjectData {
+  readonly projectId: string;
+  readonly dataVersion: DataVersion;
+  readonly scenarioVersion: ScenarioVersion;
+  readonly status: DataStatus;
+  readonly lastModified: string; // ISO date
+  readonly modifiedBy: string;
+  readonly productionProfile: ProductionProfile;
+  readonly costProfile: CostProfile;
+}
+
+export interface YearlyVariance {
+  readonly year: number;
+  readonly revenueBudget: number;
+  readonly revenueActual: number;
+  readonly revenueVariance: number;
+  readonly revenueVariancePct: number;
+  readonly capexBudget: number;
+  readonly capexActual: number;
+  readonly capexVariance: number;
+  readonly opexBudget: number;
+  readonly opexActual: number;
+  readonly opexVariance: number;
+  readonly ncfBudget: number;
+  readonly ncfActual: number;
+  readonly ncfVariance: number;
+  readonly productionBudget: number; // boe/d
+  readonly productionActual: number;
+  readonly productionVariance: number;
+}
+
+export interface VersionComparisonResult {
+  readonly projectId: string;
+  readonly version1: DataVersion;
+  readonly version2: DataVersion;
+  readonly yearlyVariances: readonly YearlyVariance[];
+  readonly npvVariance: number;
+  readonly irrVariance: number | null;
+  readonly capexVariance: number;
+  readonly productionVariance: number;
+  readonly revenueVariance: number;
+  /** Decomposition of NCF variance into price/volume/cost components */
+  readonly priceVariance: number;
+  readonly volumeVariance: number;
+  readonly costVariance: number;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// FEATURE 2: Configurable Unit Conversion (DF-01)
+// ════════════════════════════════════════════════════════════════════════
+
+export type UnitConversionCategory =
+  | 'volume_oil'
+  | 'volume_gas'
+  | 'mass'
+  | 'energy'
+  | 'currency'
+  | 'pressure'
+  | 'length';
+
+export interface UnitConversion {
+  readonly id: string;
+  readonly fromUnit: string;
+  readonly toUnit: string;
+  readonly factor: number;
+  readonly category: UnitConversionCategory;
+  readonly isDefault: boolean;
+  readonly description: string;
+}
+
+export interface UnitPreferences {
+  readonly oilVolume: string; // 'bbl' | 'm³' | 'litres'
+  readonly gasVolume: string; // 'MMscf' | 'Bcf' | 'Nm³' | 'PJ'
+  readonly mass: string;      // 'tonnes' | 'kg' | 'lb'
+  readonly currency: string;  // 'USD' | 'MYR'
+  readonly energy: string;    // 'MMBtu' | 'GJ' | 'MWh'
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// FEATURE 3: Time Granularity (DF-02)
+// ════════════════════════════════════════════════════════════════════════
+
+export type TimeGranularity = 'monthly' | 'quarterly' | 'yearly';
+
+export interface MonthlyProductionEntry {
+  readonly year: number;
+  readonly month: number; // 1-12
+  readonly oilBpd: number;
+  readonly gasMmscfd: number;
+  readonly condensateBpd: number;
+}
+
+export interface MonthlyProductionProfile {
+  readonly monthly: readonly MonthlyProductionEntry[];
+}
+
+export interface MonthlyCostEntry {
+  readonly year: number;
+  readonly month: number;
+  readonly capex: USD;
+  readonly opexFixed: USD;
+  readonly opexVariable: USD;
+  readonly abandonmentCost: USD;
+}
+
+export interface MonthlyCostProfile {
+  readonly monthly: readonly MonthlyCostEntry[];
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// FEATURE 4: Pre-FID vs Post-FID Phase Comparison (DF-04)
+// ════════════════════════════════════════════════════════════════════════
+
+export type ProjectPhaseVersion =
+  | 'pre_fid'
+  | 'post_fid'
+  | 'development'
+  | 'production'
+  | 'late_life'
+  | 'decommissioning';
+
+export interface PhaseVersionData {
+  readonly projectId: string;
+  readonly phase: ProjectPhaseVersion;
+  readonly label: string;
+  readonly createdDate: string;
+  readonly assumptions: string;
+  readonly productionProfile: ProductionProfile;
+  readonly costProfile: CostProfile;
+  /** Optional reserves estimate associated with this phase, in MMboe */
+  readonly reservesMmboe?: number;
+}
+
+export interface PhaseComparisonResult {
+  readonly projectId: string;
+  readonly phase1: ProjectPhaseVersion;
+  readonly phase1Label: string;
+  readonly phase2: ProjectPhaseVersion;
+  readonly phase2Label: string;
+  readonly economics1: EconomicsResult;
+  readonly economics2: EconomicsResult;
+  readonly npvDelta: number;
+  readonly irrDelta: number | null;
+  readonly capexDelta: number;
+  readonly reservesDelta: number;
+  readonly peakProductionDelta: number;
+}

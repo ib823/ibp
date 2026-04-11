@@ -5,6 +5,12 @@ interface ReservesWaterfallProps {
   movements: readonly ReservesMovement[];
   title: string;
   unit: string;
+  /**
+   * Multiplier applied to every value before display. Default 1 (identity).
+   * Used by ReservesPage to convert stored base-unit reserves (MMstb / Bcf)
+   * into the user's selected display unit.
+   */
+  valueFactor?: number;
 }
 
 interface Bar {
@@ -16,64 +22,71 @@ interface Bar {
   isFinal?: boolean;
 }
 
-export function ReservesWaterfall({ movements, title, unit }: ReservesWaterfallProps) {
+export function ReservesWaterfall({ movements, title, unit, valueFactor = 1 }: ReservesWaterfallProps) {
   const bars = useMemo(() => {
     if (movements.length === 0) return [];
     const m = movements[0]!;
 
     const result: Bar[] = [];
-    let running = m.opening;
+    const open = m.opening * valueFactor;
+    const ext = m.extensions * valueFactor;
+    const tech = m.technicalRevisions * valueFactor;
+    const econ = m.economicRevisions * valueFactor;
+    const prod = m.production * valueFactor;
+    const close = m.closing * valueFactor;
+
+    let running = open;
 
     result.push({
       label: 'Opening',
-      value: m.opening,
+      value: open,
       start: 0,
-      end: m.opening,
+      end: open,
       color: '#1E3A5F',
     });
 
-    if (m.extensions !== 0) {
+    if (ext !== 0) {
       const prev = running;
-      running += m.extensions;
+      running += ext;
       result.push({
         label: 'Extensions',
-        value: m.extensions,
+        value: ext,
         start: prev,
         end: running,
-        color: m.extensions >= 0 ? '#2D8A4E' : '#C0392B',
+        color: ext >= 0 ? '#2D8A4E' : '#C0392B',
       });
     }
 
-    if (m.technicalRevisions !== 0) {
+    if (tech !== 0) {
       const prev = running;
-      running += m.technicalRevisions;
+      running += tech;
       result.push({
         label: 'Tech. Revisions',
-        value: m.technicalRevisions,
+        value: tech,
         start: prev,
         end: running,
-        color: m.technicalRevisions >= 0 ? '#2D8A4E' : '#C0392B',
+        color: tech >= 0 ? '#2D8A4E' : '#C0392B',
       });
     }
 
-    if (m.economicRevisions !== 0) {
+    if (econ !== 0) {
       const prev = running;
-      running += m.economicRevisions;
+      running += econ;
       result.push({
         label: 'Econ. Revisions',
-        value: m.economicRevisions,
+        value: econ,
         start: prev,
         end: running,
-        color: m.economicRevisions >= 0 ? '#2D8A4E' : '#C0392B',
+        color: econ >= 0 ? '#2D8A4E' : '#C0392B',
       });
     }
 
-    if (m.production > 0) {
+    if (prod > 0) {
       const prev = running;
-      running -= m.production;
+      running -= prod;
       result.push({
         label: 'Production',
-        value: -m.production,
+        value: -prod,
         start: prev,
         end: running,
         color: '#C0392B',
@@ -82,15 +95,15 @@ export function ReservesWaterfall({ movements, title, unit }: ReservesWaterfallP
 
     result.push({
       label: 'Closing',
-      value: m.closing,
+      value: close,
       start: 0,
-      end: m.closing,
+      end: close,
       color: '#1E3A5F',
       isFinal: true,
     });
 
     return result;
-  }, [movements]);
+  }, [movements, valueFactor]);
 
   if (bars.length === 0) return <p className="text-xs text-text-muted">No data</p>;
 

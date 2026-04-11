@@ -1,17 +1,25 @@
-import { useState } from 'react';
 import { useProjectStore } from '@/store/project-store';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { Badge } from '@/components/ui5/Ui5Badge';
 import { FISCAL_REGIMES } from '@/data/fiscal-regimes';
+import { EduTooltip } from '@/components/shared/EduTooltip';
+import { InfoIcon } from '@/components/shared/InfoIcon';
+import { SectionHelp } from '@/components/shared/SectionHelp';
+import { startTour, resetTourFlag } from '@/components/shared/GuidedTour';
+import { UnitConversionSection } from '@/components/settings/UnitConversionSection';
+import { Button } from '@/components/ui5/Ui5Button';
 import { fmtPct } from '@/lib/format';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { getPageEntries } from '@/lib/educational-content';
+
+const edu = getPageEntries('settings');
 
 export default function SettingsPage() {
+  usePageTitle('Settings');
   const projects = useProjectStore((s) => s.projects);
   const activeScenario = useProjectStore((s) => s.activeScenario);
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-5xl">
       <div>
         <h2 className="text-lg font-semibold text-text-primary">Settings & Reference</h2>
         <p className="text-xs text-text-secondary mt-0.5">
@@ -21,32 +29,45 @@ export default function SettingsPage() {
 
       {/* Model Parameters */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
           Model Parameters
         </h4>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
-          <Row label="Discount Rate (NPV)" value="10.0%" />
-          <Row label="CAPEX Depreciation" value="5-year straight-line" />
-          <Row label="MIRR Finance Rate" value="8.0%" />
-          <Row label="MIRR Reinvest Rate" value="10.0%" />
-          <Row label="THV Oil Threshold" value="30 MMstb" />
-          <Row label="THV Gas Threshold" value="0.75 Tscf" />
-          <Row label="Supplementary Payment Rate" value="70%" />
-          <Row label="Decomm. Discount Rate" value="8.0%" />
-          <Row label="Gas Conversion" value="1 MMscf = 1,055 MMBtu" />
-          <Row label="BOE Conversion" value="6 Mscf = 1 BOE" />
+        <SectionHelp entry={edu['ST-02']!} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-xs">
+          <EduRow label="Discount Rate (NPV)" value="10.0%" tooltipId="ST-03" />
+          <EduRow label="CAPEX Depreciation" value="5-year straight-line" tooltipId="ST-04" />
+          <EduRow label="MIRR Finance Rate" value="8.0%" tooltipId="ST-05" />
+          <EduRow label="MIRR Reinvest Rate" value="10.0%" tooltipId="ST-06" />
+          <EduRow label="THV Oil Threshold" value="30 MMstb" tooltipId="ST-07" />
+          <EduRow label="THV Gas Threshold" value="0.75 Tscf" tooltipId="ST-08" />
+          <EduRow label="Supplementary Payment Rate" value="70%" tooltipId="ST-09" />
+          <EduRow label="Decomm. Discount Rate" value="8.0%" tooltipId="ST-10" />
+          <EduRow label="Gas Conversion" value="1 MMscf = 1,055 MMBtu" tooltipId="ST-11" />
+          <EduRow label="BOE Conversion" value="6 Mscf = 1 BOE" tooltipId="ST-12" />
           <Row label="Active Scenario" value={activeScenario.charAt(0).toUpperCase() + activeScenario.slice(1)} />
           <Row label="Projects Loaded" value={`${projects.length}`} />
         </div>
       </div>
 
-      <Separator />
+      <hr className="border-border my-2" />
+
+      {/* Unit Conversion Factors (DF-01) */}
+      <div>
+        <h3 className="text-sm font-semibold text-text-primary mb-1">Unit Conversion Factors</h3>
+        <p className="text-xs text-text-secondary mb-3">
+          Configure display unit preferences and customise conversion factors. Reference: SOW DF-01.
+        </p>
+        <UnitConversionSection />
+      </div>
+
+      <hr className="border-border my-2" />
 
       {/* Fiscal Regimes Reference */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
           Fiscal Regime Reference
         </h4>
+        <SectionHelp entry={edu['ST-13']!} />
         <div className="space-y-4">
           {Object.entries(FISCAL_REGIMES).map(([key, regime]) => (
             <div key={key} className="border border-border/50 p-3">
@@ -55,7 +76,7 @@ export default function SettingsPage() {
                   {regime.type.replace('_', ' ')}
                 </Badge>
               </div>
-              <div className="grid grid-cols-4 gap-2 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <Row label="Royalty" value={fmtPct(regime.royaltyRate, 0)} />
                 <Row label="PITA" value={fmtPct(regime.pitaRate, 0)} />
                 <Row label="Export Duty" value={fmtPct(regime.exportDutyRate, 0)} />
@@ -63,7 +84,10 @@ export default function SettingsPage() {
               </div>
               {'tranches' in regime && (
                 <div className="mt-2">
-                  <span className="text-[10px] font-medium text-text-secondary">R/C Tranches:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-medium text-text-secondary">R/C Tranches:</span>
+                    <InfoIcon entry={edu['ST-14']!} />
+                  </div>
                   <div className="grid grid-cols-5 gap-1 mt-1 text-[10px]">
                     <span className="font-medium text-text-secondary">R/C Range</span>
                     <span className="font-medium text-text-secondary text-right">Ceiling</span>
@@ -83,14 +107,14 @@ export default function SettingsPage() {
                 </div>
               )}
               {'fixedCostRecoveryCeiling' in regime && (
-                <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                   <Row label="Cost Recovery Ceiling" value={fmtPct(regime.fixedCostRecoveryCeiling, 0)} />
                   <Row label="PI Lower / Upper" value={`${regime.piLower} / ${regime.piUpper}`} />
                   <Row label="Contractor @ Lower/Upper" value={`${fmtPct(regime.contractorShareAtLower, 0)} / ${fmtPct(regime.contractorShareAtUpper, 0)}`} />
                 </div>
               )}
               {'costRecoveryCeilingPct' in regime && !('tranches' in regime) && !('fixedCostRecoveryCeiling' in regime) && (
-                <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                   <Row label="Cost Recovery" value={fmtPct(regime.costRecoveryCeilingPct, 0)} />
                   <Row label="Contractor Share" value={fmtPct(regime.contractorProfitSharePct, 0)} />
                   <Row label="PETRONAS Share" value={fmtPct(regime.petronasProfitSharePct, 0)} />
@@ -98,7 +122,7 @@ export default function SettingsPage() {
               )}
               {'taxRate' in regime && (
                 <div className="mt-2 text-xs">
-                  <Row label="Corporate Tax Rate" value={fmtPct(regime.taxRate, 0)} />
+                  <EduRow label="Corporate Tax Rate" value={fmtPct(regime.taxRate, 0)} tooltipId="ST-17" />
                 </div>
               )}
             </div>
@@ -107,6 +131,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="outline" className="text-[10px]">RSC</Badge>
               <span className="text-[10px] text-text-muted">(Risk Service Contract)</span>
+              <InfoIcon entry={edu['ST-18']!} />
             </div>
             <p className="text-[10px] text-text-secondary">
               Simplified approximation in POC using corporate-tax model.
@@ -116,6 +141,27 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Guided Tour */}
+      <div className="border border-border bg-white p-4">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+          Guided Tour
+        </h4>
+        <p className="text-xs text-text-secondary mb-3">
+          Walk through all features of the PETROS IPS with a 12-step interactive tour.
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs"
+          icon="sys-help"
+          onClick={() => { resetTourFlag(); startTour(); }}
+        >
+          Restart Guided Tour
+        </Button>
+      </div>
+
+      <hr className="border-border my-2" />
 
       {/* About */}
       <div className="border border-border bg-white p-4">
@@ -146,8 +192,6 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Tech Stack (collapsible) */}
-      <TechStackSection />
     </div>
   );
 }
@@ -161,26 +205,16 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function TechStackSection() {
-  const [open, setOpen] = useState(false);
+function EduRow({ label, value, tooltipId }: { label: string; value: string; tooltipId: string }) {
+  const entry = edu[tooltipId];
   return (
-    <div className="border border-border bg-white p-4">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-text-secondary w-full"
-      >
-        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        Technology Stack
-      </button>
-      {open && (
-        <div className="mt-3 text-xs text-text-muted space-y-1">
-          <p>React 19 + TypeScript 5.9 + Vite 6</p>
-          <p>Tailwind CSS 4 + shadcn/ui + Radix UI</p>
-          <p>Zustand 5 (state) + Recharts (charts) + TanStack Table</p>
-          <p>SheetJS xlsx (Excel export) + seedrandom (Monte Carlo PRNG)</p>
-          <p>Vitest + Testing Library (258 unit tests)</p>
-        </div>
-      )}
-    </div>
+    <>
+      <span className="text-text-secondary flex items-center gap-1">
+        <EduTooltip entryId={tooltipId}><span className="cursor-help">{label}</span></EduTooltip>
+        {entry?.infoPanel && <InfoIcon entry={entry} />}
+      </span>
+      <span className="font-data font-medium text-text-primary text-right">{value}</span>
+    </>
   );
 }
+
