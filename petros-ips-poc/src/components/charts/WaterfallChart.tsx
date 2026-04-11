@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { YearlyCashflow } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { getEntry } from '@/lib/educational-content';
 
 interface WaterfallChartProps {
   cashflows: readonly YearlyCashflow[];
@@ -13,6 +14,8 @@ interface WaterfallBar {
   end: number;
   color: string;
   isFinal?: boolean;
+  /** Educational entry ID — surfaces as SVG <title> tooltip on hover. */
+  eduEntryId?: string;
 }
 
 export function WaterfallChart({ cashflows }: WaterfallChartProps) {
@@ -35,6 +38,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
       start: 0,
       end: totalRevenue,
       color: '#1E3A5F',
+      eduEntryId: 'E-22',
     });
 
     running -= totalRoyalty;
@@ -44,6 +48,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
       start: running + totalRoyalty,
       end: running,
       color: '#C0392B',
+      eduEntryId: 'E-23',
     });
 
     running -= totalPetronasShare;
@@ -53,6 +58,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
       start: running + totalPetronasShare,
       end: running,
       color: '#E74C3C',
+      eduEntryId: 'E-24',
     });
 
     if (totalSP > 0) {
@@ -63,6 +69,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
         start: running + totalSP,
         end: running,
         color: '#D35400',
+        eduEntryId: 'E-24a',
       });
     }
 
@@ -73,6 +80,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
       start: running + totalTax,
       end: running,
       color: '#C0392B',
+      eduEntryId: 'E-25',
     });
 
     // Costs bar: CAPEX + OPEX + ABEX minus cost recovery received
@@ -85,6 +93,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
         start: running + impliedCosts,
         end: running,
         color: '#8B4513',
+        eduEntryId: 'E-26',
       });
     }
 
@@ -95,6 +104,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
       end: totalNcf,
       color: totalNcf >= 0 ? '#2D8A4E' : '#C0392B',
       isFinal: true,
+      eduEntryId: 'E-27',
     });
 
     return result;
@@ -138,9 +148,12 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
         const top = scaleY(Math.max(bar.start, bar.end));
         const bottom = scaleY(Math.min(bar.start, bar.end));
         const height = Math.max(1, bottom - top);
+        const entry = bar.eduEntryId ? getEntry(bar.eduEntryId) : undefined;
+        const tooltipText = entry?.tooltip ?? undefined;
 
         return (
           <g key={i}>
+            {tooltipText && <title>{tooltipText}</title>}
             {/* Bar */}
             <rect
               x={x}

@@ -57,6 +57,10 @@ export default function FinancialPage() {
           <p className="text-sm text-text-muted">Select a project to view financial statements</p>
         </div>
       ) : (
+        // Wrapper carries the data-tour attribute so the guided tour can
+        // find it via querySelector — Ui5Tabs does not forward unknown
+        // props to a host DOM node.
+        <div data-tour="financial-tabs">
         <Tabs
           defaultTab="income"
           tabs={[
@@ -64,7 +68,6 @@ export default function FinancialPage() {
               key: 'income',
               label: 'Income Statement',
               icon: 'business-card',
-              'data-tour': 'financial-tabs',
               content: (
                 <div className="border border-border bg-white p-4">
                   <FinancialTable
@@ -202,6 +205,7 @@ export default function FinancialPage() {
             },
           ]}
         />
+        </div>
       )}
     </div>
   );

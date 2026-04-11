@@ -393,6 +393,14 @@ export const GLOSSARY_ENTRIES: GlossaryItem[] = [
     reference: null,
   },
   {
+    id: 'dw',
+    term: 'DW (Deepwater PSC)',
+    definition: 'PSC fiscal framework with enhanced terms for deepwater operations (water depths greater than 200 m).',
+    explanation: 'Uses the same R/C Index mechanism as the standard PSC RC but with a 5% uplift per tranche to compensate for higher costs and risks. Tranches range from 75% cost recovery ceiling / 75% contractor share at R/C 0\u20131.0 down to 25% / 25% at R/C 2.5+. Royalty, export duty, and PITA rates remain unchanged from the standard PSC.',
+    formula: null,
+    reference: 'PETRONAS MPM Fiscal Terms',
+  },
+  {
     id: 'wacc',
     term: 'WACC (Weighted Average Cost of Capital)',
     definition: "Blended cost of a company's debt and equity financing.",
