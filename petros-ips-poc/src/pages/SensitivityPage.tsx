@@ -87,6 +87,7 @@ export default function SensitivityPage() {
               disabled={!activeProjectId || isRunning}
               icon="horizontal-bar-chart"
               className="text-xs h-10 sm:h-9 shrink-0"
+              title="Runs ±30% sensitivity on all input variables"
             >
               Run Sensitivity
             </Button>

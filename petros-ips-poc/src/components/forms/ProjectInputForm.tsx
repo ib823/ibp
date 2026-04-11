@@ -380,6 +380,7 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
         disabled={isCalculating}
         className="w-full"
         icon="simulate"
+        title="Runs the full fiscal model for the selected project"
       >
         {isCalculating ? 'Calculating...' : 'Calculate'}
       </Button>

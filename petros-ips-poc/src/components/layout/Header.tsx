@@ -59,6 +59,7 @@ export function Header() {
             icon="refresh"
             className="text-xs h-10 sm:h-9 min-w-[44px] sm:min-w-0 px-2 sm:px-3"
             aria-label="Recalculate all projects"
+            title="Re-runs economics for all projects using current inputs and scenario"
           >
             <span className="hidden sm:inline">Recalculate All</span>
           </Button>

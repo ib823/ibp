@@ -695,14 +695,14 @@ const PORTFOLIO: Record<string, EducationalEntry> = {
     id: 'P-02',
     label: 'Active Projects',
     tooltip: 'Number of projects currently included in portfolio. Toggle projects on/off with the switches on the right panel.',
-    infoPanel: null,
+    infoPanel: "Active Projects is the count of portfolio projects currently included in aggregate NPV, CAPEX, IRR and government take calculations.\n\nUse the toggle switches in the Project Inclusion panel to the right to include or exclude individual projects. Every KPI and chart on this page updates immediately to reflect the new active set \u2014 enabling incremental analysis, stress-testing, and divestment scenarios.\n\nExample: switching off a single project lets you see its marginal contribution to total NPV \u2014 if portfolio NPV drops by $200M when you remove it, that project's incremental value is $200M.",
     references: [],
   },
   'P-03': {
     id: 'P-03',
     label: 'Total CAPEX',
     tooltip: 'Combined capital expenditure for all active portfolio projects.',
-    infoPanel: null,
+    infoPanel: "Total CAPEX is the sum of capital expenditure across every active portfolio project over its full lifecycle. CAPEX includes drilling, facilities, subsea infrastructure, and other capitalised investment categories.\n\nThis is the headline figure for capital budgeting and funding decisions. Use the Project Inclusion panel to add or remove projects from the aggregate; the number updates immediately.\n\nCAPEX is shown in the user's display currency (USD by default; changeable in Settings \u2192 Display Unit Preferences).",
     references: [],
   },
   'P-04': {
@@ -1318,8 +1318,8 @@ const MONTE_CARLO: Record<string, EducationalEntry> = {
     id: 'MC-14',
     label: 'P90',
     tooltip: 'The NPV value at the 90th percentile \u2014 only 10% of outcomes exceed this value. Represents an optimistic (upside) scenario.',
-    infoPanel: null,
-    references: [],
+    infoPanel: "P90 represents the 90th percentile of the NPV distribution \u2014 90% of simulated outcomes are worse than this value, and only 10% are better.\n\nIn financial convention (used by default): P90 = optimistic/high case. Only 10% probability of exceeding this value.\n\nIn SPE/PRMS convention (toggle available): P90 = pessimistic. 90% probability of exceeding this (low) value.\n\nThe two conventions are mirror images. This tool defaults to the financial convention where P10 = low and P90 = high, but provides a toggle for the SPE convention.",
+    references: ['SPE PRMS 2018, Section 3.3'],
   },
   'MC-15': {
     id: 'MC-15',

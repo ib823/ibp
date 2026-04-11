@@ -89,6 +89,7 @@ export default function EconomicsPage() {
                             variant="outline"
                             className="text-xs"
                             icon="download"
+                            title="Downloads year-by-year economics as an Excel workbook"
                             onClick={() =>
                               activeProject &&
                               exportEconomicsToExcel(
