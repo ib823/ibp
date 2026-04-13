@@ -137,6 +137,9 @@ export default function FinancialPage() {
                       { label: 'Closing Cash', values: statements.cfStmt.yearly.map((l) => l.closingCash as number), isTotal: true, eduEntryId: 'F-32' },
                     ]}
                   />
+                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                    <strong>Note:</strong> Closing Cash in this statement is derived from accounting cash flows (Profit Before Tax + Depreciation − Tax − CAPEX). The Balance Sheet Cash row is derived from the economics model's cumulative Net Cash Flow, which includes fiscal items (royalty, export duty, cost recovery, profit split) not captured in this simplified accounting cash flow. In the production SAC implementation, both statements will be generated from a unified accrual-based accounting engine integrated with SAP S/4HANA, eliminating this divergence.
+                  </div>
                 </div>
               ),
             },
@@ -157,10 +160,10 @@ export default function FinancialPage() {
                     <FinancialTable
                       years={statements.years}
                       rows={[
-                        { label: 'Opening', values: statements.am.ppe.map((l) => l.opening as number) },
-                        { label: 'Additions', values: statements.am.ppe.map((l) => l.additions as number) },
-                        { label: 'Depreciation', values: statements.am.ppe.map((l) => -(l.depreciation as number)) },
-                        { label: 'Closing', values: statements.am.ppe.map((l) => l.closing as number), isTotal: true },
+                        { label: 'Opening', values: statements.am.ppe.map((l) => l.opening as number), eduEntryId: 'F-38' },
+                        { label: 'Additions', values: statements.am.ppe.map((l) => l.additions as number), eduEntryId: 'F-39' },
+                        { label: 'Depreciation', values: statements.am.ppe.map((l) => -(l.depreciation as number)), eduEntryId: 'F-40' },
+                        { label: 'Closing', values: statements.am.ppe.map((l) => l.closing as number), isTotal: true, eduEntryId: 'F-41' },
                       ]}
                     />
                   </div>
@@ -175,11 +178,11 @@ export default function FinancialPage() {
                     <FinancialTable
                       years={statements.years}
                       rows={[
-                        { label: 'Opening', values: statements.am.decommissioningProvision.map((l) => l.opening as number) },
-                        { label: 'Additions', values: statements.am.decommissioningProvision.map((l) => l.additions as number) },
-                        { label: 'Unwinding', values: statements.am.decommissioningProvision.map((l) => l.unwinding as number) },
-                        { label: 'Utilisations', values: statements.am.decommissioningProvision.map((l) => -(l.utilisations as number)) },
-                        { label: 'Closing', values: statements.am.decommissioningProvision.map((l) => l.closing as number), isTotal: true },
+                        { label: 'Opening', values: statements.am.decommissioningProvision.map((l) => l.opening as number), eduEntryId: 'F-42' },
+                        { label: 'Additions', values: statements.am.decommissioningProvision.map((l) => l.additions as number), eduEntryId: 'F-43' },
+                        { label: 'Unwinding', values: statements.am.decommissioningProvision.map((l) => l.unwinding as number), eduEntryId: 'F-44' },
+                        { label: 'Utilisations', values: statements.am.decommissioningProvision.map((l) => -(l.utilisations as number)), eduEntryId: 'F-45' },
+                        { label: 'Closing', values: statements.am.decommissioningProvision.map((l) => l.closing as number), isTotal: true, eduEntryId: 'F-46' },
                       ]}
                     />
                   </div>
@@ -194,9 +197,9 @@ export default function FinancialPage() {
                     <FinancialTable
                       years={statements.years}
                       rows={[
-                        { label: 'Opening', values: statements.am.retainedEarnings.map((l) => l.opening as number) },
-                        { label: 'Profit After Tax', values: statements.am.retainedEarnings.map((l) => l.profitAfterTax as number) },
-                        { label: 'Closing', values: statements.am.retainedEarnings.map((l) => l.closing as number), isTotal: true },
+                        { label: 'Opening', values: statements.am.retainedEarnings.map((l) => l.opening as number), eduEntryId: 'F-47' },
+                        { label: 'Profit After Tax', values: statements.am.retainedEarnings.map((l) => l.profitAfterTax as number), eduEntryId: 'F-48' },
+                        { label: 'Closing', values: statements.am.retainedEarnings.map((l) => l.closing as number), isTotal: true, eduEntryId: 'F-49' },
                       ]}
                     />
                   </div>

@@ -328,12 +328,24 @@ function GranularEconomicsView({
       <table className="w-full border-collapse text-xs tabular-nums min-w-[640px]">
         <thead className="sticky top-0 bg-content-alt z-10">
           <tr className="border-b border-border text-text-secondary">
-            <th className="text-left text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">Period</th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">Revenue ({u.currencySymbol}M)</th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">Cost Rec ({u.currencySymbol}M)</th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">Profit Split ({u.currencySymbol}M)</th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">Tax ({u.currencySymbol}M)</th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">NCF ({u.currencySymbol}M)</th>
+            <th className="text-left text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+              <EduTooltip entryId="E-44"><span className="cursor-help">Period</span></EduTooltip>
+            </th>
+            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+              <EduTooltip entryId="E-45"><span className="cursor-help">Revenue ({u.currencySymbol}M)</span></EduTooltip>
+            </th>
+            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+              <EduTooltip entryId="E-46"><span className="cursor-help">Cost Rec ({u.currencySymbol}M)</span></EduTooltip>
+            </th>
+            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+              <EduTooltip entryId="E-47"><span className="cursor-help">Profit Split ({u.currencySymbol}M)</span></EduTooltip>
+            </th>
+            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+              <EduTooltip entryId="E-48"><span className="cursor-help">Tax ({u.currencySymbol}M)</span></EduTooltip>
+            </th>
+            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+              <EduTooltip entryId="E-49"><span className="cursor-help">NCF ({u.currencySymbol}M)</span></EduTooltip>
+            </th>
           </tr>
         </thead>
         <tbody>
