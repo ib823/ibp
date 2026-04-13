@@ -227,10 +227,13 @@ export function EconomicsTable({ cashflows, fiscalRegimeType }: EconomicsTablePr
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="border-b border-border bg-content-alt">
-                {hg.headers.map((header) => (
+                {hg.headers.map((header, hi) => (
                   <th
                     key={header.id}
-                    className="text-[10px] font-semibold text-text-secondary uppercase tracking-wider text-right px-2 py-1.5"
+                    className={cn(
+                      'text-[10px] font-semibold text-text-secondary uppercase tracking-wider text-right px-2 py-1.5',
+                      hi === 0 && 'sticky left-0 z-10 bg-content-alt',
+                    )}
                     style={{ width: header.getSize() }}
                   >
                     {flexRender(header.column.columnDef.header, header.getContext())}
@@ -242,8 +245,15 @@ export function EconomicsTable({ cashflows, fiscalRegimeType }: EconomicsTablePr
           <tbody>
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id} className="border-b border-border/50 hover:bg-content-alt/50">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-2 py-1" style={{ width: cell.column.getSize() }}>
+                {row.getVisibleCells().map((cell, ci) => (
+                  <td
+                    key={cell.id}
+                    className={cn(
+                      'px-2 py-1',
+                      ci === 0 && 'sticky left-0 z-10 bg-white',
+                    )}
+                    style={{ width: cell.column.getSize() }}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

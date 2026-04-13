@@ -27,7 +27,8 @@ export function KpiCard({ label, value, unit, delta, className, eduEntry }: KpiC
       <div className="flex items-baseline gap-1.5 min-w-0">
         <span
           className={cn(
-            'text-2xl font-semibold font-data break-all',
+            'font-semibold font-data whitespace-nowrap',
+            value.length > 9 ? 'text-lg' : 'text-2xl',
             // Auto-detect parenthesized accounting negatives like "($701.0M)" or "(701.0)" → red
             value.trim().startsWith('(') && value.trim().endsWith(')')
               ? 'text-danger'

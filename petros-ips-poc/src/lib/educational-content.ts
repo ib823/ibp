@@ -280,7 +280,7 @@ const ECONOMICS: Record<string, EducationalEntry> = {
     id: 'E-10',
     label: 'Equity Share',
     tooltip: "The contractor's ownership percentage \u2014 determines the proportion of revenue received and costs borne.",
-    infoPanel: "Equity Share is the contractor's ownership percentage in the project. If PETROS holds 85%, it bears 85% of costs and receives 85% of revenue.\n\nMost petroleum projects are Joint Ventures (JVs) \u2014 partnerships sharing risk and reward. A 100% share means sole investor; lower shares mean partners hold the remainder.\n\nAll revenue and cost figures in this model are shown at equity share \u2014 representing only PETROS's portion.",
+    infoPanel: "Equity Share is the contractor's ownership percentage in the project. If the contractor holds an 85% equity share, it bears 85% of costs and receives 85% of revenue and production entitlements.\n\nMost petroleum projects are Joint Ventures (JVs) \u2014 partnerships sharing risk and reward. A 100% share means sole investor; lower shares mean partners hold the remainder.\n\nAll revenue and cost figures in this model are shown at equity share \u2014 representing only the contractor's portion.",
     references: [],
   },
   'E-11': {

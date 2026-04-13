@@ -141,7 +141,9 @@ export default function DashboardPage() {
               const r = projectResults.get(p.project.id);
               if (!r) return null;
               const npvRaw = r.npv10 as number;
-              const regimeLabel = p.project.businessSector === 'CCS' ? 'CCS' : p.fiscalRegimeConfig.type.replace('_', ' ');
+              const regimeLabel = p.fiscalRegimeConfig.type === 'DOWNSTREAM'
+                ? (p.project.businessSector === 'CCS' ? 'CCS/Downstream' : 'DOWNSTREAM')
+                : p.fiscalRegimeConfig.type.replace('_', ' ');
               const regimeTooltipId = p.project.businessSector === 'CCS' ? 'D-18'
                 : p.fiscalRegimeConfig.type === 'PSC_RC' ? 'D-14'
                 : p.fiscalRegimeConfig.type === 'PSC_DW' ? 'D-15'

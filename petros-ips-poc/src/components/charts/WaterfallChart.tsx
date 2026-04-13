@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
-import type { YearlyCashflow } from '@/engine/types';
+import type { YearlyCashflow, FiscalRegimeType } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { getEntry } from '@/lib/educational-content';
 
 interface WaterfallChartProps {
   cashflows: readonly YearlyCashflow[];
+  fiscalRegimeType?: FiscalRegimeType;
 }
 
 interface WaterfallBar {
@@ -18,15 +19,20 @@ interface WaterfallBar {
   eduEntryId?: string;
 }
 
-export function WaterfallChart({ cashflows }: WaterfallChartProps) {
+export function WaterfallChart({ cashflows, fiscalRegimeType }: WaterfallChartProps) {
   const u = useDisplayUnits();
   const bars = useMemo(() => {
     const totalRevenue = cashflows.reduce((s, cf) => s + (cf.totalGrossRevenue as number), 0);
     const totalRoyalty = cashflows.reduce((s, cf) => s + (cf.royalty as number), 0);
+    const totalExportDuty = cashflows.reduce((s, cf) => s + (cf.exportDuty as number), 0);
+    const totalResearchCess = cashflows.reduce((s, cf) => s + (cf.researchCess as number), 0);
     const totalPetronasShare = cashflows.reduce((s, cf) => s + (cf.petronasProfitShare as number), 0);
     const totalSP = cashflows.reduce((s, cf) => s + (cf.supplementaryPayment as number), 0);
     const totalTax = cashflows.reduce((s, cf) => s + (cf.pitaTax as number), 0);
     const totalNcf = cashflows.reduce((s, cf) => s + (cf.netCashFlow as number), 0);
+
+    const isDownstream = fiscalRegimeType === 'DOWNSTREAM';
+    const taxLabel = isDownstream ? 'Corp. Tax' : 'PITA Tax';
 
     // Waterfall: Revenue → deductions → NCF
     const result: WaterfallBar[] = [];
@@ -41,25 +47,51 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
       eduEntryId: 'E-22',
     });
 
-    running -= totalRoyalty;
-    result.push({
-      label: 'Royalty',
-      value: -totalRoyalty,
-      start: running + totalRoyalty,
-      end: running,
-      color: '#C0392B',
-      eduEntryId: 'E-23',
-    });
+    if (totalRoyalty > 0) {
+      running -= totalRoyalty;
+      result.push({
+        label: 'Royalty',
+        value: -totalRoyalty,
+        start: running + totalRoyalty,
+        end: running,
+        color: '#C0392B',
+        eduEntryId: 'E-23',
+      });
+    }
 
-    running -= totalPetronasShare;
-    result.push({
-      label: 'PETRONAS Share',
-      value: -totalPetronasShare,
-      start: running + totalPetronasShare,
-      end: running,
-      color: '#E74C3C',
-      eduEntryId: 'E-24',
-    });
+    if (totalExportDuty > 0) {
+      running -= totalExportDuty;
+      result.push({
+        label: 'Export Duty',
+        value: -totalExportDuty,
+        start: running + totalExportDuty,
+        end: running,
+        color: '#D35400',
+      });
+    }
+
+    if (totalResearchCess > 0) {
+      running -= totalResearchCess;
+      result.push({
+        label: 'Research Cess',
+        value: -totalResearchCess,
+        start: running + totalResearchCess,
+        end: running,
+        color: '#E67E22',
+      });
+    }
+
+    if (totalPetronasShare > 0) {
+      running -= totalPetronasShare;
+      result.push({
+        label: 'PETRONAS Share',
+        value: -totalPetronasShare,
+        start: running + totalPetronasShare,
+        end: running,
+        color: '#E74C3C',
+        eduEntryId: 'E-24',
+      });
+    }
 
     if (totalSP > 0) {
       running -= totalSP;
@@ -73,18 +105,20 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
       });
     }
 
-    running -= totalTax;
-    result.push({
-      label: 'PITA Tax',
-      value: -totalTax,
-      start: running + totalTax,
-      end: running,
-      color: '#C0392B',
-      eduEntryId: 'E-25',
-    });
+    if (totalTax > 0) {
+      running -= totalTax;
+      result.push({
+        label: taxLabel,
+        value: -totalTax,
+        start: running + totalTax,
+        end: running,
+        color: '#C0392B',
+        eduEntryId: 'E-25',
+      });
+    }
 
     // Costs bar: CAPEX + OPEX + ABEX minus cost recovery received
-    const impliedCosts = totalRevenue - totalRoyalty - totalPetronasShare - totalSP - totalTax - totalNcf;
+    const impliedCosts = totalRevenue - totalRoyalty - totalExportDuty - totalResearchCess - totalPetronasShare - totalSP - totalTax - totalNcf;
     if (impliedCosts > 0) {
       running -= impliedCosts;
       result.push({
@@ -108,7 +142,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
     });
 
     return result;
-  }, [cashflows]);
+  }, [cashflows, fiscalRegimeType]);
 
   if (bars.length === 0) return null;
 

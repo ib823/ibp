@@ -178,6 +178,9 @@ export default function PortfolioPage() {
           eduEntry={edu['P-05']}
         />
       </div>
+      <p className="text-[10px] text-text-muted -mt-1">
+        Portfolio totals are calculated from full-precision values and may differ from the sum of individually rounded project values by up to $0.1M.
+      </p>
 
       {/* PANELS 2 & 3 — Bubble + Toggle List */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

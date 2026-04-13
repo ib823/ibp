@@ -58,6 +58,8 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
         <XAxis
           dataKey="pctChange"
+          type="number"
+          domain={[-30, 30]}
           tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
           label={{ value: '% Change from Base', position: 'insideBottom', offset: -5, fontSize: 11, fill: '#9CA3AF' }}

@@ -104,9 +104,9 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
             );
           }}
         />
-        <Scatter data={data}>
+        <Scatter name="Projects" data={data} fillOpacity={0.8}>
           {data.map((d, i) => (
-            <Cell key={i} fill={getRegimeColor(d.regime)} fillOpacity={0.8} />
+            <Cell key={i} fill={getRegimeColor(d.regime)} />
           ))}
         </Scatter>
       </ScatterChart>

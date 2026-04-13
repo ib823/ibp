@@ -135,7 +135,7 @@ export default function EconomicsPage() {
                         <KpiCard
                           label="Payback"
                           value={fmtYears(result.paybackYears)}
-                          unit="years"
+                          unit="yr"
                           eduEntry={edu['E-19']}
                         />
                         <KpiCard
@@ -156,7 +156,7 @@ export default function EconomicsPage() {
                             </h4>
                           </div>
                           <SectionHelp entry={edu['E-21']!} />
-                          <WaterfallChart cashflows={result.yearlyCashflows} />
+                          <WaterfallChart cashflows={result.yearlyCashflows} fiscalRegimeType={baseActiveProject?.fiscalRegimeConfig.type} />
                         </div>
                         <div className="border border-border bg-white p-4 pr-2">
                           <div className="flex items-center gap-1.5 mb-3">
