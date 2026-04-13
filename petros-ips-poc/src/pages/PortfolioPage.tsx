@@ -10,6 +10,7 @@ import { Switch } from '@ui5/webcomponents-react';
 import { Badge } from '@/components/ui5/Ui5Badge';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { EduTooltip } from '@/components/shared/EduTooltip';
+import { Button } from '@/components/ui5/Ui5Button';
 import { toast } from '@/lib/toast';
 import { fmtPct } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
@@ -133,7 +134,18 @@ export default function PortfolioPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-text-primary">Portfolio Dashboard</h2>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-text-primary">Portfolio Dashboard</h1>
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-xs"
+          icon="download"
+          onClick={() => toast.info('Excel export for this page will be available in the SAC production system.')}
+        >
+          Export Portfolio
+        </Button>
+      </div>
 
       {/* PANEL 1 — KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -219,7 +231,7 @@ export default function PortfolioPage() {
                       {p.project.name}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <Badge variant="outline" className="text-[8px] py-0 px-1">
+                      <Badge variant="outline" className="text-[10px] py-0 px-1">
                         {p.fiscalRegimeConfig.type.replace('_', ' ')}
                       </Badge>
                     </div>

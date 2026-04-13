@@ -149,10 +149,10 @@ export function ReservesWaterfall({ movements, title, unit, valueFactor = 1 }: R
                   strokeDasharray="2,2"
                 />
               )}
-              <text x={x + barW / 2} y={top - 4} textAnchor="middle" fontSize={8} fill="#1A1A2E" className="font-data">
+              <text x={x + barW / 2} y={top - 4} textAnchor="middle" fontSize={11} fill="#1A1A2E" className="font-data">
                 {bar.value >= 0 ? bar.value.toFixed(1) : `(${Math.abs(bar.value).toFixed(1)})`}
               </text>
-              <text x={x + barW / 2} y={svgH - padB + 12} textAnchor="middle" fontSize={7} fill="#6B7280">
+              <text x={x + barW / 2} y={svgH - padB + 12} textAnchor="middle" fontSize={11} fill="#6B7280">
                 {bar.label}
               </text>
             </g>

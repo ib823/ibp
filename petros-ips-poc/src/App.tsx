@@ -15,6 +15,7 @@ const ReservesPage = lazy(() => import('@/pages/ReservesPage'));
 const MonteCarloPage = lazy(() => import('@/pages/MonteCarloPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const GlossaryPage = lazy(() => import('@/pages/GlossaryPage'));
+const DataSourcesPage = lazy(() => import('@/pages/DataSourcesPage'));
 
 function PageLoader() {
   return (
@@ -63,6 +64,7 @@ const router = createBrowserRouter([
       { path: '/monte-carlo', element: wrap(MonteCarloPage) },
       { path: '/settings', element: wrap(SettingsPage) },
       { path: '/glossary', element: wrap(GlossaryPage) },
+      { path: '/data-sources', element: wrap(DataSourcesPage) },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

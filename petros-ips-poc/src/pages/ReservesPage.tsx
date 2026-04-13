@@ -9,6 +9,8 @@ import { ReservesWaterfall } from '@/components/charts/ReservesWaterfall';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
+import { Button } from '@/components/ui5/Ui5Button';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { getPageEntries } from '@/lib/educational-content';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
@@ -50,9 +52,20 @@ export default function ReservesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <h2 className="text-lg font-semibold text-text-primary">Reserves</h2>
-        <InfoIcon entry={edu['R-01']!} />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-semibold text-text-primary">Reserves</h1>
+          <InfoIcon entry={edu['R-01']!} />
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-xs"
+          icon="download"
+          onClick={() => toast.info('Excel export for this page will be available in the SAC production system.')}
+        >
+          Export Reserves
+        </Button>
       </div>
 
       {/* Summary Table */}
@@ -313,7 +326,7 @@ function SrmsSection({ projects }: { projects: readonly import('@/engine/types')
         </div>
       ))}
 
-      <p className="text-[9px] text-text-muted mt-2">
+      <p className="text-[10px] text-text-muted mt-2">
         Classified per SPE CO₂ Storage Resources Management System (SRMS) 2025.
         Estimates are illustrative — not actual assessed storage capacity.
       </p>

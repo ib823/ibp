@@ -66,7 +66,7 @@ export default function SensitivityPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-text-primary">Sensitivity Analysis</h2>
+          <h1 className="text-lg font-semibold text-text-primary">Sensitivity Analysis</h1>
           <InfoIcon entry={edu['S-01']!} />
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
@@ -114,7 +114,7 @@ export default function SensitivityPage() {
                 <div className="min-h-[300px] sm:min-h-[350px]">
                   <TornadoChart result={tornadoResult} />
                 </div>
-                <div className="flex items-center gap-6 mt-3 text-[10px] text-text-muted">
+                <div className="flex items-center gap-6 mt-3 text-xs text-text-muted">
                   <EduTooltip entryId="S-08">
                     <span className="flex items-center gap-1.5 cursor-help">
                       <span className="w-3 h-3 inline-block" style={{ backgroundColor: '#E07060' }} />
@@ -145,7 +145,7 @@ export default function SensitivityPage() {
                   <SpiderDiagramChart result={spiderResult} />
                 </div>
                 <EduTooltip entryId="S-10">
-                  <p className="text-[10px] text-text-muted mt-2 cursor-help">
+                  <p className="text-xs text-text-muted mt-2 cursor-help">
                     Steeper lines indicate higher sensitivity. The intersection at 0% marks the base case NPV.
                   </p>
                 </EduTooltip>

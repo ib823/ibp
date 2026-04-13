@@ -53,9 +53,9 @@ export default function EconomicsPage() {
       {/* LEFT PANEL — Inputs */}
       <div className="w-full lg:w-[320px] lg:shrink-0" data-tour="economics-inputs">
         <div className="border border-border bg-white p-4 lg:sticky lg:top-0">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">
+          <h1 className="text-lg font-semibold text-text-primary mb-4">
             Project Economics
-          </h3>
+          </h1>
           <ProjectInputForm onCalculate={handleCalculate} />
         </div>
       </div>
@@ -257,7 +257,7 @@ export default function EconomicsPage() {
             },
             {
               key: 'versions',
-              label: 'Versions',
+              label: 'Budget & Forecast',
               icon: 'compare',
               content: <VersionComparisonView />,
             },

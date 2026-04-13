@@ -27,7 +27,7 @@ export function SectionHelp({ entry }: SectionHelpProps) {
             <p key={i} className="whitespace-pre-line">{paragraph}</p>
           ))}
           {entry.references.length > 0 && (
-            <p className="text-[9px] text-text-muted mt-2">
+            <p className="text-[10px] text-text-muted mt-2">
               Ref: {entry.references.join('; ')}
             </p>
           )}

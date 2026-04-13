@@ -204,6 +204,9 @@ export function buildVersionedDataRegistry(): Map<
     }
     if (project.project.id === 'sk-410') {
       versions.set('working', buildWorkingForSk410(project));
+      // SK-410 Forecast was rejected — marked as needing revision
+      const forecast = versions.get('forecast')!;
+      versions.set('forecast', { ...forecast, status: 'to_change', lastModified: '2026-04-05', modifiedBy: 'A. Hakim (FP&A)' });
     }
 
     registry.set(project.project.id, versions);

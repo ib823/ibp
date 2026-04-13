@@ -72,13 +72,13 @@ export function TornadoChart({ result }: TornadoChartProps) {
   return (
     <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full" style={{ maxHeight: 360 }}>
       {/* Header labels */}
-      <text x={padL} y={14} fontSize={9} fill="#9CA3AF">
+      <text x={padL} y={14} fontSize={11} fill="#9CA3AF">
         {u.money(minNpv)}
       </text>
-      <text x={svgW - padR} y={14} fontSize={9} fill="#9CA3AF" textAnchor="end">
+      <text x={svgW - padR} y={14} fontSize={11} fill="#9CA3AF" textAnchor="end">
         {u.money(maxNpv)}
       </text>
-      <text x={baseLine} y={14} fontSize={9} fill="#1A1A2E" textAnchor="middle" fontWeight={600}>
+      <text x={baseLine} y={14} fontSize={11} fill="#1A1A2E" textAnchor="middle" fontWeight={600}>
         Base: {u.money(baseNpv)}
       </text>
 
@@ -153,7 +153,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
               x={xDown - 4}
               y={y + barHeight / 2 + 3}
               textAnchor="end"
-              fontSize={9}
+              fontSize={11}
               fill="#6B7280"
               className="font-data"
             >
@@ -163,7 +163,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
               x={xUp + 4}
               y={y + barHeight / 2 + 3}
               textAnchor="start"
-              fontSize={9}
+              fontSize={11}
               fill="#6B7280"
               className="font-data"
             >

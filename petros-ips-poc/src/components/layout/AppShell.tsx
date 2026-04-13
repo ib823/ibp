@@ -35,6 +35,12 @@ export function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-content">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:ring-2 focus:rounded"
+      >
+        Skip to main content
+      </a>
       {/* Mobile backdrop */}
       {mobileSidebarOpen && (
         <div
@@ -48,7 +54,7 @@ export function AppShell() {
 
       <div className="flex flex-col flex-1 min-w-0">
         <Header />
-        <main className="flex-1 overflow-y-auto">
+        <main id="main-content" className="flex-1 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto p-4 sm:p-6">
             <Outlet />
           </div>

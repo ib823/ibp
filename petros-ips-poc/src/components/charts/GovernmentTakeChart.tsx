@@ -75,7 +75,7 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
       </div>
 
       {exceeds100 && (
-        <p className="text-[9px] text-text-muted text-center mt-1">
+        <p className="text-[10px] text-text-muted text-center mt-1">
           * Government take exceeds 100% — contractor returns are negative for this project under current assumptions.
         </p>
       )}

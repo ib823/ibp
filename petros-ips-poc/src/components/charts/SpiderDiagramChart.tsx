@@ -54,20 +54,20 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={350}>
-      <LineChart data={data} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+      <LineChart data={data} margin={{ top: 10, right: 50, left: 30, bottom: 25 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
         <XAxis
           dataKey="pctChange"
-          tick={{ fontSize: 10, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
-          label={{ value: '% Change from Base', position: 'insideBottom', offset: -5, fontSize: 10, fill: '#9CA3AF' }}
+          label={{ value: '% Change from Base', position: 'insideBottom', offset: -5, fontSize: 11, fill: '#9CA3AF' }}
           tickFormatter={(v: number) => `${v > 0 ? '+' : ''}${v}%`}
         />
         <YAxis
-          tick={{ fontSize: 10, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
           tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`}
-          label={{ value: `NPV (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 10, fill: '#9CA3AF' }}
+          label={{ value: `NPV (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 11, fill: '#9CA3AF' }}
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}

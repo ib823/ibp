@@ -459,10 +459,10 @@ function VarianceWaterfall({
                   strokeDasharray="3,2"
                 />
               )}
-              <text x={x + barWidth / 2} y={top - 6} textAnchor="middle" fill="#1A1A2E" fontSize={10} className="font-data">
+              <text x={x + barWidth / 2} y={top - 6} textAnchor="middle" fill="#1A1A2E" fontSize={11} className="font-data">
                 {`${u.currencySymbol}${bar.value.toFixed(1)}M`}
               </text>
-              <text x={x + barWidth / 2} y={svgH - padB + 16} textAnchor="middle" fill="#6B7280" fontSize={9}>
+              <text x={x + barWidth / 2} y={svgH - padB + 16} textAnchor="middle" fill="#6B7280" fontSize={11}>
                 {bar.label}
               </text>
             </g>

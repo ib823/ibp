@@ -137,7 +137,7 @@ export default function MonteCarloPage() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-text-primary">Monte Carlo Simulation</h2>
+          <h1 className="text-lg font-semibold text-text-primary">Monte Carlo Simulation</h1>
           <InfoIcon entry={edu['MC-01']!} />
         </div>
         <Select
@@ -236,16 +236,16 @@ function DistRow({ label, tooltipId, v1, v2, v3, s1, s2, s3, h1, h2, h3 }: {
       )}
       <div className="grid grid-cols-3 gap-1 mt-0.5">
         <div className="min-w-0">
-          <span className="text-[8px] text-text-muted">{h1}</span>
+          <span className="text-[10px] text-text-muted">{h1}</span>
           <Input type="number" step="0.01" value={v1} onChange={(e) => safeSetNumber(s1, e.target.value)} className="text-[10px] font-data" />
         </div>
         <div className="min-w-0">
-          <span className="text-[8px] text-text-muted">{h2}</span>
+          <span className="text-[10px] text-text-muted">{h2}</span>
           <Input type="number" step="0.01" value={v2} onChange={(e) => safeSetNumber(s2, e.target.value)} className="text-[10px] font-data" />
         </div>
         {v3 !== undefined && s3 && h3 && (
           <div className="min-w-0">
-            <span className="text-[8px] text-text-muted">{h3}</span>
+            <span className="text-[10px] text-text-muted">{h3}</span>
             <Input type="number" step="0.01" value={v3} onChange={(e) => safeSetNumber(s3, e.target.value)} className="text-[10px] font-data" />
           </div>
         )}
@@ -343,12 +343,12 @@ function MCResults({ result }: { result: MonteCarloResult }) {
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={histData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-            <XAxis dataKey="npv" tick={{ fontSize: 9, fill: '#6B7280' }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
-            <YAxis tick={{ fontSize: 9, fill: '#6B7280' }} />
+            <XAxis dataKey="npv" tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
+            <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} />
             <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [v, 'Count']} labelFormatter={(v: number) => `NPV: ${u.currencySymbol}${v.toFixed(0)}M`} />
-            <ReferenceLine x={p10Display} stroke="#C0392B" strokeDasharray="4,3" label={{ value: 'P10', fontSize: 9, fill: '#C0392B' }} />
-            <ReferenceLine x={p50Display} stroke="#1E3A5F" strokeDasharray="4,3" label={{ value: 'P50', fontSize: 9, fill: '#1E3A5F' }} />
-            <ReferenceLine x={p90Display} stroke="#2D8A4E" strokeDasharray="4,3" label={{ value: 'P90', fontSize: 9, fill: '#2D8A4E' }} />
+            <ReferenceLine x={p10Display} stroke="#C0392B" strokeDasharray="4,3" label={{ value: 'P10', fontSize: 11, fill: '#C0392B' }} />
+            <ReferenceLine x={p50Display} stroke="#1E3A5F" strokeDasharray="4,3" label={{ value: 'P50', fontSize: 11, fill: '#1E3A5F' }} />
+            <ReferenceLine x={p90Display} stroke="#2D8A4E" strokeDasharray="4,3" label={{ value: 'P90', fontSize: 11, fill: '#2D8A4E' }} />
             <Bar dataKey="count" name="Frequency">
               {histData.map((d, i) => (
                 <Cell key={i} fill={d.isAboveP50 ? '#3B8DBD' : '#E07060'} opacity={0.8} />
@@ -370,8 +370,8 @@ function MCResults({ result }: { result: MonteCarloResult }) {
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={sCurveData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-              <XAxis dataKey="npv" tick={{ fontSize: 9, fill: '#6B7280' }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
-              <YAxis tick={{ fontSize: 9, fill: '#6B7280' }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
+              <XAxis dataKey="npv" tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
+              <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
               <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [`${v.toFixed(1)}%`, 'Probability']} labelFormatter={(v: number) => `NPV: ${u.currencySymbol}${v.toFixed(0)}M`} />
               <ReferenceLine y={10} stroke="#C0392B" strokeDasharray="3,3" />
               <ReferenceLine y={50} stroke="#1E3A5F" strokeDasharray="3,3" />

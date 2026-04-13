@@ -39,7 +39,7 @@ export default function FinancialPage() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-text-primary">Financial Statements</h2>
+          <h1 className="text-lg font-semibold text-text-primary">Financial Statements</h1>
           <InfoIcon entry={edu['F-01']!} />
         </div>
         <Select
@@ -109,7 +109,7 @@ export default function FinancialPage() {
                     ]}
                   />
                   <EduTooltip entryId="F-36">
-                    <p className="text-[9px] text-text-muted mt-3 cursor-help">
+                    <p className="text-[10px] text-text-muted mt-3 cursor-help">
                       * Reconciliation Adjustment: This POC derives financial statements from a cash-based economic model.
                       In the production SAC implementation, financial statements will be generated from a proper accrual-based
                       accounting engine integrated with SAP S/4HANA, eliminating this adjustment.

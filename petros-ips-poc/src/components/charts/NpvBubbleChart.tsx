@@ -70,17 +70,17 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
           dataKey="capex"
           type="number"
           name="CAPEX"
-          tick={{ fontSize: 10, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
-          label={{ value: `Total CAPEX (${u.currencyCode} M)`, position: 'insideBottom', offset: -5, fontSize: 10, fill: '#9CA3AF' }}
+          label={{ value: `Total CAPEX (${u.currencyCode} M)`, position: 'insideBottom', offset: -5, fontSize: 11, fill: '#9CA3AF' }}
         />
         <YAxis
           dataKey="npv"
           type="number"
           name="NPV"
-          tick={{ fontSize: 10, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
-          label={{ value: `NPV₁₀ (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 10, fill: '#9CA3AF' }}
+          label={{ value: `NPV₁₀ (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 11, fill: '#9CA3AF' }}
         />
         <ZAxis
           dataKey="production"

@@ -17,7 +17,7 @@ const STATUS_CONFIG: Record<DataStatus, { label: string; className: string }> = 
   },
   to_change: {
     label: 'To Change',
-    className: 'bg-danger/10 text-danger border-danger/30',
+    className: 'bg-amber/10 text-amber border-amber/30',
   },
 };
 

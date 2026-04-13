@@ -13,7 +13,7 @@ export function Header() {
   const setMobileSidebarOpen = useProjectStore((s) => s.setMobileSidebarOpen);
 
   return (
-    <div className="border-b border-border shrink-0">
+    <header role="banner" className="border-b border-border shrink-0">
       {/* ShellBar — SAP Fiori branding + global actions */}
       <ShellBar
         primaryTitle="PETROS IPS"
@@ -65,6 +65,6 @@ export function Header() {
           </Button>
         </EduTooltip>
       </div>
-    </div>
+    </header>
   );
 }

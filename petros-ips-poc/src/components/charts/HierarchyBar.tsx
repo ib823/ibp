@@ -19,10 +19,18 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
 
   return (
     <div className="space-y-3">
+      {/* 4-level hierarchy legend */}
+      <div className="text-[10px] text-text-muted font-medium tracking-wide">
+        L1: Business Entity → L2: Business Sector → L3: Business Type → L4: Project Name
+      </div>
+
       {/* Root bar */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-semibold text-text-primary">{aggregation.key}</span>
+          <span className="text-xs font-semibold text-text-primary">
+            {aggregation.key}
+            <span className="ml-1.5 text-[10px] font-normal text-text-muted">L1: Business Entity</span>
+          </span>
           <span className={cn(
             'text-xs font-data font-medium',
             totalNpv < 0 ? 'text-danger' : 'text-text-primary',
@@ -36,7 +44,7 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
             return (
               <div
                 key={sector.key}
-                className="h-full flex items-center justify-center text-[9px] text-white font-medium"
+                className="h-full flex items-center justify-center text-[10px] text-white font-medium"
                 style={{
                   width: `${pct}%`,
                   backgroundColor: SECTOR_COLORS[sector.key] ?? '#6B7280',
@@ -59,7 +67,10 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
         return (
           <div key={sector.key} className="pl-4 border-l-2" style={{ borderColor: color }}>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-medium text-text-secondary">{sector.key}</span>
+              <span className="text-[11px] font-medium text-text-secondary">
+                {sector.key}
+                <span className="ml-1 text-[10px] font-normal text-text-muted">L2: Business Sector</span>
+              </span>
               <span className={cn(
                 'text-[11px] font-data',
                 sectorNpv < 0 ? 'text-danger' : 'text-text-primary',
@@ -67,6 +78,9 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
             </div>
             {sector.children.map((type) => (
               <div key={type.key} className="pl-3 space-y-0.5">
+                <div className="text-[10px] text-text-muted font-medium mb-0.5">
+                  L3: Business Type — {type.key}
+                </div>
                 {type.children.map((proj) => {
                   const projNpv = proj.npv as number;
                   const barPct = totalNpv !== 0

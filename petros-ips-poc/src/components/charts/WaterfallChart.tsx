@@ -182,7 +182,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
               textAnchor="middle"
               className="font-data"
               fill="#1A1A2E"
-              fontSize={9}
+              fontSize={11}
             >
               {u.money(bar.value)}
             </text>
@@ -192,7 +192,7 @@ export function WaterfallChart({ cashflows }: WaterfallChartProps) {
               y={svgH - padB + 14}
               textAnchor="middle"
               fill="#6B7280"
-              fontSize={8}
+              fontSize={11}
             >
               {bar.label}
             </text>

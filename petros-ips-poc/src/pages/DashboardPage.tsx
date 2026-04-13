@@ -69,7 +69,7 @@ export default function DashboardPage() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-text-primary">Executive Dashboard</h2>
+        <h1 className="text-lg font-semibold text-text-primary">Executive Dashboard</h1>
         <p className="text-xs text-text-secondary mt-0.5">
           Portfolio overview — {activeScenario.charAt(0).toUpperCase() + activeScenario.slice(1)} case scenario
         </p>
@@ -96,8 +96,7 @@ export default function DashboardPage() {
         />
         <KpiCard
           label="Active Projects"
-          value={totalProjects.toString()}
-          unit={`of ${projects.length}`}
+          value={`${totalProjects}/${projects.length}`}
           eduEntry={edu['D-04']}
         />
       </div>
@@ -158,7 +157,7 @@ export default function DashboardPage() {
                   <td className="px-3 py-2 font-medium text-text-primary">{p.project.name}</td>
                   <td className="px-2 py-2">
                     <EduTooltip entryId={regimeTooltipId}>
-                      <Badge variant="outline" className="text-[8px] py-0 px-1 cursor-help">
+                      <Badge variant="outline" className="text-[10px] py-0 px-1 cursor-help">
                         {regimeLabel}
                       </Badge>
                     </EduTooltip>
@@ -166,7 +165,7 @@ export default function DashboardPage() {
                   <td className="px-2 py-2">
                     <EduTooltip entryId={statusTooltipId}>
                       <Badge variant="outline" className={cn(
-                        'text-[8px] py-0 px-1 cursor-help',
+                        'text-[10px] py-0 px-1 cursor-help',
                         p.project.status === 'producing' && 'bg-success/10 text-success border-success/30',
                         p.project.status === 'active' && 'bg-petrol/10 text-petrol border-petrol/30',
                         p.project.status === 'pre-fid' && 'bg-amber/10 text-amber border-amber/30',

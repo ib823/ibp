@@ -21,7 +21,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h2 className="text-lg font-semibold text-text-primary">Settings & Reference</h2>
+        <h1 className="text-lg font-semibold text-text-primary">Settings & Reference</h1>
         <p className="text-xs text-text-secondary mt-0.5">
           Model configuration and fiscal regime reference data
         </p>
@@ -55,7 +55,7 @@ export default function SettingsPage() {
       <div>
         <h3 className="text-sm font-semibold text-text-primary mb-1">Unit Conversion Factors</h3>
         <p className="text-xs text-text-secondary mb-3">
-          Configure display unit preferences and customise conversion factors. Reference: SOW DF-01.
+          Configure display unit preferences and customize conversion factors. Reference: SOW DF-01.
         </p>
         <UnitConversionSection />
       </div>
@@ -176,6 +176,11 @@ export default function SettingsPage() {
           <p>
             All fiscal parameters are illustrative, based on publicly available PETRONAS MPM descriptions.
             Sample data is derived from Sarawak offshore analogues.
+          </p>
+          <p className="text-text-muted italic">
+            Production Integration: The SAC production system supports Microsoft Power BI connectivity
+            via SAC's native live data connection, enabling interactive dashboards with drill-down,
+            slicers, and cross-filters per SOW-07.
           </p>
         </div>
       </div>

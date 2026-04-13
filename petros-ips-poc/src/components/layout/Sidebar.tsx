@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { path: '/monte-carlo', icon: 'bar-chart',           text: 'Monte Carlo' },
   { path: '/settings',    icon: 'action-settings',     text: 'Settings' },
   { path: '/glossary',    icon: 'learning-assistant',  text: 'Glossary' },
+  { path: '/data-sources', icon: 'document',           text: 'Data Sources' },
 ] as const;
 
 export function Sidebar() {
@@ -39,7 +40,8 @@ export function Sidebar() {
   };
 
   return (
-    <aside
+    <nav
+      aria-label="Main navigation"
       className={cn(
         'flex flex-col bg-white border-r border-border transition-all duration-200',
         // Mobile: fixed overlay, slide in from left
@@ -73,6 +75,7 @@ export function Sidebar() {
               data-path={item.path}
               icon={item.icon}
               text={item.text}
+              tooltip={item.text}
               selected={
                 item.path === '/'
                   ? location.pathname === '/'
@@ -91,6 +94,6 @@ export function Sidebar() {
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
-    </aside>
+    </nav>
   );
 }

@@ -50,7 +50,7 @@ export function ScenarioBarChart({ results }: ScenarioBarChartProps) {
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 10, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
           tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`}
         />

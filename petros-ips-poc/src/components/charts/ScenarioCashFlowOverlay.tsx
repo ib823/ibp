@@ -46,14 +46,14 @@ export function ScenarioCashFlowOverlay({ results }: ScenarioCashFlowOverlayProp
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
         <XAxis
           dataKey="year"
-          tick={{ fontSize: 10, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 10, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
           tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`}
-          label={{ value: `Cumulative NCF (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 10, fill: '#9CA3AF' }}
+          label={{ value: `Cumulative NCF (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 11, fill: '#9CA3AF' }}
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}

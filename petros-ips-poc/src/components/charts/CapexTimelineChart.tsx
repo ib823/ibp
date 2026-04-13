@@ -53,17 +53,17 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
     <ResponsiveContainer width="100%" height={260}>
       <ComposedChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#6B7280' }} tickLine={false} />
+        <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#6B7280' }} tickLine={false} />
         <YAxis
           yAxisId="left"
-          tick={{ fontSize: 10, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
           tickFormatter={(v: number) => `${u.currencySymbol}${fmtNum(v)}M`}
         />
         <YAxis
           yAxisId="right"
           orientation="right"
-          tick={{ fontSize: 10, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           tickLine={false}
           tickFormatter={(v: number) => `${u.currencySymbol}${fmtNum(v)}M`}
         />
@@ -71,7 +71,7 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
           formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, undefined]}
         />
-        <Legend wrapperStyle={{ fontSize: 10 }} />
+        <Legend wrapperStyle={{ fontSize: 11 }} />
         {activeProjects.map((proj, i) => (
           <Bar
             key={proj.project.id}

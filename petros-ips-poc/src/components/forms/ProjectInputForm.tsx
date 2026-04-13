@@ -292,7 +292,7 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
       {/* Modified badge */}
       {modified && (
         <div className="flex items-center justify-between">
-          <Badge variant="outline" className="text-[9px] bg-amber/10 text-amber border-amber/30">Modified</Badge>
+          <Badge variant="outline" className="text-[10px] bg-amber/10 text-amber border-amber/30">Modified</Badge>
           <button onClick={handleReset} className="text-[10px] text-petrol hover:underline flex items-center gap-1">
             <RotateCcw size={10} /> Reset
           </button>

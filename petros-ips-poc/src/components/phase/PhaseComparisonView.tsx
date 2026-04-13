@@ -463,8 +463,8 @@ function PhaseTimeline({ phases }: { phases: readonly PhaseVersionData[] }) {
             <div className="flex flex-col items-center">
               <div className="w-3 h-3 rounded-full bg-petrol border-2 border-petrol-light" />
               <div className="text-[10px] font-semibold text-text-primary mt-1">{p.label}</div>
-              <div className="text-[9px] text-text-muted">{PHASE_LABEL[p.phase]}</div>
-              <div className="text-[9px] text-text-muted">{new Date(p.createdDate).getFullYear()}</div>
+              <div className="text-[10px] text-text-muted">{PHASE_LABEL[p.phase]}</div>
+              <div className="text-[10px] text-text-muted">{new Date(p.createdDate).getFullYear()}</div>
             </div>
             {i < phases.length - 1 && (
               <div className="w-8 sm:w-16 h-px bg-petrol/40 self-center" />
