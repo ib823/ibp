@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { TOUR_STEPS } from '@/data/guided-tour';
-import { Button } from '@/components/ui5/Ui5Button';
 import { X } from 'lucide-react';
 import {
   isTourCompleted,
@@ -201,7 +200,7 @@ export function GuidedTour() {
 
       {/* Tour card */}
       <div
-        className="absolute bg-white border border-border shadow-xl rounded-lg p-5 w-[380px] max-h-[70vh] overflow-y-auto pointer-events-auto z-[10000]"
+        className="absolute bg-white border border-border shadow-xl rounded-lg p-5 w-[380px] max-w-[calc(100vw-32px)] max-h-[70vh] overflow-y-auto pointer-events-auto z-[10000]"
         style={cardStyle}
         onClick={(e) => e.stopPropagation()}
       >
@@ -241,17 +240,19 @@ export function GuidedTour() {
           </button>
           <div className="flex items-center gap-2">
             {!isFirstStep && (
-              <Button variant="outline" size="sm" onClick={handleBack} className="text-xs h-7 px-3">
+              <button
+                onClick={handleBack}
+                className="text-xs h-7 px-3 rounded border border-border text-text-primary hover:bg-content-alt transition-colors"
+              >
                 Back
-              </Button>
+              </button>
             )}
-            <Button
-              size="sm"
+            <button
               onClick={handleNext}
-              className="text-xs h-7 px-4 bg-petrol hover:bg-petrol-light text-white"
+              className="text-xs h-7 px-4 rounded bg-petrol hover:bg-petrol-light text-white font-medium transition-colors"
             >
               {isLastStep ? 'Finish' : 'Next'}
-            </Button>
+            </button>
           </div>
         </div>
       </div>
@@ -272,44 +273,37 @@ function getCardPosition(spotlight: SpotlightRect | null): React.CSSProperties {
 
   const viewW = window.innerWidth;
   const viewH = window.innerHeight;
-  const cardW = 380;
+  const cardW = Math.min(380, viewW - 32);
   const cardH = 300; // approximate
   const gap = 16;
+  const pad = 16; // minimum edge padding
+
+  // Clamp helper: keep the card within viewport bounds
+  const clampLeft = (l: number) => Math.min(Math.max(l, pad), viewW - cardW - pad);
+  const clampTop = (t: number) => Math.min(Math.max(t, pad), viewH - cardH - pad);
 
   // Try placing below the spotlight
   const belowTop = spotlight.top + spotlight.height + gap;
   if (belowTop + cardH < viewH) {
-    return {
-      top: belowTop,
-      left: Math.min(Math.max(spotlight.left, 16), viewW - cardW - 16),
-    };
+    return { top: belowTop, left: clampLeft(spotlight.left) };
   }
 
   // Try placing above
   const aboveTop = spotlight.top - cardH - gap;
-  if (aboveTop > 0) {
-    return {
-      top: aboveTop,
-      left: Math.min(Math.max(spotlight.left, 16), viewW - cardW - 16),
-    };
+  if (aboveTop > pad) {
+    return { top: aboveTop, left: clampLeft(spotlight.left) };
   }
 
   // Try placing to the right
   const rightLeft = spotlight.left + spotlight.width + gap;
   if (rightLeft + cardW < viewW) {
-    return {
-      top: Math.min(Math.max(spotlight.top, 16), viewH - cardH - 16),
-      left: rightLeft,
-    };
+    return { top: clampTop(spotlight.top), left: rightLeft };
   }
 
   // Try placing to the left
   const leftLeft = spotlight.left - cardW - gap;
-  if (leftLeft > 0) {
-    return {
-      top: Math.min(Math.max(spotlight.top, 16), viewH - cardH - 16),
-      left: leftLeft,
-    };
+  if (leftLeft > pad) {
+    return { top: clampTop(spotlight.top), left: leftLeft };
   }
 
   // Fallback: center
