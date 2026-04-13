@@ -58,7 +58,7 @@ export function ScenarioBarChart({ results }: ScenarioBarChartProps) {
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
           formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, 'NPV₁₀']}
         />
-        <Bar dataKey="npv" barSize={48} radius={[2, 2, 0, 0]}>
+        <Bar dataKey="npv" maxBarSize={48} radius={[2, 2, 0, 0]}>
           {data.map((d) => (
             <Cell key={d.scenarioKey} fill={SCENARIO_COLORS[d.scenarioKey]} />
           ))}

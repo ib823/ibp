@@ -244,13 +244,13 @@ export function EconomicsTable({ cashflows, fiscalRegimeType }: EconomicsTablePr
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b border-border/50 hover:bg-content-alt/50">
+              <tr key={row.id} className="group border-b border-border/50 hover:bg-content-alt/50">
                 {row.getVisibleCells().map((cell, ci) => (
                   <td
                     key={cell.id}
                     className={cn(
                       'px-2 py-1',
-                      ci === 0 && 'sticky left-0 z-10 bg-white',
+                      ci === 0 && 'sticky left-0 z-10 bg-white group-hover:bg-content-alt',
                     )}
                     style={{ width: cell.column.getSize() }}
                   >

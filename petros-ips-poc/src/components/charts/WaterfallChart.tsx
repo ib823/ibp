@@ -19,6 +19,18 @@ interface WaterfallBar {
   eduEntryId?: string;
 }
 
+const SHORT_LABELS: Record<string, string> = {
+  'Gross Revenue': 'Revenue',
+  'Export Duty': 'Exp. Duty',
+  'Research Cess': 'Res. Cess',
+  'PETRONAS Share': 'PTNS Share',
+  'Supp. Payment': 'Supp. Pmt',
+  'PITA Tax': 'PITA',
+  'Corp. Tax': 'Corp. Tax',
+  'Net Costs': 'Costs',
+  'Contractor NCF': 'Contr. NCF',
+};
+
 export function WaterfallChart({ cashflows, fiscalRegimeType }: WaterfallChartProps) {
   const u = useDisplayUnits();
   const bars = useMemo(() => {
@@ -226,9 +238,9 @@ export function WaterfallChart({ cashflows, fiscalRegimeType }: WaterfallChartPr
               y={svgH - padB + 14}
               textAnchor="middle"
               fill="#6B7280"
-              fontSize={11}
+              fontSize={bars.length > 6 ? 9 : 11}
             >
-              {bar.label}
+              {bars.length > 6 ? (SHORT_LABELS[bar.label] ?? bar.label) : bar.label}
             </text>
           </g>
         );
