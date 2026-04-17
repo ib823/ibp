@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const activeScenario = useProjectStore((s) => s.activeScenario);
   const portfolioResult = useProjectStore((s) => s.portfolioResult);
   const portfolioSelection = useProjectStore((s) => s.portfolioSelection);
+  const setActiveProject = useProjectStore((s) => s.setActiveProject);
 
   const projectResults = useMemo(() => {
     const map = new Map<string, EconomicsResult>();
@@ -115,7 +116,7 @@ export default function DashboardPage() {
         <table className="w-full border-collapse text-xs min-w-[640px] tabular-nums">
           <thead>
             <tr className="border-b border-border bg-content-alt">
-              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5 sticky left-0 bg-content-alt z-10">
+              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5 sticky left-0 bg-content-alt z-20 shadow-[2px_0_0_0_rgb(226,229,234)]">
                 <EduTooltip entryId="D-07"><span className="cursor-help">Project</span></EduTooltip>
               </th>
               <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
@@ -156,7 +157,16 @@ export default function DashboardPage() {
                 : undefined;
               return (
                 <tr key={p.project.id} className="group border-b border-border/30 hover:bg-content-alt/50">
-                  <td className="px-3 py-2 font-medium text-text-primary sticky left-0 bg-white group-hover:bg-content-alt/50 z-10">{p.project.name}</td>
+                  <td className="px-3 py-2 font-medium text-text-primary sticky left-0 bg-white group-hover:bg-content-alt/50 z-20 shadow-[2px_0_0_0_rgb(226,229,234)]">
+                    <Link
+                      to="/economics"
+                      onClick={() => setActiveProject(p.project.id)}
+                      className="hover:text-petrol hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-petrol"
+                      title={`Open ${p.project.name} in Economics`}
+                    >
+                      {p.project.name}
+                    </Link>
+                  </td>
                   <td className="px-2 py-2">
                     <EduTooltip entryId={regimeTooltipId}>
                       <Badge variant="outline" className="text-[10px] py-0 px-1 cursor-help">

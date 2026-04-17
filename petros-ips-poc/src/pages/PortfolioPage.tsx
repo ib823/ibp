@@ -236,7 +236,11 @@ export default function PortfolioPage() {
                     </div>
                   </EduTooltip>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-text-primary truncate" title={p.project.name}>
+                    <div
+                      className="text-xs font-medium text-text-primary truncate cursor-help"
+                      title={p.project.name}
+                      aria-label={p.project.name}
+                    >
                       {p.project.name}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">

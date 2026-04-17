@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import type { ProductionProfile } from '@/engine/types';
 import { fmtNum } from '@/lib/format';
+import { ChartShell } from '@/components/charts/ChartShell';
 
 interface ProductionChartProps {
   production: ProductionProfile;
@@ -37,6 +38,7 @@ export function ProductionChart({ production, startYear, endYear }: ProductionCh
   }, [production, startYear, endYear]);
 
   return (
+    <ChartShell height={250}>
     <ResponsiveContainer width="100%" height={250}>
       <AreaChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -85,5 +87,6 @@ export function ProductionChart({ production, startYear, endYear }: ProductionCh
         />
       </AreaChart>
     </ResponsiveContainer>
+    </ChartShell>
   );
 }

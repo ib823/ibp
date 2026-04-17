@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { WorkflowActionBar } from '@/components/workflow/WorkflowActionBar';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { getEntry } from '@/lib/educational-content';
+import { ChartShell } from '@/components/charts/ChartShell';
 import { useProjectStore } from '@/store/project-store';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
@@ -67,6 +68,18 @@ function VersionComparisonViewInner() {
     ? ([...projectVersions.keys()] as DataVersion[])
     : [];
 
+  // We surface Actuals + Approved as first-class options even when the
+  // active project has no seeded row for them — per SoW Financial Model
+  // item #4, planners expect to pick Actuals for gap analysis regardless
+  // of project phase. Unavailable versions are disabled with a hint.
+  const optionVersions: DataVersion[] = Array.from(new Set([
+    ...availableVersions,
+    'budget',
+    'forecast',
+    'actuals',
+    'approved',
+  ])) as DataVersion[];
+
   const [v1, setV1] = useState<DataVersion>('budget');
   const [v2, setV2] = useState<DataVersion>(
     availableVersions.includes('forecast') ? 'forecast' : (availableVersions[1] ?? 'budget'),
@@ -100,7 +113,10 @@ function VersionComparisonViewInner() {
             <Select
               value={v1}
               onValueChange={(val) => setV1(val as DataVersion)}
-              options={availableVersions.map((v) => ({ value: v, label: VERSION_LABELS[v] }))}
+              options={optionVersions.map((v) => ({
+                value: v,
+                label: availableVersions.includes(v) ? VERSION_LABELS[v] : `${VERSION_LABELS[v]} — not available`,
+              }))}
               aria-label="Compare version"
             />
           </div>
@@ -112,19 +128,30 @@ function VersionComparisonViewInner() {
             <Select
               value={v2}
               onValueChange={(val) => setV2(val as DataVersion)}
-              options={availableVersions.map((v) => ({ value: v, label: VERSION_LABELS[v] }))}
+              options={optionVersions.map((v) => ({
+                value: v,
+                label: availableVersions.includes(v) ? VERSION_LABELS[v] : `${VERSION_LABELS[v]} — not available`,
+              }))}
               aria-label="Against version"
             />
           </div>
           <Button
             size="sm"
             onClick={handleCompare}
-            disabled={v1 === v2}
+            disabled={v1 === v2 || !availableVersions.includes(v1) || !availableVersions.includes(v2)}
             className="bg-petrol hover:bg-petrol-light text-white text-xs h-9 shrink-0"
+            title={(!availableVersions.includes(v1) || !availableVersions.includes(v2)) ? 'One of the selected versions has no data for this project (Actuals only available for producing assets).' : undefined}
           >
             Compare Versions
           </Button>
         </div>
+        {(!availableVersions.includes(v1) || !availableVersions.includes(v2)) && (
+          <p className="text-[11px] text-amber mt-2 leading-snug">
+            <strong>Actuals</strong> are sourced from SAP S/4HANA once an asset begins producing.
+            Only producing assets (e.g. Balingian) carry Actuals in this POC — selecting Actuals on a
+            pre-FID or development project will show "not available" until the project enters production.
+          </p>
+        )}
 
         {/* Status banner + workflow actions */}
         {(v1Data || v2Data) && activeProjectId && (
@@ -534,7 +561,7 @@ function ProductionOverlayChart({
       <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3">
         Production Profile Overlay (boe/d)
       </h4>
-      <div className="min-h-[280px]">
+      <ChartShell height={280}>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -545,11 +572,11 @@ function ProductionOverlayChart({
               formatter={(v: number) => [v.toLocaleString() + ' boe/d', '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Line type="monotone" dataKey={v1L} stroke="#1E3A5F" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey={v2L} stroke="#D4A843" strokeWidth={2} strokeDasharray="5,3" dot={false} />
+            <Line type="monotone" dataKey={v1L} stroke="#1E3A5F" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={v2L} stroke="#D4A843" strokeWidth={2} strokeDasharray="5,3" dot={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+      </ChartShell>
     </div>
   );
 }

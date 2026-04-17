@@ -18,6 +18,7 @@ import { Tabs } from '@/components/ui5/Ui5Tabs';
 import { fmtPct, fmtYears } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { exportEconomicsToExcel } from '@/lib/excel-export';
+import { toast } from '@/lib/toast';
 import { getPageEntries } from '@/lib/educational-content';
 import { Button } from '@/components/ui5/Ui5Button';
 import type { TimeGranularity, YearlyCashflow } from '@/engine/types';
@@ -90,15 +91,20 @@ export default function EconomicsPage() {
                             className="text-xs"
                             icon="download"
                             title="Downloads year-by-year economics as an Excel workbook"
-                            onClick={() =>
-                              activeProject &&
-                              exportEconomicsToExcel(
-                                activeProject.project.name,
-                                activeScenario,
-                                result,
-                                { currency: u.currencyCode, conversions: u.conversions },
-                              )
-                            }
+                            onClick={() => {
+                              if (!activeProject) return;
+                              try {
+                                exportEconomicsToExcel(
+                                  activeProject.project.name,
+                                  activeScenario,
+                                  result,
+                                  { currency: u.currencyCode, conversions: u.conversions },
+                                );
+                                toast.success(`Economics workbook for ${activeProject.project.name} (${activeScenario}) downloaded.`);
+                              } catch (err) {
+                                toast.error(err instanceof Error ? err.message : 'Export failed.');
+                              }
+                            }}
                           >
                             Export to Excel
                           </Button>

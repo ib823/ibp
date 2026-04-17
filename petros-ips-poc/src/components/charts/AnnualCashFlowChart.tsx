@@ -14,6 +14,7 @@ import {
 import type { YearlyCashflow, CostProfile } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { computeCosts } from '@/engine/fiscal/shared';
+import { ChartShell } from '@/components/charts/ChartShell';
 
 interface AnnualCashFlowChartProps {
   cashflows: readonly YearlyCashflow[];
@@ -49,6 +50,7 @@ export function AnnualCashFlowChart({ cashflows, costProfile }: AnnualCashFlowCh
   }, [cashflows, costProfile, u.currencyFactor]);
 
   return (
+    <ChartShell height={250}>
     <ResponsiveContainer width="100%" height={250}>
       <ComposedChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -81,5 +83,6 @@ export function AnnualCashFlowChart({ cashflows, costProfile }: AnnualCashFlowCh
         />
       </ComposedChart>
     </ResponsiveContainer>
+    </ChartShell>
   );
 }

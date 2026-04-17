@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tabs } from '@/components/ui5/Ui5Tabs';
 import { Select } from '@/components/ui5/Ui5Select';
+import { Button } from '@/components/ui5/Ui5Button';
 import { useProjectStore, getActiveResult, useEffectiveActiveProject } from '@/store/project-store';
 import { FinancialTable } from '@/components/tables/FinancialTable';
 import type { FinancialRow } from '@/components/tables/FinancialTable';
@@ -13,6 +14,9 @@ import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { getPageEntries } from '@/lib/educational-content';
+import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { exportFinancialStatementsToExcel } from '@/lib/excel-export';
+import { toast } from '@/lib/toast';
 import {
   type PeriodGranularity,
   type RowKind,
@@ -28,6 +32,8 @@ export default function FinancialPage() {
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const result = useProjectStore((s) => getActiveResult(s));
+  const activeScenario = useProjectStore((s) => s.activeScenario);
+  const u = useDisplayUnits();
   const [granularity, setGranularity] = useState<PeriodGranularity>('year');
 
   // Use the override-merged project so what-if edits propagate to IS/BS/CF.
@@ -49,6 +55,75 @@ export default function FinancialPage() {
   );
   const expandRows = (rows: Array<FinancialRow & { kind?: RowKind }>): FinancialRow[] =>
     rows.map((r) => ({ ...r, values: expandValues(r.values, granularity, r.kind ?? 'flow') }));
+
+  const handleExport = () => {
+    if (!statements || !activeProject) return;
+    try {
+      exportFinancialStatementsToExcel(
+        activeProject.project.name,
+        activeScenario,
+        {
+          years: statements.years,
+          incomeStatement: [
+            { label: 'Revenue', values: statements.is.yearly.map((l) => l.revenue as number) },
+            { label: 'Royalty', values: statements.is.yearly.map((_, idx) => -(statements.cfs[idx]?.royalty as number ?? 0)) },
+            { label: 'Cost of Sales', values: statements.is.yearly.map((l) => -(l.costOfSales as number)) },
+            { label: 'Gross Profit', values: statements.is.yearly.map((l) => l.grossProfit as number) },
+            { label: 'DD&A', values: statements.is.yearly.map((l) => -(l.depreciationAmortisation as number)) },
+            { label: 'Operating Profit', values: statements.is.yearly.map((l) => l.operatingProfit as number) },
+            { label: 'Profit Before Tax', values: statements.is.yearly.map((l) => l.profitBeforeTax as number) },
+            { label: 'Tax Expense', values: statements.is.yearly.map((l) => -(l.taxExpense as number)) },
+            { label: 'Net Income', values: statements.is.yearly.map((l) => l.profitAfterTax as number) },
+          ],
+          balanceSheet: [
+            { label: 'PP&E (net)', values: statements.bs.yearly.map((l) => l.ppeNet as number) },
+            { label: 'Cash', values: statements.bs.yearly.map((l) => l.cash as number) },
+            { label: 'Total Assets', values: statements.bs.yearly.map((l) => l.totalAssets as number) },
+            { label: 'Retained Earnings', values: statements.bs.yearly.map((l) => l.retainedEarnings as number) },
+            { label: 'Reconciliation Adj. (POC)', values: statements.bs.yearly.map((l) => l.otherReserves as number) },
+            { label: 'Total Equity', values: statements.bs.yearly.map((l) => l.totalEquity as number) },
+            { label: 'Decomm. Provision', values: statements.bs.yearly.map((l) => l.decommissioningProvision as number) },
+            { label: 'Total Liabilities', values: statements.bs.yearly.map((l) => l.totalLiabilities as number) },
+            { label: 'Equity + Liabilities', values: statements.bs.yearly.map((l) => l.totalEquityAndLiabilities as number) },
+          ],
+          cashFlow: [
+            { label: 'Profit Before Tax', values: statements.cfStmt.yearly.map((l) => l.profitBeforeTax as number) },
+            { label: 'Add: Depreciation', values: statements.cfStmt.yearly.map((l) => l.depreciation as number) },
+            { label: 'Tax Paid', values: statements.cfStmt.yearly.map((l) => -(l.taxPaid as number)) },
+            { label: 'Operating Cash Flow', values: statements.cfStmt.yearly.map((l) => l.netOperatingCashFlow as number) },
+            { label: 'CAPEX', values: statements.cfStmt.yearly.map((l) => l.netInvestingCashFlow as number) },
+            { label: 'Net Cash Change', values: statements.cfStmt.yearly.map((l) => l.netCashChange as number) },
+            { label: 'Opening Cash', values: statements.cfStmt.yearly.map((l) => l.openingCash as number) },
+            { label: 'Closing Cash', values: statements.cfStmt.yearly.map((l) => l.closingCash as number) },
+          ],
+          accountMovements: [
+            { section: 'PP&E Roll-Forward', rows: [
+              { label: 'Opening', values: statements.am.ppe.map((l) => l.opening as number) },
+              { label: 'Additions', values: statements.am.ppe.map((l) => l.additions as number) },
+              { label: 'Depreciation', values: statements.am.ppe.map((l) => -(l.depreciation as number)) },
+              { label: 'Closing', values: statements.am.ppe.map((l) => l.closing as number) },
+            ] },
+            { section: 'Decommissioning Provision', rows: [
+              { label: 'Opening', values: statements.am.decommissioningProvision.map((l) => l.opening as number) },
+              { label: 'Additions', values: statements.am.decommissioningProvision.map((l) => l.additions as number) },
+              { label: 'Unwinding', values: statements.am.decommissioningProvision.map((l) => l.unwinding as number) },
+              { label: 'Utilisations', values: statements.am.decommissioningProvision.map((l) => -(l.utilisations as number)) },
+              { label: 'Closing', values: statements.am.decommissioningProvision.map((l) => l.closing as number) },
+            ] },
+            { section: 'Retained Earnings', rows: [
+              { label: 'Opening', values: statements.am.retainedEarnings.map((l) => l.opening as number) },
+              { label: 'Profit After Tax', values: statements.am.retainedEarnings.map((l) => l.profitAfterTax as number) },
+              { label: 'Closing', values: statements.am.retainedEarnings.map((l) => l.closing as number) },
+            ] },
+          ],
+        },
+        { currency: u.currencyCode, conversions: u.conversions },
+      );
+      toast.success(`Financial Statements for ${activeProject.project.name} (${activeScenario}) downloaded.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Export failed.');
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -77,6 +152,17 @@ export default function FinancialPage() {
             className="w-full sm:w-[220px]"
             aria-label="Select project"
           />
+          <Button
+            size="sm"
+            variant="outline"
+            icon="download"
+            onClick={handleExport}
+            disabled={!statements || !activeProject}
+            className="text-xs"
+            title="Download Income Statement, Balance Sheet, Cash Flow, and Account Movements as a single Excel workbook."
+          >
+            Export Financials
+          </Button>
         </div>
       </div>
       {granularity !== 'year' && (

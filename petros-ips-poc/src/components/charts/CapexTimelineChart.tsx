@@ -14,6 +14,7 @@ import type { ProjectInputs } from '@/engine/types';
 import { computeCosts } from '@/engine/fiscal/shared';
 import { fmtNum } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { ChartShell } from '@/components/charts/ChartShell';
 
 interface CapexTimelineChartProps {
   projects: readonly ProjectInputs[];
@@ -50,6 +51,7 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
   }, [projects, activeIds, u.currencyFactor]);
 
   return (
+    <ChartShell height={260}>
     <ResponsiveContainer width="100%" height={260}>
       <ComposedChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -95,5 +97,6 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
         />
       </ComposedChart>
     </ResponsiveContainer>
+    </ChartShell>
   );
 }

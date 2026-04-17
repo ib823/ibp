@@ -1,4 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { ChartShell } from '@/components/charts/ChartShell';
 
 interface GovernmentTakeChartProps {
   governmentTakePct: number;
@@ -30,7 +31,8 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
 
   return (
     <div className="w-full">
-      <div className="relative w-full" style={{ height: 180 }}>
+      <div className="relative w-full">
+        <ChartShell height={180}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
             <Pie
@@ -53,6 +55,7 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
             />
           </PieChart>
         </ResponsiveContainer>
+        </ChartShell>
         {/* Centre label — government take headline figure */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span className="text-[10px] text-text-muted uppercase tracking-wider">Govt Take</span>

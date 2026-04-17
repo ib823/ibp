@@ -21,6 +21,14 @@ const edu = getPageEntries('reserves');
 const YEARS = [2024, 2025, 2026];
 const SRMS_YEARS = [2030, 2031, 2032, 2033, 2034, 2035];
 
+// Uniform formatter for reserve/resource numeric cells: thousand separators
+// with one decimal place under 10, zero decimals at or above 10. Keeps gas
+// volumes in MMscf (six-figure values) readable at scan speed.
+function fmtReserveValue(v: number): string {
+  const digits = Math.abs(v) >= 10 ? 0 : 1;
+  return v.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
 export default function ReservesPage() {
   usePageTitle('Reserves');
   const projects = useProjectStore((s) => s.projects);
@@ -118,7 +126,7 @@ export default function ReservesPage() {
                       const v = pr.oil[c] * u.oilFactor;
                       return (
                         <td key={`oil-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                          {v > 0 ? v.toFixed(v >= 10 ? 0 : 1) : '-'}
+                          {v > 0 ? fmtReserveValue(v) : '-'}
                         </td>
                       );
                     })}
@@ -126,17 +134,18 @@ export default function ReservesPage() {
                       const v = pr.gas[c] * bcfFactor;
                       return (
                         <td key={`gas-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                          {v > 0 ? v.toFixed(v >= 10 ? 0 : 1) : '-'}
+                          {v > 0 ? fmtReserveValue(v) : '-'}
                         </td>
                       );
                     })}
-                    {(['1P', '2P', '3P'] as const).map((c) => (
-                      <td key={`boe-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                        {(pr.oil[c] + gasBcfToMmboe(pr.gas[c])) > 0
-                          ? (pr.oil[c] + gasBcfToMmboe(pr.gas[c])).toFixed(1)
-                          : '-'}
-                      </td>
-                    ))}
+                    {(['1P', '2P', '3P'] as const).map((c) => {
+                      const boe = pr.oil[c] + gasBcfToMmboe(pr.gas[c]);
+                      return (
+                        <td key={`boe-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
+                          {boe > 0 ? fmtReserveValue(boe) : '-'}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}
@@ -147,7 +156,7 @@ export default function ReservesPage() {
                   const total = PROJECT_RESERVES.reduce((s, pr) => s + pr.oil[c], 0) * u.oilFactor;
                   return (
                     <td key={`tot-oil-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                      {total.toFixed(total >= 10 ? 0 : 1)}
+                      {fmtReserveValue(total)}
                     </td>
                   );
                 })}
@@ -155,7 +164,7 @@ export default function ReservesPage() {
                   const total = PROJECT_RESERVES.reduce((s, pr) => s + pr.gas[c], 0) * bcfFactor;
                   return (
                     <td key={`tot-gas-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                      {total.toFixed(total >= 10 ? 0 : 1)}
+                      {fmtReserveValue(total)}
                     </td>
                   );
                 })}
@@ -166,7 +175,7 @@ export default function ReservesPage() {
                   );
                   return (
                     <td key={`tot-boe-${c}`} className="text-right font-data px-2 py-1.5 border-l border-border/30">
-                      {total.toFixed(1)}
+                      {fmtReserveValue(total)}
                     </td>
                   );
                 })}

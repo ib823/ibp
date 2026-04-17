@@ -13,6 +13,7 @@ import {
 import type { EconomicsResult, ScenarioVersion } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { ChartDataTable } from '@/components/shared/ChartDataTable';
+import { ChartShell } from '@/components/charts/ChartShell';
 
 interface ScenarioBarChartProps {
   results: Record<ScenarioVersion, EconomicsResult>;
@@ -54,6 +55,7 @@ export function ScenarioBarChart({ results }: ScenarioBarChartProps) {
 
   return (
     <figure className="m-0" aria-label="NPV ten by scenario comparison">
+    <ChartShell height={250}>
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -80,6 +82,7 @@ export function ScenarioBarChart({ results }: ScenarioBarChartProps) {
         </Bar>
       </BarChart>
     </ResponsiveContainer>
+    </ChartShell>
     <ChartDataTable
       caption={`NPV₁₀ by scenario, expressed in ${u.currencyCode} millions.`}
       columns={[

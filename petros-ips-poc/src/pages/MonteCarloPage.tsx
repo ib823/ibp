@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { useProjectStore } from '@/store/project-store';
 import { KpiCard } from '@/components/shared/KpiCard';
+import { ChartShell } from '@/components/charts/ChartShell';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
@@ -339,7 +340,7 @@ function MCResults({ result }: { result: MonteCarloResult }) {
           NPV Distribution ({fmtNum(result.npvValues.length)} {result.npvValues.length === 1 ? 'iteration' : 'iterations'})
         </h4>
         <SectionHelp entry={edu['MC-16']!} />
-        <div className="min-h-[260px]">
+        <ChartShell height={260}>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={histData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -349,14 +350,14 @@ function MCResults({ result }: { result: MonteCarloResult }) {
             <ReferenceLine x={p10Display} stroke="#C0392B" strokeDasharray="4,3" label={{ value: 'P10', fontSize: 11, fill: '#C0392B' }} />
             <ReferenceLine x={p50Display} stroke="#1E3A5F" strokeDasharray="4,3" label={{ value: 'P50', fontSize: 11, fill: '#1E3A5F' }} />
             <ReferenceLine x={p90Display} stroke="#2D8A4E" strokeDasharray="4,3" label={{ value: 'P90', fontSize: 11, fill: '#2D8A4E' }} />
-            <Bar dataKey="count" name="Frequency">
+            <Bar dataKey="count" name="Frequency" isAnimationActive={false}>
               {histData.map((d, i) => (
                 <Cell key={i} fill={d.isAboveP50 ? '#3B8DBD' : '#E07060'} opacity={0.8} />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-        </div>
+        </ChartShell>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -366,7 +367,7 @@ function MCResults({ result }: { result: MonteCarloResult }) {
             Cumulative Probability (S-Curve)
           </h4>
           <SectionHelp entry={edu['MC-17']!} />
-          <div className="min-h-[260px]">
+          <ChartShell height={260}>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={sCurveData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -376,10 +377,10 @@ function MCResults({ result }: { result: MonteCarloResult }) {
               <ReferenceLine y={10} stroke="#C0392B" strokeDasharray="3,3" />
               <ReferenceLine y={50} stroke="#1E3A5F" strokeDasharray="3,3" />
               <ReferenceLine y={90} stroke="#2D8A4E" strokeDasharray="3,3" />
-              <Line type="monotone" dataKey="prob" stroke="#1E3A5F" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="prob" stroke="#1E3A5F" strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
-          </div>
+          </ChartShell>
         </div>
 
         {/* Statistics */}

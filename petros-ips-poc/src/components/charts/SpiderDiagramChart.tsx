@@ -14,6 +14,7 @@ import type { SpiderResult } from '@/engine/sensitivity/spider';
 import type { SensitivityVariable } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { ChartDataTable } from '@/components/shared/ChartDataTable';
+import { ChartShell } from '@/components/charts/ChartShell';
 
 
 interface SpiderDiagramChartProps {
@@ -55,6 +56,7 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
 
   return (
     <figure className="m-0" aria-label="Spider diagram: NPV versus percent change for each sensitivity variable.">
+    <ChartShell height={350}>
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data} margin={{ top: 10, right: 50, left: 30, bottom: 25 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -100,6 +102,7 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
         ))}
       </LineChart>
     </ResponsiveContainer>
+    </ChartShell>
     <ChartDataTable
       caption={`Spider sensitivity data: NPV in ${u.currencyCode} millions for each variable across the plus/minus 30 percent range.`}
       columns={[

@@ -67,7 +67,7 @@ export function FinancialTable({ years, rows }: FinancialTableProps) {
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="border-b border-border bg-content-alt">
-              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider px-3 py-1.5 sticky left-0 bg-content-alt w-[180px] min-w-[180px]">
+              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider px-3 py-1.5 sticky left-0 z-20 bg-content-alt shadow-[2px_0_0_0_rgb(226,229,234)] w-[180px] min-w-[180px]">
                 {u.currencySymbol}M
               </th>
               {years.map((y) => (
@@ -92,7 +92,7 @@ export function FinancialTable({ years, rows }: FinancialTableProps) {
               >
                 <td
                   className={cn(
-                    'px-3 py-1 text-text-secondary sticky left-0 bg-white',
+                    'px-3 py-1 text-text-secondary sticky left-0 z-20 bg-white shadow-[2px_0_0_0_rgb(226,229,234)]',
                     (row.isSubtotal || row.isTotal) && 'font-semibold text-text-primary bg-content-alt/50',
                     row.isTotal && 'bg-content-alt',
                   )}

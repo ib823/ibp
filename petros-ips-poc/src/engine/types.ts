@@ -692,6 +692,10 @@ export interface UnitConversion {
   readonly category: UnitConversionCategory;
   readonly isDefault: boolean;
   readonly description: string;
+  /** Seeded (unmodified) factor for System Default rows.
+   *  When `factor !== defaultFactor`, the row is marked "Modified" and
+   *  can be reverted via the Reset action. Absent for user-defined rows. */
+  readonly defaultFactor?: number;
 }
 
 export interface UnitPreferences {

@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import type { EconomicsResult, ScenarioVersion } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { ChartShell } from '@/components/charts/ChartShell';
 
 interface ScenarioCashFlowOverlayProps {
   results: Record<ScenarioVersion, EconomicsResult>;
@@ -41,6 +42,7 @@ export function ScenarioCashFlowOverlay({ results }: ScenarioCashFlowOverlayProp
   }, [results, u.currencyFactor]);
 
   return (
+    <ChartShell height={280}>
     <ResponsiveContainer width="100%" height={280}>
       <LineChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -76,5 +78,6 @@ export function ScenarioCashFlowOverlay({ results }: ScenarioCashFlowOverlayProp
         ))}
       </LineChart>
     </ResponsiveContainer>
+    </ChartShell>
   );
 }

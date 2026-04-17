@@ -44,6 +44,7 @@ import {
   addConversion as engineAddConv,
   updateConversion as engineUpdateConv,
   removeConversion as engineRemoveConv,
+  resetConversionToDefault as engineResetConv,
   type NewConversionInput,
 } from '@/engine/utils/unit-conversion';
 
@@ -125,6 +126,7 @@ interface ProjectStoreActions {
   addUnitConversion: (input: NewConversionInput) => void;
   updateUnitConversion: (id: string, factor: number) => void;
   removeUnitConversion: (id: string) => void;
+  resetUnitConversionToDefault: (id: string) => void;
   setUnitPreference: (category: keyof UnitPreferences, unit: string) => void;
 
   // ── Feature 3: Time granularity ─────────────────────────────────────
@@ -500,6 +502,10 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   removeUnitConversion: (id) => {
     set((s) => ({ unitConversions: engineRemoveConv(s.unitConversions, id) }));
+  },
+
+  resetUnitConversionToDefault: (id) => {
+    set((s) => ({ unitConversions: engineResetConv(s.unitConversions, id) }));
   },
 
   setUnitPreference: (category, unit) => {

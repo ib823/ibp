@@ -12,6 +12,7 @@ import {
 import type { ProjectInputs } from '@/engine/types';
 import { fmtNum } from '@/lib/format';
 import { ChartDataTable } from '@/components/shared/ChartDataTable';
+import { ChartShell } from '@/components/charts/ChartShell';
 
 interface PortfolioProductionChartProps {
   projects: readonly ProjectInputs[];
@@ -44,6 +45,7 @@ export function PortfolioProductionChart({ projects, activeIds }: PortfolioProdu
 
   return (
     <figure className="m-0" aria-label="Portfolio production forecast, stacked by project, in barrels of oil equivalent per day.">
+    <ChartShell height={260}>
     <ResponsiveContainer width="100%" height={260}>
       <AreaChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -56,7 +58,7 @@ export function PortfolioProductionChart({ projects, activeIds }: PortfolioProdu
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [fmtNum(v), undefined]}
+          formatter={(v: number, name: string) => [`${fmtNum(v)} boe/d`, name]}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         {activeProjects.map((proj, i) => (
@@ -74,6 +76,7 @@ export function PortfolioProductionChart({ projects, activeIds }: PortfolioProdu
         ))}
       </AreaChart>
     </ResponsiveContainer>
+    </ChartShell>
     <ChartDataTable
       caption="Annual production in barrels of oil equivalent per day, per project."
       columns={[

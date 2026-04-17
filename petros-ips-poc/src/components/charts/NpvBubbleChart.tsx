@@ -15,6 +15,7 @@ import type { EconomicsResult, FiscalRegimeType } from '@/engine/types';
 import { fmtPct } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { ChartDataTable } from '@/components/shared/ChartDataTable';
+import { ChartShell } from '@/components/charts/ChartShell';
 
 interface NpvBubbleChartProps {
   projects: Array<{
@@ -68,6 +69,7 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
       <figcaption id="npv-bubble-caption" className="sr-only">
         Scatter chart: NPV versus total CAPEX, one bubble per project, sized by cumulative production.
       </figcaption>
+      <ChartShell height={300}>
       <ResponsiveContainer width="100%" height={300}>
       <ScatterChart margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -116,6 +118,7 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
         </Scatter>
       </ScatterChart>
     </ResponsiveContainer>
+    </ChartShell>
     <ChartDataTable
       caption={`Projects by NPV (${u.currencyCode} M) versus CAPEX (${u.currencyCode} M); production shown in MMboe; IRR as percentage; fiscal regime as category.`}
       columns={[

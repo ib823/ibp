@@ -18,6 +18,7 @@ import {
   Legend,
 } from 'recharts';
 import { GitBranch, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ChartShell } from '@/components/charts/ChartShell';
 import type {
   PhaseComparisonResult,
   PhaseVersionData,
@@ -385,7 +386,7 @@ function ProductionOverlay({ p1, p2 }: { p1: PhaseVersionData; p2: PhaseVersionD
       <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3">
         Production Profile Overlay (boe/d)
       </h4>
-      <div className="min-h-[280px]">
+      <ChartShell height={280}>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -396,11 +397,11 @@ function ProductionOverlay({ p1, p2 }: { p1: PhaseVersionData; p2: PhaseVersionD
               formatter={(v: number) => [v.toLocaleString() + ' boe/d', '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Area type="monotone" dataKey={p1.label} stroke="#3B8DBD" fill="#3B8DBD" fillOpacity={0.25} strokeDasharray="4,2" />
-            <Area type="monotone" dataKey={p2.label} stroke="#1E3A5F" fill="#1E3A5F" fillOpacity={0.4} />
+            <Area type="monotone" dataKey={p1.label} stroke="#3B8DBD" fill="#3B8DBD" fillOpacity={0.25} strokeDasharray="4,2" isAnimationActive={false} />
+            <Area type="monotone" dataKey={p2.label} stroke="#1E3A5F" fill="#1E3A5F" fillOpacity={0.4} isAnimationActive={false} />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+      </ChartShell>
     </div>
   );
 }
@@ -431,7 +432,7 @@ function CashFlowOverlay({ result }: { result: PhaseComparisonResult }) {
       <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3">
         Cumulative Net Cash Flow ({u.currencyCode} M)
       </h4>
-      <div className="min-h-[280px]">
+      <ChartShell height={280}>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -442,11 +443,11 @@ function CashFlowOverlay({ result }: { result: PhaseComparisonResult }) {
               formatter={(v: number) => [`${u.currencySymbol}${v.toLocaleString()}M`, '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Line type="monotone" dataKey={result.phase1Label} stroke="#3B8DBD" strokeWidth={2} strokeDasharray="5,3" dot={false} />
-            <Line type="monotone" dataKey={result.phase2Label} stroke="#1E3A5F" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey={result.phase1Label} stroke="#3B8DBD" strokeWidth={2} strokeDasharray="5,3" dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={result.phase2Label} stroke="#1E3A5F" strokeWidth={2} dot={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+      </ChartShell>
     </div>
   );
 }

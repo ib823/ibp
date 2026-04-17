@@ -180,8 +180,14 @@ describe('page regressions against engine truth', () => {
     );
     const gasFactor = convertSafe(1, 'Bcf', 'MMscf', DEFAULT_CONVERSIONS);
 
-    expect(screen.getByText(oil2PTotal.toFixed(oil2PTotal >= 10 ? 0 : 1))).toBeInTheDocument();
-    expect(screen.getByText((gas2PTotal * gasFactor).toFixed(gas2PTotal * gasFactor >= 10 ? 0 : 1))).toBeInTheDocument();
-    expect(screen.getByText(total2PBoe.toFixed(1))).toBeInTheDocument();
+    // Matches `fmtReserveValue` in ReservesPage: one decimal under 10,
+    // zero decimals at or above 10, with locale thousand separators.
+    const fmtR = (v: number): string => {
+      const digits = Math.abs(v) >= 10 ? 0 : 1;
+      return v.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    };
+    expect(screen.getByText(fmtR(oil2PTotal))).toBeInTheDocument();
+    expect(screen.getByText(fmtR(gas2PTotal * gasFactor))).toBeInTheDocument();
+    expect(screen.getByText(fmtR(total2PBoe))).toBeInTheDocument();
   });
 });

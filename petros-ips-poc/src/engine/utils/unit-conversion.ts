@@ -180,7 +180,11 @@ export function addConversion(
   ];
 }
 
-/** Update the factor of an existing conversion */
+/** Update the factor of an existing conversion.
+ *
+ * For System Default rows, the first edit captures the original factor as
+ * `defaultFactor` so the UI can present a Modified pill and offer a Reset
+ * action. Subsequent edits leave the captured `defaultFactor` untouched. */
 export function updateConversion(
   current: readonly UnitConversion[],
   id: string,
@@ -189,7 +193,32 @@ export function updateConversion(
   if (!Number.isFinite(factor) || factor <= 0) {
     throw new Error('Factor must be a positive finite number');
   }
-  return current.map((c) => (c.id === id ? { ...c, factor } : c));
+  return current.map((c) => {
+    if (c.id !== id) return c;
+    const capturedDefault = c.isDefault && c.defaultFactor === undefined ? c.factor : c.defaultFactor;
+    return { ...c, factor, defaultFactor: capturedDefault };
+  });
+}
+
+/** Restore a System Default conversion to its original (seeded) factor.
+ *  Throws if the target is not a default row or has never been modified. */
+export function resetConversionToDefault(
+  current: readonly UnitConversion[],
+  id: string,
+): UnitConversion[] {
+  return current.map((c) => {
+    if (c.id !== id) return c;
+    if (!c.isDefault) throw new Error('Only System Default rows can be reset.');
+    if (c.defaultFactor === undefined) return c; // already at default
+    const { defaultFactor: _d, ...rest } = c;
+    void _d;
+    return { ...rest, factor: c.defaultFactor };
+  });
+}
+
+/** True when a System Default row has been modified away from its seeded factor. */
+export function isConversionModified(c: UnitConversion): boolean {
+  return c.isDefault && c.defaultFactor !== undefined && c.factor !== c.defaultFactor;
 }
 
 /** Remove a custom (non-default) conversion */

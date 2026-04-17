@@ -202,3 +202,93 @@ export function exportEconomicsToExcel(
   const filename = `${safeName}_Economics_${scenario}_${opts.currency}_${new Date().toISOString().split('T')[0]}.xlsx`;
   XLSX.writeFile(wb, filename);
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// Financial Statements workbook — 4 sheets (IS, BS, CF, Account Movements)
+// ════════════════════════════════════════════════════════════════════════
+
+export interface FinancialRowsBundle {
+  years: (number | string)[];
+  incomeStatement: ReadonlyArray<{ label: string; values: number[] }>;
+  balanceSheet:    ReadonlyArray<{ label: string; values: number[] }>;
+  cashFlow:        ReadonlyArray<{ label: string; values: number[] }>;
+  accountMovements: ReadonlyArray<{ section: string; rows: ReadonlyArray<{ label: string; values: number[] }> }>;
+}
+
+function rowsToSheet(
+  periodLabels: (number | string)[],
+  rows: ReadonlyArray<{ label: string; values: number[] }>,
+  currencyFactor: number,
+): XLSX.WorkSheet {
+  const header = ['Line item', ...periodLabels.map((p) => String(p))];
+  const body = rows.map((r) => [
+    r.label,
+    ...r.values.map((v) => (v === 0 ? 0 : Number(((v * currencyFactor) / 1e6).toFixed(2)))),
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
+  ws['!cols'] = [{ wch: 26 }, ...periodLabels.map(() => ({ wch: 12 }))];
+  return ws;
+}
+
+export function buildFinancialWorkbook(
+  projectName: string,
+  scenario: string,
+  bundle: FinancialRowsBundle,
+  opts: ExportOptions = DEFAULT_OPTIONS,
+): XLSX.WorkBook {
+  // convertSafe takes (value, fromUnit, toUnit, conversions) — here we
+  // pre-compute the factor by converting 1 USD to the display currency.
+  const factor = convertSafe(1, 'USD', opts.currency, opts.conversions);
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(wb, rowsToSheet(bundle.years, bundle.incomeStatement, factor), 'Income Statement');
+  XLSX.utils.book_append_sheet(wb, rowsToSheet(bundle.years, bundle.balanceSheet, factor), 'Balance Sheet');
+  XLSX.utils.book_append_sheet(wb, rowsToSheet(bundle.years, bundle.cashFlow, factor), 'Cash Flow');
+
+  // Account movements: multiple subsections stacked vertically
+  const amRows: (string | number)[][] = [];
+  const amHeader = ['Line item', ...bundle.years.map((p) => String(p))];
+  amRows.push(amHeader);
+  for (const section of bundle.accountMovements) {
+    amRows.push([`— ${section.section} —`]);
+    for (const r of section.rows) {
+      amRows.push([
+        r.label,
+        ...r.values.map((v) => (v === 0 ? 0 : Number(((v * factor) / 1e6).toFixed(2)))),
+      ]);
+    }
+    amRows.push([]);
+  }
+  const wsAm = XLSX.utils.aoa_to_sheet(amRows);
+  wsAm['!cols'] = [{ wch: 26 }, ...bundle.years.map(() => ({ wch: 12 }))];
+  XLSX.utils.book_append_sheet(wb, wsAm, 'Account Movements');
+
+  // Title/metadata sheet
+  const meta = [
+    ['PETROS IPS — Financial Statements Export'],
+    ['Project', projectName],
+    ['Scenario', scenario],
+    ['Currency', opts.currency],
+    ['Units', 'Millions'],
+    ['Exported', new Date().toISOString()],
+    [],
+    ['POC note', 'Derived from a cash-based economic model. In the production SAC implementation, Financial Statements will be generated from an accrual-based accounting engine integrated with SAP S/4HANA.'],
+  ];
+  const wsMeta = XLSX.utils.aoa_to_sheet(meta);
+  wsMeta['!cols'] = [{ wch: 20 }, { wch: 60 }];
+  XLSX.utils.book_append_sheet(wb, wsMeta, 'About', true);
+
+  return wb;
+}
+
+export function exportFinancialStatementsToExcel(
+  projectName: string,
+  scenario: string,
+  bundle: FinancialRowsBundle,
+  opts: ExportOptions = DEFAULT_OPTIONS,
+): void {
+  const wb = buildFinancialWorkbook(projectName, scenario, bundle, opts);
+  const safeName = projectName.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = `${safeName}_Financials_${scenario}_${opts.currency}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(wb, filename);
+}

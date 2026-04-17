@@ -232,7 +232,7 @@ export function EconomicsTable({ cashflows, fiscalRegimeType }: EconomicsTablePr
                     key={header.id}
                     className={cn(
                       'text-[10px] font-semibold text-text-secondary uppercase tracking-wider text-right px-2 py-1.5',
-                      hi === 0 && 'sticky left-0 z-10 bg-content-alt',
+                      hi === 0 && 'sticky left-0 z-20 bg-content-alt shadow-[2px_0_0_0_rgb(226,229,234)]',
                     )}
                     style={{ width: header.getSize() }}
                   >
@@ -250,7 +250,7 @@ export function EconomicsTable({ cashflows, fiscalRegimeType }: EconomicsTablePr
                     key={cell.id}
                     className={cn(
                       'px-2 py-1',
-                      ci === 0 && 'sticky left-0 z-10 bg-white group-hover:bg-content-alt',
+                      ci === 0 && 'sticky left-0 z-20 bg-white group-hover:bg-content-alt shadow-[2px_0_0_0_rgb(226,229,234)]',
                     )}
                     style={{ width: cell.column.getSize() }}
                   >
