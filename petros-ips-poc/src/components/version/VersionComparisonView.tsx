@@ -2,6 +2,9 @@ import { useState, useMemo, useCallback } from 'react';
 import { Select } from '@/components/ui5/Ui5Select';
 import { Button } from '@/components/ui5/Ui5Button';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { WorkflowActionBar } from '@/components/workflow/WorkflowActionBar';
+import { InfoIcon } from '@/components/shared/InfoIcon';
+import { getEntry } from '@/lib/educational-content';
 import { useProjectStore } from '@/store/project-store';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
@@ -123,23 +126,43 @@ function VersionComparisonViewInner() {
           </Button>
         </div>
 
-        {/* Status banner */}
-        {(v1Data || v2Data) && (
+        {/* Status banner + workflow actions */}
+        {(v1Data || v2Data) && activeProjectId && (
           <div className="mt-3 pt-3 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-3">
             {v1Data && (
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-text-muted">{VERSION_LABELS[v1]}:</span>
-                <StatusBadge status={v1Data.status} />
-                <span className="text-text-muted">{formatDate(v1Data.lastModified)}</span>
-                <span className="text-text-muted truncate">— {v1Data.modifiedBy}</span>
+              <div className="flex flex-col gap-2 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-text-muted">{VERSION_LABELS[v1]}:</span>
+                  <StatusBadge status={v1Data.status} />
+                  {(() => {
+                    const e = getEntry('W-01');
+                    return e ? <InfoIcon entry={e} size={10} /> : null;
+                  })()}
+                  <span className="text-text-muted">{formatDate(v1Data.lastModified)}</span>
+                  <span className="text-text-muted truncate">— {v1Data.modifiedBy}</span>
+                </div>
+                {v1Data.reviewComment && (
+                  <p className="text-[10px] text-amber bg-amber/5 border-l-2 border-amber/40 pl-2 py-1">
+                    Review note: {v1Data.reviewComment}
+                  </p>
+                )}
+                <WorkflowActionBar projectId={activeProjectId} dataVersion={v1} record={v1Data} compact />
               </div>
             )}
             {v2Data && (
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-text-muted">{VERSION_LABELS[v2]}:</span>
-                <StatusBadge status={v2Data.status} />
-                <span className="text-text-muted">{formatDate(v2Data.lastModified)}</span>
-                <span className="text-text-muted truncate">— {v2Data.modifiedBy}</span>
+              <div className="flex flex-col gap-2 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-text-muted">{VERSION_LABELS[v2]}:</span>
+                  <StatusBadge status={v2Data.status} />
+                  <span className="text-text-muted">{formatDate(v2Data.lastModified)}</span>
+                  <span className="text-text-muted truncate">— {v2Data.modifiedBy}</span>
+                </div>
+                {v2Data.reviewComment && (
+                  <p className="text-[10px] text-amber bg-amber/5 border-l-2 border-amber/40 pl-2 py-1">
+                    Review note: {v2Data.reviewComment}
+                  </p>
+                )}
+                <WorkflowActionBar projectId={activeProjectId} dataVersion={v2} record={v2Data} compact />
               </div>
             )}
           </div>
@@ -197,7 +220,7 @@ function KpiDeltaRow({
   const prodPct = totals.prodB !== 0 ? (result.productionVariance / Math.abs(totals.prodB * 365)) * 100 : null;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
       <DeltaCard
         label="NPV₁₀ Δ"
         primary={u.money(result.npvVariance, { accounting: true })}
@@ -272,12 +295,20 @@ function DeltaCard({
   const Icon = deltaSign > 0 ? TrendingUp : deltaSign < 0 ? TrendingDown : Minus;
 
   return (
-    <div className={cn('border border-border bg-white p-4 border-l-2', borderClass)}>
+    <div className={cn('border border-border bg-white p-4 border-l-2 min-w-0', borderClass)}>
       <div className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1">
         {label}
       </div>
-      <div className="flex items-baseline gap-1.5">
-        <span className={cn('text-2xl font-semibold font-data', colorClass)}>{primary}</span>
+      <div className="flex items-baseline gap-1.5 min-w-0">
+        <span
+          className={cn(
+            'text-lg sm:text-xl xl:text-2xl font-semibold font-data tabular-nums tracking-tight leading-tight',
+            colorClass,
+          )}
+          title={primary}
+        >
+          {primary}
+        </span>
       </div>
       <div className="flex items-center gap-1 mt-1.5 text-[10px]">
         <Icon size={11} className={colorClass} />

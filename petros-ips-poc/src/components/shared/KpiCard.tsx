@@ -14,8 +14,12 @@ interface KpiCardProps {
 }
 
 export function KpiCard({ label, value, unit, delta, className, eduEntry }: KpiCardProps) {
+  // Progressive sizing so large values don't overflow narrow cards at ≤768 px:
+  //   ≤ 9 chars → text-2xl; ≤ 12 chars → text-xl; else text-lg.
+  const len = value.trim().length;
+  const sizeClass = len <= 9 ? 'text-xl sm:text-2xl' : len <= 12 ? 'text-lg sm:text-xl' : 'text-base sm:text-lg';
   return (
-    <div className={cn('border border-border bg-white p-4 min-w-[160px]', className)}>
+    <div className={cn('border border-border bg-white p-4 min-w-0', className)}>
       <div className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1 flex items-start gap-1 leading-tight">
         {eduEntry?.tooltip ? (
           <EduTooltip entry={eduEntry}><span className="cursor-help break-words">{label}</span></EduTooltip>
@@ -27,13 +31,13 @@ export function KpiCard({ label, value, unit, delta, className, eduEntry }: KpiC
       <div className="flex items-baseline gap-1.5 min-w-0">
         <span
           className={cn(
-            'font-semibold font-data whitespace-nowrap',
-            value.length > 9 ? 'text-lg' : 'text-2xl',
-            // Auto-detect parenthesized accounting negatives like "($701.0M)" or "(701.0)" → red
+            'font-semibold font-data whitespace-nowrap tabular-nums tracking-tight',
+            sizeClass,
             value.trim().startsWith('(') && value.trim().endsWith(')')
               ? 'text-danger'
               : 'text-text-primary',
           )}
+          title={value}
         >
           {value}
         </span>

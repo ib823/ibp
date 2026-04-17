@@ -54,7 +54,13 @@ export function AppShell() {
 
       <div className="flex flex-col flex-1 min-w-0">
         <Header />
-        <main id="main-content" className="flex-1 overflow-y-auto">
+        <main
+          id="main-content"
+          role="main"
+          aria-label="Main content"
+          tabIndex={-1}
+          className="flex-1 overflow-y-auto focus:outline-none"
+        >
           <div className="max-w-[1600px] mx-auto p-4 sm:p-6">
             <Outlet />
           </div>

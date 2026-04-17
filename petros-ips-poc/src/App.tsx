@@ -1,10 +1,11 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, RouterProvider, Link } from 'react-router';
+import { createBrowserRouter, RouterProvider, Link, Navigate, useLocation } from 'react-router';
 import { Toaster } from '@/components/ui5/Ui5Toast';
 import { ThemeProvider } from '@ui5/webcomponents-react';
 import '@ui5/webcomponents-react/dist/Assets.js';
 import { AppShell } from '@/components/layout/AppShell';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useIsAuthenticated } from '@/store/auth-store';
 
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const EconomicsPage = lazy(() => import('@/pages/EconomicsPage'));
@@ -16,6 +17,8 @@ const MonteCarloPage = lazy(() => import('@/pages/MonteCarloPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const GlossaryPage = lazy(() => import('@/pages/GlossaryPage'));
 const DataSourcesPage = lazy(() => import('@/pages/DataSourcesPage'));
+const AuditTrailPage = lazy(() => import('@/pages/AuditTrailPage'));
+const LoginPage = lazy(() => import('@/pages/LoginPage'));
 
 function PageLoader() {
   return (
@@ -51,9 +54,24 @@ function wrap(Page: React.LazyExoticComponent<() => React.JSX.Element>) {
   );
 }
 
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const isAuth = useIsAuthenticated();
+  const location = useLocation();
+  if (!isAuth) {
+    const returnTo = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?returnTo=${returnTo}`} replace />;
+  }
+  return <>{children}</>;
+}
+
 const router = createBrowserRouter([
+  { path: '/login', element: wrap(LoginPage) },
   {
-    element: <AppShell />,
+    element: (
+      <RequireAuth>
+        <AppShell />
+      </RequireAuth>
+    ),
     children: [
       { path: '/', element: wrap(DashboardPage) },
       { path: '/economics', element: wrap(EconomicsPage) },
@@ -65,6 +83,7 @@ const router = createBrowserRouter([
       { path: '/settings', element: wrap(SettingsPage) },
       { path: '/glossary', element: wrap(GlossaryPage) },
       { path: '/data-sources', element: wrap(DataSourcesPage) },
+      { path: '/audit', element: wrap(AuditTrailPage) },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

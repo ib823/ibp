@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tabs } from '@/components/ui5/Ui5Tabs';
 import { Select } from '@/components/ui5/Ui5Select';
 import { useProjectStore, getActiveResult, useEffectiveActiveProject } from '@/store/project-store';
 import { FinancialTable } from '@/components/tables/FinancialTable';
+import type { FinancialRow } from '@/components/tables/FinancialTable';
 import { generateIncomeStatement } from '@/engine/financial/income-statement';
 import { generateBalanceSheet } from '@/engine/financial/balance-sheet';
 import { generateCashFlowStatement } from '@/engine/financial/cashflow-statement';
@@ -12,6 +13,12 @@ import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { getPageEntries } from '@/lib/educational-content';
+import {
+  type PeriodGranularity,
+  type RowKind,
+  expandValues,
+  expandYearLabels,
+} from '@/lib/period-granularity';
 
 const edu = getPageEntries('financial');
 
@@ -21,6 +28,7 @@ export default function FinancialPage() {
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const result = useProjectStore((s) => getActiveResult(s));
+  const [granularity, setGranularity] = useState<PeriodGranularity>('year');
 
   // Use the override-merged project so what-if edits propagate to IS/BS/CF.
   const activeProject = useEffectiveActiveProject() ?? projects.find((p) => p.project.id === activeProjectId);
@@ -35,6 +43,13 @@ export default function FinancialPage() {
     return { is, bs, cfStmt, am, cfs, years: cfs.map((c) => c.year) };
   }, [result, activeProject]);
 
+  const periodLabels = useMemo(
+    () => (statements ? expandYearLabels(statements.years, granularity) : []),
+    [statements, granularity],
+  );
+  const expandRows = (rows: Array<FinancialRow & { kind?: RowKind }>): FinancialRow[] =>
+    rows.map((r) => ({ ...r, values: expandValues(r.values, granularity, r.kind ?? 'flow') }));
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -42,15 +57,33 @@ export default function FinancialPage() {
           <h1 className="text-lg font-semibold text-text-primary">Financial Statements</h1>
           <InfoIcon entry={edu['F-01']!} />
         </div>
-        <Select
-          value={activeProjectId ?? ''}
-          onValueChange={(v) => setActiveProject(v)}
-          options={projects.map((p) => ({ value: p.project.id, label: p.project.name }))}
-          placeholder="Select project..."
-          className="w-full sm:w-[220px]"
-          aria-label="Select project"
-        />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select
+            value={granularity}
+            onValueChange={(v) => setGranularity(v as PeriodGranularity)}
+            options={[
+              { value: 'year', label: 'Yearly' },
+              { value: 'quarter', label: 'Quarterly' },
+              { value: 'month', label: 'Monthly' },
+            ]}
+            className="w-[120px]"
+            aria-label="Time granularity"
+          />
+          <Select
+            value={activeProjectId ?? ''}
+            onValueChange={(v) => setActiveProject(v)}
+            options={projects.map((p) => ({ value: p.project.id, label: p.project.name }))}
+            placeholder="Select project..."
+            className="w-full sm:w-[220px]"
+            aria-label="Select project"
+          />
+        </div>
       </div>
+      {granularity !== 'year' && (
+        <div className="text-[11px] text-amber bg-amber/5 border border-amber/30 rounded px-3 py-2">
+          <strong>POC note:</strong> {granularity === 'quarter' ? 'Quarterly' : 'Monthly'} values are derived straight-line from annual figures for demonstration. The production SAC implementation will source true {granularity === 'quarter' ? 'quarterly' : 'monthly'} close data from SAP S/4HANA accrual-based accounting.
+        </div>
+      )}
 
       {!statements ? (
         <div className="flex items-center justify-center h-64 border border-border bg-white">
@@ -71,8 +104,8 @@ export default function FinancialPage() {
               content: (
                 <div className="border border-border bg-white p-4">
                   <FinancialTable
-                    years={statements.years}
-                    rows={[
+                    years={periodLabels}
+                    rows={expandRows([
                       { label: 'Revenue', values: statements.is.yearly.map((l) => l.revenue as number), eduEntryId: 'F-07' },
                       { label: 'Royalty', values: statements.is.yearly.map((_, idx) => -(statements.cfs[idx]?.royalty as number ?? 0)), eduEntryId: 'F-08' },
                       { label: 'Cost of Sales', values: statements.is.yearly.map((l) => -(l.costOfSales as number)), eduEntryId: 'F-09' },
@@ -82,7 +115,7 @@ export default function FinancialPage() {
                       { label: 'Profit Before Tax', values: statements.is.yearly.map((l) => l.profitBeforeTax as number), isSubtotal: true, eduEntryId: 'F-13' },
                       { label: 'Tax Expense', values: statements.is.yearly.map((l) => -(l.taxExpense as number)), eduEntryId: 'F-14' },
                       { label: 'Net Income', values: statements.is.yearly.map((l) => l.profitAfterTax as number), isTotal: true, eduEntryId: 'F-15' },
-                    ]}
+                    ])}
                   />
                 </div>
               ),
@@ -94,19 +127,19 @@ export default function FinancialPage() {
               content: (
                 <div className="border border-border bg-white p-4">
                   <FinancialTable
-                    years={statements.years}
-                    rows={[
-                      { label: 'PP&E (net)', values: statements.bs.yearly.map((l) => l.ppeNet as number), eduEntryId: 'F-16' },
-                      { label: 'Cash', values: statements.bs.yearly.map((l) => l.cash as number), eduEntryId: 'F-17' },
-                      { label: 'Total Assets', values: statements.bs.yearly.map((l) => l.totalAssets as number), isSubtotal: true, eduEntryId: 'F-18' },
-                      { label: '', values: statements.years.map(() => 0) },
-                      { label: 'Retained Earnings', values: statements.bs.yearly.map((l) => l.retainedEarnings as number), eduEntryId: 'F-19' },
-                      { label: 'Reconciliation Adj. (POC)*', values: statements.bs.yearly.map((l) => l.otherReserves as number), eduEntryId: 'F-20' },
-                      { label: 'Total Equity', values: statements.bs.yearly.map((l) => l.totalEquity as number), isSubtotal: true, eduEntryId: 'F-21' },
-                      { label: 'Decomm. Provision', values: statements.bs.yearly.map((l) => l.decommissioningProvision as number), eduEntryId: 'F-22' },
-                      { label: 'Total Liabilities', values: statements.bs.yearly.map((l) => l.totalLiabilities as number), isSubtotal: true, eduEntryId: 'F-23' },
-                      { label: 'Equity + Liabilities', values: statements.bs.yearly.map((l) => l.totalEquityAndLiabilities as number), isTotal: true, eduEntryId: 'F-24' },
-                    ]}
+                    years={periodLabels}
+                    rows={expandRows([
+                      { label: 'PP&E (net)', values: statements.bs.yearly.map((l) => l.ppeNet as number), kind: 'stock', eduEntryId: 'F-16' },
+                      { label: 'Cash', values: statements.bs.yearly.map((l) => l.cash as number), kind: 'stock', eduEntryId: 'F-17' },
+                      { label: 'Total Assets', values: statements.bs.yearly.map((l) => l.totalAssets as number), kind: 'stock', isSubtotal: true, eduEntryId: 'F-18' },
+                      { label: '', values: statements.years.map(() => 0), kind: 'stock' },
+                      { label: 'Retained Earnings', values: statements.bs.yearly.map((l) => l.retainedEarnings as number), kind: 'stock', eduEntryId: 'F-19' },
+                      { label: 'Reconciliation Adj. (POC)*', values: statements.bs.yearly.map((l) => l.otherReserves as number), kind: 'stock', eduEntryId: 'F-20' },
+                      { label: 'Total Equity', values: statements.bs.yearly.map((l) => l.totalEquity as number), kind: 'stock', isSubtotal: true, eduEntryId: 'F-21' },
+                      { label: 'Decomm. Provision', values: statements.bs.yearly.map((l) => l.decommissioningProvision as number), kind: 'stock', eduEntryId: 'F-22' },
+                      { label: 'Total Liabilities', values: statements.bs.yearly.map((l) => l.totalLiabilities as number), kind: 'stock', isSubtotal: true, eduEntryId: 'F-23' },
+                      { label: 'Equity + Liabilities', values: statements.bs.yearly.map((l) => l.totalEquityAndLiabilities as number), kind: 'stock', isTotal: true, eduEntryId: 'F-24' },
+                    ])}
                   />
                   <EduTooltip entryId="F-36">
                     <p className="text-[10px] text-text-muted mt-3 cursor-help">
@@ -125,17 +158,17 @@ export default function FinancialPage() {
               content: (
                 <div className="border border-border bg-white p-4">
                   <FinancialTable
-                    years={statements.years}
-                    rows={[
+                    years={periodLabels}
+                    rows={expandRows([
                       { label: 'Profit Before Tax', values: statements.cfStmt.yearly.map((l) => l.profitBeforeTax as number), eduEntryId: 'F-25' },
                       { label: 'Add: Depreciation', values: statements.cfStmt.yearly.map((l) => l.depreciation as number), eduEntryId: 'F-26' },
                       { label: 'Tax Paid', values: statements.cfStmt.yearly.map((l) => -(l.taxPaid as number)), eduEntryId: 'F-27' },
                       { label: 'Operating Cash Flow', values: statements.cfStmt.yearly.map((l) => l.netOperatingCashFlow as number), isSubtotal: true, eduEntryId: 'F-28' },
                       { label: 'CAPEX', values: statements.cfStmt.yearly.map((l) => l.netInvestingCashFlow as number), eduEntryId: 'F-29' },
                       { label: 'Net Cash Change', values: statements.cfStmt.yearly.map((l) => l.netCashChange as number), isSubtotal: true, eduEntryId: 'F-30' },
-                      { label: 'Opening Cash', values: statements.cfStmt.yearly.map((l) => l.openingCash as number), eduEntryId: 'F-31' },
-                      { label: 'Closing Cash', values: statements.cfStmt.yearly.map((l) => l.closingCash as number), isTotal: true, eduEntryId: 'F-32' },
-                    ]}
+                      { label: 'Opening Cash', values: statements.cfStmt.yearly.map((l) => l.openingCash as number), kind: 'stock', eduEntryId: 'F-31' },
+                      { label: 'Closing Cash', values: statements.cfStmt.yearly.map((l) => l.closingCash as number), kind: 'stock', isTotal: true, eduEntryId: 'F-32' },
+                    ])}
                   />
                   <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
                     <strong>Note:</strong> Closing Cash in this statement is derived from accounting cash flows (Profit Before Tax + Depreciation − Tax − CAPEX). The Balance Sheet Cash row is derived from the economics model's cumulative Net Cash Flow, which includes fiscal items (royalty, export duty, cost recovery, profit split) not captured in this simplified accounting cash flow. In the production SAC implementation, both statements will be generated from a unified accrual-based accounting engine integrated with SAP S/4HANA, eliminating this divergence.
@@ -158,13 +191,13 @@ export default function FinancialPage() {
                     </div>
                     <SectionHelp entry={edu['F-33']!} />
                     <FinancialTable
-                      years={statements.years}
-                      rows={[
-                        { label: 'Opening', values: statements.am.ppe.map((l) => l.opening as number), eduEntryId: 'F-38' },
+                      years={periodLabels}
+                      rows={expandRows([
+                        { label: 'Opening', values: statements.am.ppe.map((l) => l.opening as number), kind: 'stock', eduEntryId: 'F-38' },
                         { label: 'Additions', values: statements.am.ppe.map((l) => l.additions as number), eduEntryId: 'F-39' },
                         { label: 'Depreciation', values: statements.am.ppe.map((l) => -(l.depreciation as number)), eduEntryId: 'F-40' },
-                        { label: 'Closing', values: statements.am.ppe.map((l) => l.closing as number), isTotal: true, eduEntryId: 'F-41' },
-                      ]}
+                        { label: 'Closing', values: statements.am.ppe.map((l) => l.closing as number), kind: 'stock', isTotal: true, eduEntryId: 'F-41' },
+                      ])}
                     />
                   </div>
                   <div>
@@ -176,14 +209,14 @@ export default function FinancialPage() {
                     </div>
                     <SectionHelp entry={edu['F-34']!} />
                     <FinancialTable
-                      years={statements.years}
-                      rows={[
-                        { label: 'Opening', values: statements.am.decommissioningProvision.map((l) => l.opening as number), eduEntryId: 'F-42' },
+                      years={periodLabels}
+                      rows={expandRows([
+                        { label: 'Opening', values: statements.am.decommissioningProvision.map((l) => l.opening as number), kind: 'stock', eduEntryId: 'F-42' },
                         { label: 'Additions', values: statements.am.decommissioningProvision.map((l) => l.additions as number), eduEntryId: 'F-43' },
                         { label: 'Unwinding', values: statements.am.decommissioningProvision.map((l) => l.unwinding as number), eduEntryId: 'F-44' },
                         { label: 'Utilisations', values: statements.am.decommissioningProvision.map((l) => -(l.utilisations as number)), eduEntryId: 'F-45' },
-                        { label: 'Closing', values: statements.am.decommissioningProvision.map((l) => l.closing as number), isTotal: true, eduEntryId: 'F-46' },
-                      ]}
+                        { label: 'Closing', values: statements.am.decommissioningProvision.map((l) => l.closing as number), kind: 'stock', isTotal: true, eduEntryId: 'F-46' },
+                      ])}
                     />
                   </div>
                   <div>
@@ -195,12 +228,12 @@ export default function FinancialPage() {
                     </div>
                     <SectionHelp entry={edu['F-35']!} />
                     <FinancialTable
-                      years={statements.years}
-                      rows={[
-                        { label: 'Opening', values: statements.am.retainedEarnings.map((l) => l.opening as number), eduEntryId: 'F-47' },
+                      years={periodLabels}
+                      rows={expandRows([
+                        { label: 'Opening', values: statements.am.retainedEarnings.map((l) => l.opening as number), kind: 'stock', eduEntryId: 'F-47' },
                         { label: 'Profit After Tax', values: statements.am.retainedEarnings.map((l) => l.profitAfterTax as number), eduEntryId: 'F-48' },
-                        { label: 'Closing', values: statements.am.retainedEarnings.map((l) => l.closing as number), isTotal: true, eduEntryId: 'F-49' },
-                      ]}
+                        { label: 'Closing', values: statements.am.retainedEarnings.map((l) => l.closing as number), kind: 'stock', isTotal: true, eduEntryId: 'F-49' },
+                      ])}
                     />
                   </div>
                 </div>

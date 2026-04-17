@@ -173,13 +173,19 @@ export default function PortfolioPage() {
           eduEntry={edu['P-04']}
         />
         <KpiCard
-          label="Portfolio Govt Take"
+          label={totalGovtTake > 100 ? 'Portfolio Govt Take *' : 'Portfolio Govt Take'}
           value={totalGovtTake.toFixed(1) + '%'}
           eduEntry={edu['P-05']}
         />
       </div>
       <p className="text-[10px] text-text-muted -mt-1">
         Portfolio totals are calculated from full-precision values and may differ from the sum of individually rounded project values by up to $0.1M.
+        {totalGovtTake > 100 && (
+          <>
+            {' '}
+            <span className="text-amber">* Portfolio Govt Take &gt; 100% indicates a loss-making project in the active set — contractor take is negative while PSC fiscal stabilisers still accrue to the government. See tooltip for details.</span>
+          </>
+        )}
       </p>
 
       {/* PANELS 2 & 3 — Bubble + Toggle List */}

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { TornadoResult, SensitivityVariable } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { ChartDataTable } from '@/components/shared/ChartDataTable';
 
 interface TornadoChartProps {
   result: TornadoResult;
@@ -64,13 +65,21 @@ export function TornadoChart({ result }: TornadoChartProps) {
   const padT = 25;
   const chartW = svgW - padL - padR;
   const svgH = padT + bars.length * (barHeight + barGap) + 30;
+  const INSIDE_LABEL_MIN_W = 50;
 
   const range = maxNpv - minNpv || 1;
   const scaleX = (v: number) => padL + ((v - minNpv) / range) * chartW;
   const baseLine = scaleX(baseNpv);
 
   return (
-    <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full" style={{ maxHeight: 360 }}>
+    <figure className="m-0">
+    <svg
+      viewBox={`0 0 ${svgW} ${svgH}`}
+      className="w-full"
+      style={{ maxHeight: 360 }}
+      role="img"
+      aria-label={`Tornado sensitivity: impact of each variable on NPV at plus or minus 30 percent. Base NPV ${u.money(baseNpv)}.`}
+    >
       {/* Header labels */}
       <text x={padL} y={14} fontSize={11} fill="#9CA3AF">
         {u.money(minNpv)}
@@ -148,30 +157,75 @@ export function TornadoChart({ result }: TornadoChartProps) {
               />
             )}
 
-            {/* Value labels */}
-            <text
-              x={xDown - 4}
-              y={y + barHeight / 2 + 3}
-              textAnchor="end"
-              fontSize={11}
-              fill="#6B7280"
-              className="font-data"
-            >
-              {u.money(downside)}
-            </text>
-            <text
-              x={xUp + 4}
-              y={y + barHeight / 2 + 3}
-              textAnchor="start"
-              fontSize={11}
-              fill="#6B7280"
-              className="font-data"
-            >
-              {u.money(upside)}
-            </text>
+            {/* Value labels — inside bar when wide enough, else outside.
+                Inside placement avoids collision with the variable axis label at the leftmost bar. */}
+            {downBarW >= INSIDE_LABEL_MIN_W ? (
+              <text
+                x={downBarX + 6}
+                y={y + barHeight / 2 + 3}
+                textAnchor="start"
+                fontSize={11}
+                fill="#FFFFFF"
+                fontWeight={500}
+                className="font-data"
+              >
+                {u.money(downside)}
+              </text>
+            ) : (
+              <text
+                x={xDown - 4}
+                y={y + barHeight / 2 + 3}
+                textAnchor="end"
+                fontSize={11}
+                fill="#6B7280"
+                className="font-data"
+              >
+                {u.money(downside)}
+              </text>
+            )}
+            {upBarW >= INSIDE_LABEL_MIN_W ? (
+              <text
+                x={upBarX + upBarW - 6}
+                y={y + barHeight / 2 + 3}
+                textAnchor="end"
+                fontSize={11}
+                fill="#FFFFFF"
+                fontWeight={500}
+                className="font-data"
+              >
+                {u.money(upside)}
+              </text>
+            ) : (
+              <text
+                x={xUp + 4}
+                y={y + barHeight / 2 + 3}
+                textAnchor="start"
+                fontSize={11}
+                fill="#6B7280"
+                className="font-data"
+              >
+                {u.money(upside)}
+              </text>
+            )}
           </g>
         );
       })}
     </svg>
+    <ChartDataTable
+      caption={`Tornado sensitivity result: each variable's low-side and high-side NPV at plus or minus 30 percent. Sorted by total swing. Base NPV ${u.money(baseNpv)}.`}
+      columns={[
+        { label: 'Variable' },
+        { label: 'Low NPV' },
+        { label: 'High NPV' },
+        { label: 'Swing' },
+      ]}
+      rows={bars.map(([variable, { low, high }]) => [
+        VARIABLE_LABELS[variable],
+        u.money(Math.min(low, high)),
+        u.money(Math.max(low, high)),
+        u.money(Math.abs(high - low)),
+      ])}
+    />
+    </figure>
   );
 }

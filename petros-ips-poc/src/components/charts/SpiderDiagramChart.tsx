@@ -13,6 +13,7 @@ import {
 import type { SpiderResult } from '@/engine/sensitivity/spider';
 import type { SensitivityVariable } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { ChartDataTable } from '@/components/shared/ChartDataTable';
 
 
 interface SpiderDiagramChartProps {
@@ -53,6 +54,7 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
   }, [result, u.currencyFactor]);
 
   return (
+    <figure className="m-0" aria-label="Spider diagram: NPV versus percent change for each sensitivity variable.">
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data} margin={{ top: 10, right: 50, left: 30, bottom: 25 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -90,12 +92,25 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
             dataKey={line.variable}
             stroke={VARIABLE_COLORS[line.variable]}
             strokeWidth={2}
-            dot={false}
+            dot={{ r: 2.5, fill: VARIABLE_COLORS[line.variable], strokeWidth: 0 }}
             activeDot={{ r: 4 }}
             name={line.variable}
+            isAnimationActive={false}
           />
         ))}
       </LineChart>
     </ResponsiveContainer>
+    <ChartDataTable
+      caption={`Spider sensitivity data: NPV in ${u.currencyCode} millions for each variable across the plus/minus 30 percent range.`}
+      columns={[
+        { label: '% change from base' },
+        ...result.lines.map((l) => ({ label: VARIABLE_LABELS[l.variable], unit: `${u.currencyCode} M` })),
+      ]}
+      rows={data.map((row) => [
+        `${row['pctChange']! >= 0 ? '+' : ''}${row['pctChange']}%`,
+        ...result.lines.map((l) => Number((row[l.variable] ?? 0).toFixed(1))),
+      ])}
+    />
+    </figure>
   );
 }

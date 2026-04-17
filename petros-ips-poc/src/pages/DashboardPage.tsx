@@ -115,7 +115,7 @@ export default function DashboardPage() {
         <table className="w-full border-collapse text-xs min-w-[640px] tabular-nums">
           <thead>
             <tr className="border-b border-border bg-content-alt">
-              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5">
+              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5 sticky left-0 bg-content-alt z-10">
                 <EduTooltip entryId="D-07"><span className="cursor-help">Project</span></EduTooltip>
               </th>
               <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
@@ -155,8 +155,8 @@ export default function DashboardPage() {
                 : p.project.status === 'producing' ? 'D-09c'
                 : undefined;
               return (
-                <tr key={p.project.id} className="border-b border-border/30 hover:bg-content-alt/50">
-                  <td className="px-3 py-2 font-medium text-text-primary">{p.project.name}</td>
+                <tr key={p.project.id} className="group border-b border-border/30 hover:bg-content-alt/50">
+                  <td className="px-3 py-2 font-medium text-text-primary sticky left-0 bg-white group-hover:bg-content-alt/50 z-10">{p.project.name}</td>
                   <td className="px-2 py-2">
                     <EduTooltip entryId={regimeTooltipId}>
                       <Badge variant="outline" className="text-[10px] py-0 px-1 cursor-help">

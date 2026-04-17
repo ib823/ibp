@@ -628,6 +628,11 @@ export interface VersionedProjectData {
   readonly modifiedBy: string;
   readonly productionProfile: ProductionProfile;
   readonly costProfile: CostProfile;
+  /** Identity of the user who made the most recent "submitted" transition.
+   *  Used by the SoD guard to prevent same-user approval. Absent until first submission. */
+  readonly submittedBy?: string;
+  /** Free-form comment attached to the most recent transition (e.g. reviewer feedback). */
+  readonly reviewComment?: string;
 }
 
 export interface YearlyVariance {

@@ -14,7 +14,8 @@ export interface FinancialRow {
 }
 
 interface FinancialTableProps {
-  years: number[];
+  /** Column labels (annual years as numbers, or period strings like "2025-Q1", "Jan-25") */
+  years: (number | string)[];
   rows: FinancialRow[];
 }
 

@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { path: '/settings',    icon: 'action-settings',     text: 'Settings' },
   { path: '/glossary',    icon: 'learning-assistant',  text: 'Glossary' },
   { path: '/data-sources', icon: 'document',           text: 'Data Sources' },
+  { path: '/audit',       icon: 'history',             text: 'Audit Trail' },
 ] as const;
 
 export function Sidebar() {

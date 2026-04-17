@@ -4,6 +4,11 @@ import { Badge } from '@/components/ui5/Ui5Badge';
 import { Button } from '@/components/ui5/Ui5Button';
 import { ChevronDown, ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ConnectionCard } from '@/components/shared/ConnectionCard';
+import { VersionedDataUpload } from '@/components/shared/VersionedDataUpload';
+import { InfoIcon } from '@/components/shared/InfoIcon';
+import { SectionHelp } from '@/components/shared/SectionHelp';
+import { getEntry } from '@/lib/educational-content';
 
 // ── Live data imports (sample rows pulled from actual POC data) ────────
 import { ALL_PROJECTS } from '@/data/projects';
@@ -415,6 +420,7 @@ export default function DataSourcesPage() {
     },
   ], [versionedRegistry, phaseRegistry]);
 
+  const connEntry = getEntry('CONN-01');
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
@@ -425,6 +431,31 @@ export default function DataSourcesPage() {
           the structure, sample data, and downloadable blank template for production upload.
         </p>
       </div>
+
+      {/* Zone 0 — Live connections (POC simulation) */}
+      <section className="border border-border bg-white p-4 sm:p-5 space-y-3" aria-labelledby="ds-connections-title">
+        <header className="flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <h2 id="ds-connections-title" className="text-sm font-semibold text-text-primary flex items-center gap-1.5">
+              Live connections
+              {connEntry && <InfoIcon entry={connEntry} />}
+            </h2>
+            <p className="text-[11px] text-text-secondary mt-0.5">
+              Production integration lifecycle — connect / sync / disconnect SAP S/4HANA and SAP Analytics Cloud.
+              Microsoft Entra ID shows the current authenticated tenant for reference.
+            </p>
+          </div>
+        </header>
+        {connEntry?.sectionHelp && <SectionHelp entry={connEntry} />}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <ConnectionCard kind="s4hana" eduId="CONN-01" />
+          <ConnectionCard kind="sac" />
+          <ConnectionCard kind="entra" />
+        </div>
+      </section>
+
+      {/* Round-trip upload */}
+      <VersionedDataUpload />
 
       {/* Zone 1 — Input → Output Flow Map */}
       <FlowMap />

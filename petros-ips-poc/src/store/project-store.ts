@@ -33,6 +33,8 @@ import { buildVersionedDataRegistry } from '@/data/versioned-data';
 import { buildPhaseDataRegistry } from '@/data/phase-data';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
 import { compareVersions as engineCompareVersions } from '@/engine/economics/version-comparison';
+import { applyTransition, type WorkflowAction } from '@/engine/workflow/transitions';
+import type { User } from '@/engine/auth/types';
 import { comparePhases as engineComparePhases } from '@/engine/economics/phase-comparison';
 import { calculateTornado } from '@/engine/sensitivity/tornado';
 import { runMonteCarlo } from '@/engine/montecarlo/simulation';
@@ -104,6 +106,20 @@ interface ProjectStoreActions {
   // ── Feature 1: Versioned data ───────────────────────────────────────
   setActiveDataVersion: (version: DataVersion) => void;
   compareVersions: (projectId: string, v1: DataVersion, v2: DataVersion) => void;
+  applyWorkflowTransition: (
+    projectId: string,
+    dataVersion: DataVersion,
+    action: WorkflowAction,
+    actor: User,
+    options?: { comment?: string },
+  ) => { ok: true } | { ok: false; reason: string };
+  applyVersionedDataUpdates: (rows: ReadonlyArray<{
+    projectId: string;
+    dataVersion: DataVersion;
+    status: import('@/engine/types').DataStatus;
+    lastModified: string;
+    modifiedBy: string;
+  }>) => { updated: number; added: number };
 
   // ── Feature 2: Unit conversion ──────────────────────────────────────
   addUnitConversion: (input: NewConversionInput) => void;
@@ -418,6 +434,58 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const updated = new Map(state.versionComparisonResults);
     updated.set(projectId, result);
     set({ versionComparisonResults: updated });
+  },
+
+  applyWorkflowTransition: (projectId, dataVersion, action, actor, options) => {
+    const state = get();
+    const projVersions = state.versionedData.get(projectId);
+    const current = projVersions?.get(dataVersion);
+    if (!projVersions || !current) {
+      return { ok: false, reason: 'Version not found.' };
+    }
+    let next;
+    try {
+      next = applyTransition(current, action, actor, options);
+    } catch (err) {
+      return { ok: false, reason: err instanceof Error ? err.message : 'Transition failed.' };
+    }
+    const nextProjVersions = new Map(projVersions);
+    nextProjVersions.set(dataVersion, next);
+    const nextVersioned = new Map(state.versionedData);
+    nextVersioned.set(projectId, nextProjVersions);
+    set({ versionedData: nextVersioned });
+    return { ok: true };
+  },
+
+  applyVersionedDataUpdates: (rows) => {
+    const state = get();
+    let updated = 0;
+    let added = 0;
+    const nextVersioned = new Map(state.versionedData);
+    for (const row of rows) {
+      const existingProj = nextVersioned.get(row.projectId);
+      const existingVer = existingProj?.get(row.dataVersion);
+      if (existingVer) {
+        const merged: VersionedProjectData = {
+          ...existingVer,
+          status: row.status,
+          lastModified: row.lastModified,
+          modifiedBy: row.modifiedBy,
+        };
+        const nextProj = new Map(existingProj);
+        nextProj.set(row.dataVersion, merged);
+        nextVersioned.set(row.projectId, nextProj);
+        updated++;
+      } else {
+        // We cannot synthesise a full VersionedProjectData for a brand-new
+        // project+version pair without production/cost profiles, so we skip
+        // these rows in the POC. Production SAC will reconcile against
+        // existing project master data.
+        added++;
+      }
+    }
+    set({ versionedData: nextVersioned });
+    return { updated, added };
   },
 
   // ── Feature 2: Unit conversion actions ─────────────────────────────

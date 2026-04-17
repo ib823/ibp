@@ -758,8 +758,8 @@ const PORTFOLIO: Record<string, EducationalEntry> = {
   'P-05': {
     id: 'P-05',
     label: 'Portfolio Govt Take',
-    tooltip: 'Revenue-weighted average government take across all active projects.',
-    infoPanel: "Government Take at the portfolio level is weighted by each project's revenue contribution. Higher-revenue projects have proportionally more influence.\n\nTypical Malaysian PSC government take: 70\u201390% for profitable fields, potentially exceeding 100% for unprofitable ones.",
+    tooltip: 'Revenue-weighted average government take across active projects. Can exceed 100% when one or more projects is loss-making \u2014 PSC fiscal stabilisers (minimum royalty, cost-oil cap, export duty) still accrue to the government while contractor take is negative.',
+    infoPanel: "Government Take at the portfolio level is weighted by each project's revenue contribution. Higher-revenue projects have proportionally more influence.\n\nTypical Malaysian PSC government take: 70\u201390% for profitable fields.\n\nWhy it can exceed 100%: PSC fiscal stabilisers \u2014 minimum royalty, cost-oil recovery caps, and export duty \u2014 continue to accrue to the government even when a project is loss-making. If contractor take is negative on a loss-making project included in the weighted aggregation, the portfolio take can weight past 100%. This is a feature of Malaysian PSC economics, not a calculation error.",
     references: [],
   },
   'P-06': {
@@ -1743,6 +1743,93 @@ export const GLOSSARY: GlossaryEntry[] = [
   { term: 'Monte Carlo', definition: 'Probabilistic simulation method using random sampling from specified distributions to quantify uncertainty.', references: ['SPE REP Section 5.4'] },
 ];
 
+// ── AUDIT TRAIL PAGE (A-01 through A-05) ────────────────────────────
+
+const AUDIT: Record<string, EducationalEntry> = {
+  'A-01': {
+    id: 'A-01',
+    label: 'Audit Trail',
+    tooltip: 'Append-only log of privileged actions — who did what, when, from which role.',
+    infoPanel: 'Every authenticated action writes an immutable audit entry: sign-in, MFA, workflow transitions, connection changes, and template up/downloads. Entries record the timestamp, actor identity, actor role at the time of the action, the target resource, and a free-form detail string.\n\nScope: the POC session-scoped log retains up to 500 entries and clears on tab close. Production SAC will persist entries to a tamper-evident store (WORM / immutable) with retention per PETROS IT security policy (typically 7 years for financial-relevant events).\n\nUse cases: forensic review of approval chains (SoD verification), SOX walk-throughs, PETRONAS MPM audits, incident response for suspected unauthorised changes.',
+    sectionHelp: 'Filter by event category or user. Admin role can clear the demo log; production deployment disables clear entirely.',
+    references: ['SoW Section 2.10 — role-based access, audit trail for change tracking', 'ISO 27001 A.12.4 — Logging and monitoring'],
+  },
+  'A-02': {
+    id: 'A-02',
+    label: 'Event Kind',
+    tooltip: 'Category of audit event. Workflow events enforce SoD; auth events track session lifecycle.',
+    infoPanel: null,
+    references: [],
+  },
+  'A-03': {
+    id: 'A-03',
+    label: 'Actor Role',
+    tooltip: 'Role held by the user at the moment the action was performed — captured at emit time so later role changes do not rewrite history.',
+    infoPanel: null,
+    references: [],
+  },
+};
+
+// ── WORKFLOW (W-01 through W-10) ─────────────────────────────────────
+
+const WORKFLOW: Record<string, EducationalEntry> = {
+  'W-01': {
+    id: 'W-01',
+    label: 'Status Workflow',
+    tooltip: 'Budget and forecast versions move through states: open → submitted → (to_change | approved). Approval requires a different user than the submitter (Segregation of Duty).',
+    infoPanel: 'Workflow states:\n\n• open — Analyst is editing a working draft. No lock, no audit footprint beyond last-modified.\n• submitted — Analyst has submitted the version for review. Reviewers and Approvers can act; Analyst cannot edit further until resubmission is requested.\n• to_change — Reviewer or Approver has requested changes. Ball is back in Analyst\'s court. Next submission returns the version to submitted.\n• approved — Terminal. Approved versions are locked and form the basis for downstream planning.\n\nSegregation of Duty: a user cannot approve their own submission. The Approver role is required for approval; Admins can also approve (with the same SoD guard). Reviewers can request changes but not approve.\n\nEvery transition writes an audit entry capturing the actor, their role at the time, and the target version.',
+    references: ['SoW Section 2.9 — data states (open / submitted / to_change / approved)', 'SoW Data Management item 2 — Segregation of Duty'],
+  },
+  'W-02': {
+    id: 'W-02',
+    label: 'Submit for Review',
+    tooltip: 'Move this working draft to "submitted" state for Approver review. Only the Analyst who owns the draft (or an Admin) can submit.',
+    infoPanel: null,
+    references: [],
+  },
+  'W-03': {
+    id: 'W-03',
+    label: 'Approve',
+    tooltip: 'Finalise this submission as the approved plan. Requires Approver or Admin role. Cannot approve own submission.',
+    infoPanel: null,
+    references: [],
+  },
+  'W-04': {
+    id: 'W-04',
+    label: 'Request Changes',
+    tooltip: 'Send the submission back to the Analyst with a note describing what needs to change.',
+    infoPanel: null,
+    references: [],
+  },
+  'W-05': {
+    id: 'W-05',
+    label: 'Resubmit',
+    tooltip: 'Resubmit after addressing reviewer feedback. Returns the version to "submitted" state.',
+    infoPanel: null,
+    references: [],
+  },
+};
+
+// ── CONNECTIONS & DATA SOURCES (CONN-01+) ────────────────────────────
+
+const CONNECTIONS: Record<string, EducationalEntry> = {
+  'CONN-01': {
+    id: 'CONN-01',
+    label: 'SAP S/4HANA Connection',
+    tooltip: 'Live connection to the PETROS SAP S/4HANA tenant for actuals, master data, and chart of accounts.',
+    infoPanel: 'In production, this connector pulls Actuals (realised revenue, cost, CAPEX) and master data (project structures, cost centres, WBS elements) directly from S/4HANA via the SAP Analytics Cloud Import Data Management service. Scheduled pulls run overnight; ad-hoc pulls are available to planners.\n\nThis POC simulates the connection lifecycle and uses locally-seeded Actuals. No real credentials are held in the browser. Phase 1a will federate to the PETROS S/4HANA sandbox; Phase 1b will connect to production with read-only service accounts under least-privilege.',
+    sectionHelp: 'Toggle the connection to simulate the production integration lifecycle. Connect / Sync / Disconnect events write to the audit log.',
+    references: ['SoW Section 2.8 — cloud data platform, ingest via APIs / SAP S/4HANA / file upload'],
+  },
+  'CONN-02': {
+    id: 'CONN-02',
+    label: 'Versioned Data Round-Trip',
+    tooltip: 'Download a template, edit offline in Excel, and upload to apply changes.',
+    infoPanel: 'Download: generates an xlsx matching the Versioned Data sheet schema (project_id, data_version, scenario_version, status, last_modified, modified_by) populated with the current approved baseline. Planners edit offline — typical for budget cycles where multiple analysts work in parallel.\n\nUpload: parses the xlsx, validates required columns and ISO date formats, shows a diff against the current state (added / updated / removed rows), and applies on confirm. Every upload writes an audit entry capturing the uploader, filename, and row counts.\n\nProduction SAC will offer the same round-trip with additional server-side validation, row-level conflict resolution, and optimistic locking against concurrent edits.',
+    references: ['SoW Section 2.8', 'SoW Data Management item 2 — forecast tabulated by month/quarter/year'],
+  },
+};
+
 // ── COMBINED REGISTRY ────────────────────────────────────────────────
 
 export const EDUCATIONAL_CONTENT = {
@@ -1754,6 +1841,9 @@ export const EDUCATIONAL_CONTENT = {
   reserves: RESERVES,
   monteCarlo: MONTE_CARLO,
   settings: SETTINGS,
+  audit: AUDIT,
+  workflow: WORKFLOW,
+  connections: CONNECTIONS,
 } as const;
 
 export type PageKey = keyof typeof EDUCATIONAL_CONTENT;

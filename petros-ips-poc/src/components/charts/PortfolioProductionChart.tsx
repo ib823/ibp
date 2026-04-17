@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import type { ProjectInputs } from '@/engine/types';
 import { fmtNum } from '@/lib/format';
+import { ChartDataTable } from '@/components/shared/ChartDataTable';
 
 interface PortfolioProductionChartProps {
   projects: readonly ProjectInputs[];
@@ -42,6 +43,7 @@ export function PortfolioProductionChart({ projects, activeIds }: PortfolioProdu
   }, [projects, activeIds]);
 
   return (
+    <figure className="m-0" aria-label="Portfolio production forecast, stacked by project, in barrels of oil equivalent per day.">
     <ResponsiveContainer width="100%" height={260}>
       <AreaChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
@@ -67,9 +69,22 @@ export function PortfolioProductionChart({ projects, activeIds }: PortfolioProdu
             fill={PROJECT_COLORS[i % PROJECT_COLORS.length]}
             fillOpacity={0.7}
             name={proj.project.name}
+            isAnimationActive={false}
           />
         ))}
       </AreaChart>
     </ResponsiveContainer>
+    <ChartDataTable
+      caption="Annual production in barrels of oil equivalent per day, per project."
+      columns={[
+        { label: 'Year' },
+        ...activeProjects.map((p) => ({ label: p.project.name, unit: 'boe/d' })),
+      ]}
+      rows={data.map((row) => [
+        row['year'] ?? '',
+        ...activeProjects.map((p) => (row[p.project.id] ?? 0) as number),
+      ])}
+    />
+    </figure>
   );
 }

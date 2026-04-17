@@ -14,6 +14,7 @@ import {
 import type { EconomicsResult, FiscalRegimeType } from '@/engine/types';
 import { fmtPct } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
+import { ChartDataTable } from '@/components/shared/ChartDataTable';
 
 interface NpvBubbleChartProps {
   projects: Array<{
@@ -63,7 +64,11 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
   );
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <figure className="m-0" aria-labelledby="npv-bubble-caption">
+      <figcaption id="npv-bubble-caption" className="sr-only">
+        Scatter chart: NPV versus total CAPEX, one bubble per project, sized by cumulative production.
+      </figcaption>
+      <ResponsiveContainer width="100%" height={300}>
       <ScatterChart margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
         <XAxis
@@ -104,12 +109,32 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
             );
           }}
         />
-        <Scatter name="Projects" data={data} fillOpacity={0.8}>
+        <Scatter name="Projects" data={data} fillOpacity={0.8} isAnimationActive={false}>
           {data.map((d, i) => (
             <Cell key={i} fill={getRegimeColor(d.regime)} />
           ))}
         </Scatter>
       </ScatterChart>
     </ResponsiveContainer>
+    <ChartDataTable
+      caption={`Projects by NPV (${u.currencyCode} M) versus CAPEX (${u.currencyCode} M); production shown in MMboe; IRR as percentage; fiscal regime as category.`}
+      columns={[
+        { label: 'Project' },
+        { label: 'NPV', unit: `${u.currencyCode} M` },
+        { label: 'CAPEX', unit: `${u.currencyCode} M` },
+        { label: 'Production', unit: 'MMboe' },
+        { label: 'IRR' },
+        { label: 'Regime' },
+      ]}
+      rows={data.map((d) => [
+        d.name,
+        Number(d.npv.toFixed(1)),
+        Number(d.capex.toFixed(1)),
+        Number(d.production.toFixed(1)),
+        fmtPct(d.irr),
+        d.regime.replace('_', ' '),
+      ])}
+    />
+    </figure>
   );
 }

@@ -3,6 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui5/Ui5Button';
 import { ScenarioSelector } from '@/components/shared/ScenarioSelector';
 import { EduTooltip } from '@/components/shared/EduTooltip';
+import { UserMenu } from '@/components/shared/UserMenu';
 import { useProjectStore } from '@/store/project-store';
 import { startTour, resetTourFlag } from '@/lib/tour-state';
 
@@ -64,6 +65,8 @@ export function Header() {
             <span className="hidden sm:inline">Recalculate All</span>
           </Button>
         </EduTooltip>
+        <div className="w-px h-6 bg-border mx-1" aria-hidden="true" />
+        <UserMenu />
       </div>
     </header>
   );

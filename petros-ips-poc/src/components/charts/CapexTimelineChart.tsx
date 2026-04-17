@@ -80,6 +80,7 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
             stackId="capex"
             fill={PROJECT_COLORS[i % PROJECT_COLORS.length]}
             name={proj.project.name}
+            isAnimationActive={false}
           />
         ))}
         <Line
@@ -90,6 +91,7 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
           strokeWidth={2}
           dot={false}
           name="Cumulative"
+          isAnimationActive={false}
         />
       </ComposedChart>
     </ResponsiveContainer>
