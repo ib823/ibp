@@ -3,6 +3,8 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Select } from '@/components/ui5/Ui5Select';
 import { useProjectStore } from '@/store/project-store';
 import { PROJECT_RESERVES, gasBcfToMmboe } from '@/engine/reserves/prms';
+import { PROJECT_CONTINGENT, contingentSubclassLabel } from '@/engine/reserves/contingent';
+import { PROJECT_PROSPECTIVE, riskWeightProspective } from '@/engine/reserves/prospective';
 import { generateReservesReconciliation } from '@/engine/reserves/reconciliation';
 import { CO2_STORAGE_RESOURCES, generateSrmsReconciliation } from '@/engine/reserves/srms';
 import { ReservesWaterfall } from '@/components/charts/ReservesWaterfall';
@@ -185,6 +187,12 @@ export default function ReservesPage() {
         </div>
       </div>
 
+      {/* Contingent Resources (SPE PRMS §2.1.3) */}
+      <ContingentSection projects={projects} />
+
+      {/* Prospective Resources (SPE PRMS §2.1.4) — risked + unrisked */}
+      <ProspectiveSection projects={projects} />
+
       {/* CO2 Storage Resources (SPE SRMS) */}
       <SrmsSection projects={projects} />
 
@@ -338,6 +346,130 @@ function SrmsSection({ projects }: { projects: readonly import('@/engine/types')
       <p className="text-[10px] text-text-muted mt-2">
         Classified per SPE CO₂ Storage Resources Management System (SRMS) 2025.
         Estimates are illustrative — not actual assessed storage capacity.
+      </p>
+    </div>
+  );
+}
+
+// ── Contingent Resources Section (PRMS §2.1.3) ────────────────────────
+
+function ContingentSection({ projects }: { projects: readonly import('@/engine/types').ProjectInputs[] }) {
+  const u = useDisplayUnits();
+  const bcfFactor = convertSafe(1, 'Bcf', u.gasUnit, u.conversions);
+  const rows = useMemo(
+    () => PROJECT_CONTINGENT.filter((c) =>
+      c.oil['1C'] + c.oil['2C'] + c.oil['3C'] + c.gas['1C'] + c.gas['2C'] + c.gas['3C'] > 0,
+    ),
+    [],
+  );
+  if (rows.length === 0) return null;
+  return (
+    <div className="border border-border bg-white p-4" data-tour="contingent-table">
+      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+        Contingent Resources (SPE PRMS Classification)
+      </h4>
+      <p className="text-[11px] text-text-muted mb-2">
+        Discovered accumulations not yet commercial — typically pending FID, technical FEED, or
+        favourable price recovery. Volumetric estimates use 1C / 2C / 3C bands (analogous to
+        1P / 2P / 3P for reserves).
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs border-collapse min-w-[700px] tabular-nums">
+          <thead>
+            <tr className="border-b border-border bg-content-alt/50">
+              <th className="text-left px-3 py-2">Project</th>
+              <th className="text-left px-2 py-2">Subclass</th>
+              <th className="text-right px-2 py-2">1C Oil ({u.oilUnit})</th>
+              <th className="text-right px-2 py-2">2C Oil ({u.oilUnit})</th>
+              <th className="text-right px-2 py-2">3C Oil ({u.oilUnit})</th>
+              <th className="text-right px-2 py-2">1C Gas ({u.gasUnit})</th>
+              <th className="text-right px-2 py-2">2C Gas ({u.gasUnit})</th>
+              <th className="text-right px-2 py-2">3C Gas ({u.gasUnit})</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((c) => {
+              const proj = projects.find((p) => p.project.id === c.projectId);
+              return (
+                <tr key={c.projectId} className="border-b border-border/50 hover:bg-content-alt/30" title={c.contingencyNote}>
+                  <td className="px-3 py-1.5">{proj?.project.name ?? c.projectId}</td>
+                  <td className="px-2 py-1.5 text-[10px] text-text-secondary">{contingentSubclassLabel(c.subclass)}</td>
+                  <td className="px-2 py-1.5 text-right font-data">{fmtReserveValue(c.oil['1C'] * u.oilFactor)}</td>
+                  <td className="px-2 py-1.5 text-right font-data">{fmtReserveValue(c.oil['2C'] * u.oilFactor)}</td>
+                  <td className="px-2 py-1.5 text-right font-data">{fmtReserveValue(c.oil['3C'] * u.oilFactor)}</td>
+                  <td className="px-2 py-1.5 text-right font-data">{fmtReserveValue(c.gas['1C'] * bcfFactor)}</td>
+                  <td className="px-2 py-1.5 text-right font-data">{fmtReserveValue(c.gas['2C'] * bcfFactor)}</td>
+                  <td className="px-2 py-1.5 text-right font-data">{fmtReserveValue(c.gas['3C'] * bcfFactor)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[10px] text-text-muted mt-2">
+        Hover any row to see the specific contingency note. Reclassification to reserves
+        requires the contingency to be resolved (FID, FEED, price recovery, etc.).
+      </p>
+    </div>
+  );
+}
+
+// ── Prospective Resources Section (PRMS §2.1.4) ──────────────────────
+
+function ProspectiveSection({ projects }: { projects: readonly import('@/engine/types').ProjectInputs[] }) {
+  const u = useDisplayUnits();
+  const bcfFactor = convertSafe(1, 'Bcf', u.gasUnit, u.conversions);
+  if (PROJECT_PROSPECTIVE.length === 0) return null;
+  return (
+    <div className="border border-border bg-white p-4" data-tour="prospective-table">
+      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+        Prospective Resources (SPE PRMS Classification — risked & unrisked)
+      </h4>
+      <p className="text-[11px] text-text-muted mb-2">
+        Estimated quantities recoverable from <em>undiscovered</em> accumulations. Risk-weighted
+        volumes apply Pg × Pc (geological × commercial chance of success); both unrisked
+        (Low / Best / High) and risked (CoS-weighted) cases are reported per PRMS §2.1.4.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs border-collapse min-w-[840px] tabular-nums">
+          <thead>
+            <tr className="border-b border-border bg-content-alt/50">
+              <th className="text-left px-3 py-2">Project / Play</th>
+              <th className="text-right px-2 py-2">Pg</th>
+              <th className="text-right px-2 py-2">Pc</th>
+              <th className="text-right px-2 py-2">CoS</th>
+              <th className="text-right px-2 py-2 border-l border-border">Best Oil unrisked ({u.oilUnit})</th>
+              <th className="text-right px-2 py-2">Best Oil risked</th>
+              <th className="text-right px-2 py-2 border-l border-border">Best Gas unrisked ({u.gasUnit})</th>
+              <th className="text-right px-2 py-2">Best Gas risked</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PROJECT_PROSPECTIVE.map((p) => {
+              const proj = projects.find((pr) => pr.project.id === p.projectId);
+              const risked = riskWeightProspective(p);
+              return (
+                <tr key={p.projectId} className="border-b border-border/50 hover:bg-content-alt/30">
+                  <td className="px-3 py-1.5">
+                    <div className="text-text-primary">{proj?.project.name ?? p.projectId}</div>
+                    <div className="text-[10px] text-text-muted">{p.playName}</div>
+                  </td>
+                  <td className="px-2 py-1.5 text-right font-data">{(p.pg * 100).toFixed(0)}%</td>
+                  <td className="px-2 py-1.5 text-right font-data">{(p.pc * 100).toFixed(0)}%</td>
+                  <td className="px-2 py-1.5 text-right font-data text-petrol">{(risked.cosFactor * 100).toFixed(1)}%</td>
+                  <td className="px-2 py-1.5 text-right font-data border-l border-border">{fmtReserveValue(p.unriskedOil.best * u.oilFactor)}</td>
+                  <td className="px-2 py-1.5 text-right font-data text-text-secondary">{fmtReserveValue(risked.oilMmstb.best * u.oilFactor)}</td>
+                  <td className="px-2 py-1.5 text-right font-data border-l border-border">{fmtReserveValue(p.unriskedGas.best * bcfFactor)}</td>
+                  <td className="px-2 py-1.5 text-right font-data text-text-secondary">{fmtReserveValue(risked.gasBcf.best * bcfFactor)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[10px] text-text-muted mt-2">
+        Pg = probability of geological success · Pc = probability of commercial success ·
+        CoS = Pg × Pc · Risked = Unrisked × CoS. Estimates are illustrative.
       </p>
     </div>
   );
