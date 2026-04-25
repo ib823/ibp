@@ -144,7 +144,8 @@ export default function PortfolioPage() {
           variant="outline"
           className="text-xs"
           icon="download"
-          onClick={() => toast.info('Excel export for this page will be available in the SAC production system.')}
+          disabled
+          title="Excel export will be delivered in the SAC production system; the POC uses Excel-parity unit tests to validate calculation fidelity."
         >
           Export Portfolio
         </Button>

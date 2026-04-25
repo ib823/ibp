@@ -42,12 +42,17 @@ export function Header() {
           {mobileSidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
 
-        <span className="text-[10px] font-semibold tracking-wider uppercase text-amber bg-amber/10 border border-amber/30 px-2 py-0.5 rounded shrink-0">
+        {/* POC badge — hidden on smallest screens (320px). The footer
+            disclaimer "POC — Sample data only — Not connected to SAP
+            S/4HANA" remains visible at every viewport, so the demo
+            framing isn't lost; this just frees toolbar room for the
+            persona switcher on phones. */}
+        <span className="hidden sm:inline-flex items-center text-[10px] font-semibold tracking-wider uppercase text-amber bg-amber/10 border border-amber/30 px-2 py-0.5 rounded shrink-0">
           POC
         </span>
         <div className="flex-1" />
         <EduTooltip entryId="D-05">
-          <div data-tour="scenario-selector">
+          <div data-tour="scenario-selector" className="shrink-0">
             <ScenarioSelector />
           </div>
         </EduTooltip>
@@ -58,15 +63,17 @@ export function Header() {
             onClick={runAll}
             disabled={isCalculating}
             icon="refresh"
-            className="text-xs h-10 sm:h-9 min-w-[44px] sm:min-w-0 px-2 sm:px-3"
+            className="text-xs h-10 sm:h-9 min-w-[44px] sm:min-w-0 px-2 sm:px-3 shrink-0"
             aria-label="Recalculate all projects"
             title="Re-runs economics for all projects using current inputs and scenario"
           >
             <span className="hidden sm:inline">Recalculate All</span>
           </Button>
         </EduTooltip>
-        <div className="w-px h-6 bg-border mx-1" aria-hidden="true" />
-        <UserMenu />
+        <div className="hidden sm:block w-px h-6 bg-border mx-1 shrink-0" aria-hidden="true" />
+        <div className="shrink-0">
+          <UserMenu />
+        </div>
       </div>
     </header>
   );

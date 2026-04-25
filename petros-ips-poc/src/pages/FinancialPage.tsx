@@ -13,6 +13,7 @@ import { generateAccountMovements } from '@/engine/financial/account-movements';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { EduTooltip } from '@/components/shared/EduTooltip';
+import { EmptyState } from '@/components/shared/States';
 import { getPageEntries } from '@/lib/educational-content';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { exportFinancialStatementsToExcel } from '@/lib/excel-export';
@@ -166,14 +167,18 @@ export default function FinancialPage() {
         </div>
       </div>
       {granularity !== 'year' && (
-        <div className="text-[11px] text-amber bg-amber/5 border border-amber/30 rounded px-3 py-2">
-          <strong>POC note:</strong> {granularity === 'quarter' ? 'Quarterly' : 'Monthly'} values are derived straight-line from annual figures for demonstration. The production SAC implementation will source true {granularity === 'quarter' ? 'quarterly' : 'monthly'} close data from SAP S/4HANA accrual-based accounting.
+        <div className="text-[11px] text-text-primary bg-amber/15 border border-amber/40 rounded px-3 py-2">
+          <strong className="text-amber">POC note:</strong> {granularity === 'quarter' ? 'Quarterly' : 'Monthly'} values are derived straight-line from annual figures for demonstration. The production SAC implementation will source true {granularity === 'quarter' ? 'quarterly' : 'monthly'} close data from SAP S/4HANA accrual-based accounting.
         </div>
       )}
 
       {!statements ? (
-        <div className="flex items-center justify-center h-64 border border-border bg-white">
-          <p className="text-sm text-text-muted">Select a project to view financial statements</p>
+        <div className="border border-border bg-white">
+          <EmptyState
+            title="No financial statements yet"
+            hint="Select a project from the dropdown above to generate the Income Statement, Balance Sheet, Cash Flow Statement, and Account Movements."
+            size="md"
+          />
         </div>
       ) : (
         // Wrapper carries the data-tour attribute so the guided tour can
@@ -256,8 +261,8 @@ export default function FinancialPage() {
                       { label: 'Closing Cash', values: statements.cfStmt.yearly.map((l) => l.closingCash as number), kind: 'stock', isTotal: true, eduEntryId: 'F-32' },
                     ])}
                   />
-                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
-                    <strong>Note:</strong> Closing Cash in this statement is derived from accounting cash flows (Profit Before Tax + Depreciation − Tax − CAPEX). The Balance Sheet Cash row is derived from the economics model's cumulative Net Cash Flow, which includes fiscal items (royalty, export duty, cost recovery, profit split) not captured in this simplified accounting cash flow. In the production SAC implementation, both statements will be generated from a unified accrual-based accounting engine integrated with SAP S/4HANA, eliminating this divergence.
+                  <div className="mt-3 p-3 bg-amber/15 border border-amber/40 rounded text-xs text-text-primary">
+                    <strong className="text-amber">Note:</strong> Closing Cash in this statement is derived from accounting cash flows (Profit Before Tax + Depreciation − Tax − CAPEX). The Balance Sheet Cash row is derived from the economics model's cumulative Net Cash Flow, which includes fiscal items (royalty, export duty, cost recovery, profit split) not captured in this simplified accounting cash flow. In the production SAC implementation, both statements will be generated from a unified accrual-based accounting engine integrated with SAP S/4HANA, eliminating this divergence.
                   </div>
                 </div>
               ),

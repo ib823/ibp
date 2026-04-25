@@ -150,7 +150,10 @@ export default function GlossaryPage() {
 
 // Highlights every case-insensitive occurrence of `query` inside `text`
 // by wrapping matches in a <mark> element. Returns plain text when
-// query is empty so React doesn't create unnecessary nodes.
+// query is empty so React doesn't create unnecessary nodes. Both
+// non-match text fragments and <mark> elements are wrapped in <span>
+// with explicit keys to avoid the "Each child in a list should have a
+// unique key" warning when this is rendered inline.
 function highlightMatch(text: string, query: string): React.ReactNode {
   const q = query.trim();
   if (!q) return text;
@@ -158,16 +161,19 @@ function highlightMatch(text: string, query: string): React.ReactNode {
   const needle = q.toLowerCase();
   const parts: React.ReactNode[] = [];
   let i = 0;
+  let segmentIndex = 0;
   while (i < text.length) {
     const idx = lower.indexOf(needle, i);
     if (idx === -1) {
-      parts.push(text.slice(i));
+      parts.push(<span key={`t-${segmentIndex++}`}>{text.slice(i)}</span>);
       break;
     }
-    if (idx > i) parts.push(text.slice(i, idx));
+    if (idx > i) {
+      parts.push(<span key={`t-${segmentIndex++}`}>{text.slice(i, idx)}</span>);
+    }
     parts.push(
       <mark
-        key={`${idx}-${needle}`}
+        key={`m-${segmentIndex++}`}
         className="bg-amber/30 text-text-primary rounded-sm px-0.5"
       >
         {text.slice(idx, idx + q.length)}

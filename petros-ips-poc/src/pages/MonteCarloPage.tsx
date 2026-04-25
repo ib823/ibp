@@ -188,11 +188,11 @@ export default function MonteCarloPage() {
           </div>
 
           <hr className="border-border my-2" />
-          <DistRow label="Oil Price (Tri)" tooltipId="MC-06" v1={oilMin} v2={oilMode} v3={oilMax} s1={setOilMin} s2={setOilMode} s3={setOilMax} h1="Min" h2="Mode" h3="Max" />
-          <DistRow label="Gas Price (Tri)" tooltipId="MC-07" v1={gasMin} v2={gasMode} v3={gasMax} s1={setGasMin} s2={setGasMode} s3={setGasMax} h1="Min" h2="Mode" h3="Max" />
-          <DistRow label="Production (LN)" tooltipId="MC-08" v1={prodMu} v2={prodSigma} s1={setProdMu} s2={setProdSigma} h1="Mu" h2="Sigma" />
-          <DistRow label="CAPEX (Norm)" tooltipId="MC-09" v1={capexMean} v2={capexStd} s1={setCapexMean} s2={setCapexStd} h1="Mean" h2="StdDev" />
-          <DistRow label="OPEX (Norm)" tooltipId="MC-10" v1={opexMean} v2={opexStd} s1={setOpexMean} s2={setOpexStd} h1="Mean" h2="StdDev" />
+          <DistRow label="Oil Price (Triangular)" tooltipId="MC-06" v1={oilMin} v2={oilMode} v3={oilMax} s1={setOilMin} s2={setOilMode} s3={setOilMax} h1="Min" h2="Mode" h3="Max" />
+          <DistRow label="Gas Price (Triangular)" tooltipId="MC-07" v1={gasMin} v2={gasMode} v3={gasMax} s1={setGasMin} s2={setGasMode} s3={setGasMax} h1="Min" h2="Mode" h3="Max" />
+          <DistRow label="Production (Lognormal)" tooltipId="MC-08" v1={prodMu} v2={prodSigma} s1={setProdMu} s2={setProdSigma} h1="μ" h2="σ" />
+          <DistRow label="CAPEX (Normal)" tooltipId="MC-09" v1={capexMean} v2={capexStd} s1={setCapexMean} s2={setCapexStd} h1="Mean" h2="StdDev" />
+          <DistRow label="OPEX (Normal)" tooltipId="MC-10" v1={opexMean} v2={opexStd} s1={setOpexMean} s2={setOpexStd} h1="Mean" h2="StdDev" />
 
           <EduTooltip entryId="MC-11">
             <Button

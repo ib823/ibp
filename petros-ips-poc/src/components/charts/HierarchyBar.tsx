@@ -1,16 +1,11 @@
 import type { HierarchyAggregation } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
+import { SECTOR_COLORS, COLORS } from '@/lib/chart-colors';
 
 interface HierarchyBarProps {
   aggregation: HierarchyAggregation;
 }
-
-const SECTOR_COLORS: Record<string, string> = {
-  Upstream: '#1E3A5F',
-  'Downstream & Infrastructure': '#D4A843',
-  CCS: '#2D8A4E',
-};
 
 export function HierarchyBar({ aggregation }: HierarchyBarProps) {
   const u = useDisplayUnits();
@@ -41,15 +36,18 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
             const sectorNpv = sector.npv as number;
             const pct = totalNpv !== 0 ? Math.max(0, (sectorNpv / totalNpv) * 100) : 0;
             if (pct <= 0) return null;
+            const segmentLabel = `${sector.key}: ${u.money(sectorNpv, { accounting: true })} (${pct.toFixed(1)}%)`;
             return (
               <div
                 key={sector.key}
+                role="img"
+                aria-label={segmentLabel}
                 className="h-full flex items-center justify-center text-[10px] text-white font-medium"
                 style={{
                   width: `${pct}%`,
-                  backgroundColor: SECTOR_COLORS[sector.key] ?? '#6B7280',
+                  backgroundColor: SECTOR_COLORS[sector.key] ?? COLORS.textSecondary,
                 }}
-                title={`${sector.key}: ${u.money(sectorNpv, { accounting: true })}`}
+                title={segmentLabel}
               >
                 {pct > 15 ? sector.key : ''}
               </div>
@@ -65,7 +63,7 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
         const color = SECTOR_COLORS[sector.key] ?? '#6B7280';
 
         return (
-          <div key={sector.key} className="pl-4 border-l-2" style={{ borderColor: color }}>
+          <div key={sector.key} className="pl-4 border-l-2" style={{ borderColor: color ?? COLORS.textSecondary }}>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[11px] font-medium text-text-secondary">
                 {sector.key}
@@ -86,17 +84,18 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
                   const barPct = totalNpv !== 0
                     ? Math.max(0, Math.min(100, (Math.abs(projNpv) / Math.abs(totalNpv)) * 100))
                     : 0;
+                  const projLabel = `${proj.key}: ${u.money(projNpv, { accounting: true })} (${barPct.toFixed(1)}% of total)`;
                   return (
-                    <div key={proj.key} className="flex items-center gap-2">
-                      <span className="text-[10px] text-text-secondary w-[140px] truncate">
+                    <div key={proj.key} className="flex items-center gap-2" role="group" aria-label={projLabel}>
+                      <span className="text-[10px] text-text-secondary w-[140px] truncate" title={proj.key}>
                         {proj.key}
                       </span>
-                      <div className="flex-1 h-3 bg-content-alt">
+                      <div className="flex-1 h-3 bg-content-alt" role="img" aria-label={projLabel} title={projLabel}>
                         <div
                           className="h-full"
                           style={{
                             width: `${barPct}%`,
-                            backgroundColor: projNpv >= 0 ? color : '#C0392B',
+                            backgroundColor: projNpv >= 0 ? (color ?? COLORS.textSecondary) : COLORS.danger,
                             opacity: 0.7,
                           }}
                         />

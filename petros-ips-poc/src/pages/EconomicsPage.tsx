@@ -16,7 +16,7 @@ import { EmptyState } from '@/components/shared/States';
 import { VersionComparisonView } from '@/components/version/VersionComparisonView';
 import { PhaseComparisonView } from '@/components/phase/PhaseComparisonView';
 import { Tabs } from '@/components/ui5/Ui5Tabs';
-import { fmtPct, fmtYears } from '@/lib/format';
+import { fmtPct, fmtYears, fmtNum } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { exportEconomicsToExcel } from '@/lib/excel-export';
 import { toast } from '@/lib/toast';
@@ -149,7 +149,7 @@ export default function EconomicsPage() {
                         />
                         <KpiCard
                           label="PI"
-                          value={result.profitabilityIndex.toFixed(2)}
+                          value={fmtNum(result.profitabilityIndex as number, 2)}
                           eduEntry={edu['E-20']}
                         />
                       </div>

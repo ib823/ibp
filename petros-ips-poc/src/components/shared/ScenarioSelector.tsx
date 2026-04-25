@@ -18,7 +18,7 @@ export function ScenarioSelector() {
       value={activeScenario}
       onValueChange={(v) => setActiveScenario(v as ScenarioVersion)}
       options={SCENARIOS}
-      className="w-[140px]"
+      className="w-[112px] sm:w-[140px]"
       aria-label="Price scenario"
     />
   );

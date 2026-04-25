@@ -10,7 +10,6 @@ import { EduTooltip } from '@/components/shared/EduTooltip';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { Button } from '@/components/ui5/Ui5Button';
-import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { getPageEntries } from '@/lib/educational-content';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
@@ -70,7 +69,8 @@ export default function ReservesPage() {
           variant="outline"
           className="text-xs"
           icon="download"
-          onClick={() => toast.info('Excel export for this page will be available in the SAC production system.')}
+          disabled
+          title="Excel export will be delivered in the SAC production system; the POC uses Excel-parity unit tests to validate calculation fidelity."
         >
           Export Reserves
         </Button>

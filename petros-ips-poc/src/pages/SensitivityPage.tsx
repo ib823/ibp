@@ -15,7 +15,7 @@ import { EmptyState } from '@/components/shared/States';
 import { CHART_NEG, CHART_POS } from '@/lib/chart-colors';
 import { calculateSpider } from '@/engine/sensitivity/spider';
 import { compareScenarios } from '@/engine/sensitivity/scenario';
-import { fmtPct, fmtYears } from '@/lib/format';
+import { fmtPct, fmtYears, fmtNum } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
 import { getPageEntries } from '@/lib/educational-content';
@@ -227,7 +227,12 @@ export default function SensitivityPage() {
 
 function ScenarioKpiTable({ results }: { results: Record<ScenarioVersion, EconomicsResult> }) {
   const u = useDisplayUnits();
-  const scenarios: ScenarioVersion[] = ['high', 'base', 'low', 'stress'];
+  // Filter to scenarios actually present in `results` so a missing key
+  // (e.g. backend omits 'stress') doesn't crash `.map()` downstream.
+  const ORDER: ScenarioVersion[] = ['high', 'base', 'low', 'stress'];
+  const scenarios: ScenarioVersion[] = ORDER.filter((s) => results[s] != null);
+  if (scenarios.length === 0) return null;
+
   const labels: Record<ScenarioVersion, string> = {
     high: 'High',
     base: 'Base',
@@ -269,7 +274,7 @@ function ScenarioKpiTable({ results }: { results: Record<ScenarioVersion, Econom
     {
       label: 'PI',
       tooltipId: 'S-18',
-      values: scenarios.map((s) => ({ text: results[s].profitabilityIndex.toFixed(2) })),
+      values: scenarios.map((s) => ({ text: fmtNum(results[s].profitabilityIndex as number, 2) })),
     },
     {
       label: 'Govt Take',

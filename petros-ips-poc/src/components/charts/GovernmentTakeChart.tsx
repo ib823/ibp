@@ -1,12 +1,13 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { ChartShell } from '@/components/charts/ChartShell';
+import { COLORS as PALETTE } from '@/lib/chart-colors';
 
 interface GovernmentTakeChartProps {
   governmentTakePct: number;
   contractorTakePct: number;
 }
 
-const COLORS = ['#C0392B', '#1E3A5F'];
+const SLICE_COLORS = [PALETTE.danger, PALETTE.petrol];
 
 /**
  * Government vs Contractor take donut chart.
@@ -46,7 +47,7 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
               stroke="none"
             >
               {data.map((_, idx) => (
-                <Cell key={idx} fill={COLORS[idx]} />
+                <Cell key={idx} fill={SLICE_COLORS[idx]} />
               ))}
             </Pie>
             <Tooltip
@@ -56,11 +57,14 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
           </PieChart>
         </ResponsiveContainer>
         </ChartShell>
-        {/* Centre label — government take headline figure */}
+        {/* Centre label — government take headline figure. When the actual
+            value exceeds 100% the donut visual is capped at 100/0 (the
+            contractor slice cannot render negative); the asterisk and
+            footnote below are the disclosed reconciliation. */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span className="text-[10px] text-text-muted uppercase tracking-wider">Govt Take</span>
           <span className="text-xl font-semibold font-data text-danger">
-            {governmentTakePct.toFixed(1)}%
+            {governmentTakePct.toFixed(1)}%{exceeds100 && '*'}
           </span>
         </div>
       </div>
@@ -68,11 +72,11 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
       {/* Legend row */}
       <div className="flex justify-center items-center gap-4 text-[11px] text-text-secondary mt-1 flex-wrap">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: COLORS[0] }} />
-          <span className="whitespace-nowrap">Govt {governmentTakePct.toFixed(1)}%</span>
+          <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: SLICE_COLORS[0] }} />
+          <span className="whitespace-nowrap">Govt {governmentTakePct.toFixed(1)}%{exceeds100 && '*'}</span>
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: COLORS[1] }} />
+          <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: SLICE_COLORS[1] }} />
           <span className="whitespace-nowrap">Contractor {contractorTakePct.toFixed(1)}%</span>
         </span>
       </div>

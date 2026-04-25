@@ -47,12 +47,21 @@ export function GuidedTour() {
 
   const currentStep = TOUR_STEPS[step];
 
-  // Auto-start on first visit
+  // Auto-start on first visit — only when the user lands on the Dashboard
+  // ('/'). Direct deep-links to /economics, /portfolio, etc. should NOT
+  // surface the welcome modal — that obscures the page they came to see.
+  // The tour can still be triggered manually from the ShellBar "Start Tour"
+  // item or any InfoIcon's tour entry point.
   useEffect(() => {
+    if (location.pathname !== '/') return;
     if (!isTourCompleted()) {
-      const timer = setTimeout(() => setActive(true), 800);
+      const timer = setTimeout(() => setActive(true), 1500);
       return () => clearTimeout(timer);
     }
+    return;
+    // Intentional: run once on mount. location.pathname is captured at mount
+    // time; we don't want to re-trigger on subsequent navigations.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Listen for external start requests

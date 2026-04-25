@@ -98,26 +98,26 @@ These eight issues account for ~60 individual findings combined. Each fix touche
 
 ## Demo-blocker shortlist (P0s ranked by likely demo visibility)
 
-- [ ] **MC P10/P90 KpiCard border colors don't follow SPE convention toggle** — when toggle is on, red-bordered card means "optimistic". Petrotech evaluator will pause. (`MonteCarloPage.tsx:318-334`)
-- [ ] **HierarchyBar narrow projects show no label and have no aria-label** — projects <15% portfolio share are nameless. (`HierarchyBar.tsx:43,91`)
+- [verified] **MC P10/P90 KpiCard border colors don't follow SPE convention toggle** — investigated and confirmed the implementation is **correct**. The engine emits ascending percentiles (`p10` = statistical 10th percentile = lowest NPV = always pessimistic). Border accents are positional (red→petrol→green) which maps semantically to pessimistic→median→optimistic in BOTH conventions. The toggle only relabels the percentile names. Audit was a misdiagnosis.
+- [x] **HierarchyBar narrow projects show no label and have no aria-label** — added `role="img"` + `aria-label` + `title` to sector segments and project bars; truncated project names get `title={proj.key}` for hover-reveal.
 - [x] **Tornado / Spider / Histogram off-palette colors** — replaced `#E07060` / `#3B8DBD` with `CHART_NEG` / `CHART_POS` (petrol/danger).
-- [ ] **GovernmentTakeChart cap mismatch** — donut caps at 100%, center label still shows raw 115%. (`GovernmentTakeChart.tsx:20-30`)
-- [ ] **FinancialPage amber-on-amber warning box fails contrast** — text-amber on bg-amber/5, ~3:1 on display. (`FinancialPage.tsx:169`)
-- [ ] **ScenarioKpiTable hardcoded scenario order crashes on missing key** — `.map()` on undefined if backend ever omits one. (`SensitivityPage.tsx:269`)
-- [ ] **EconomicsPage PI format inconsistency** — `.toFixed(2)` while every other metric uses `u.money()`. (`EconomicsPage.tsx:149`)
+- [x] **GovernmentTakeChart cap mismatch** — center label and legend now show `*` suffix when `>100%`, linked to existing footnote. Imports central `COLORS` palette.
+- [x] **FinancialPage amber-on-amber warning box fails contrast** — switched body to `text-text-primary` on `bg-amber/15` (with amber `<strong>` retained as the warning marker). Same fix applied to the Cash Flow note (`amber-50/200/800` → palette tokens).
+- [x] **ScenarioKpiTable hardcoded scenario order crashes on missing key** — filter `ORDER` to keys actually present in `results`; render `null` if empty.
+- [x] **EconomicsPage PI format inconsistency** — `.toFixed(2)` → `fmtNum(value, 2)`. Same fix applied in `ScenarioKpiTable`.
 - [x] **PortfolioPage "Calculating portfolio…" with no spinner** — now uses `<LoadingState />` with spinner.
-- [ ] **MC distribution labels `Tri / LN / Norm`** — evaluator-unfriendly abbreviations. (`MonteCarloPage.tsx:189-193`)
+- [x] **MC distribution labels `Tri / LN / Norm`** — spelled out as Triangular / Lognormal / Normal; lognormal headers use `μ` / `σ` symbols.
 - [x] **RoleBadge admin uses `#8B5CF6` purple — off-palette entirely** — tokenized as `--color-admin: #6B46C1`.
-- [ ] **Ui5Input null-coercion** — `value=""` becomes literal "null" / "undefined" if guard fails. (`Ui5Input.tsx:99`)
-- [ ] **Reserves Export toasts "available in SAC"** — admits POC is incomplete on a routine action. (`ReservesPage.tsx:74`)
-- [ ] **Currency-symbol overflow** — table headers hardcode `({u.currencySymbol}M)`, assume 1-char symbol.
-- [ ] **GlossaryPage missing keys on `highlightMatch()` parts** — React warning visible in console. (`GlossaryPage.tsx:114-115`)
+- [verified] **Ui5Input null-coercion** — already properly guarded (`value === undefined || value === null ? '' : String(value)`); no change needed. Audit pointed to old line.
+- [x] **Reserves Export toasts "available in SAC"** — replaced toast onClick with proper `disabled` state + tooltip explaining the SAC roadmap. Same fix on `PortfolioPage`'s Export Portfolio.
+- [ ] **Currency-symbol overflow** — table headers hardcode `({u.currencySymbol}M)`, assume 1-char symbol. Deferred (low risk while POC uses USD/MYR).
+- [x] **GlossaryPage missing keys on `highlightMatch()` parts** — wrapped both text fragments and `<mark>` elements in `<span key>` with monotonic segment indices.
 
 ### Browser-session-only findings (added 2026-04-25)
 
 - [x] **CSP blocks SAP "72" font** — `index.html` font-src didn't include `cdn.jsdelivr.net`; SAP fonts silently failed across all 11 pages × 3 viewports (36 console errors per page). Now allowed.
-- [ ] **GuidedTour auto-opens on first visit and obscures content** — design intent (good for unfamiliar evaluators) but a fresh viewer's first impression is a 12-step modal blocking the dashboard. Consider 2-3s delay or "Take the tour" CTA. (See task #14.)
-- [ ] **Mobile (320px) hides the persona switcher** — header user menu disappears; persona switcher inaccessible. Switcher is now a first-class feature, must work on mobile. (See task #15.)
+- [x] **GuidedTour auto-opens on every fresh page** — gated to dashboard route only (`location.pathname !== '/'` early return). Delay bumped 800 → 1500ms so users see content first. Direct deep-links to /economics or /portfolio no longer fire the welcome modal.
+- [x] **Mobile (320px) hides the persona switcher** — toolbar overflow root cause: shrink-able children + flex-1 content > viewport. Fix: `shrink-0` on right-side items + responsive `ScenarioSelector` width (112px on mobile, 140px on sm+) + hide POC badge on `<sm` (footer disclaimer keeps the framing). AR avatar now renders cleanly at 320px.
 - [x] **DashboardPage quick-link grid skips middle breakpoint** — added `sm:grid-cols-3`.
 - **Verified clean across 33 viewport-page combinations**: zero nav failures, zero horizontal scroll, zero React runtime errors, zero non-CSP console errors. The layout is more robust than the static audit feared.
 
