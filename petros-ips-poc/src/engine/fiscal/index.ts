@@ -16,12 +16,14 @@ import { calculatePscEpt } from './psc-ept';
 import { calculatePscSfa } from './psc-sfa';
 import { calculatePscLegacy } from './psc-legacy';
 import { calculateDownstream } from './downstream';
+import { calculateRsc } from './psc-rsc';
 
 export { calculatePscRc } from './psc-rc';
 export { calculatePscEpt } from './psc-ept';
 export { calculatePscSfa } from './psc-sfa';
 export { calculatePscLegacy } from './psc-legacy';
 export { calculateDownstream } from './downstream';
+export { calculateRsc } from './psc-rsc';
 
 /** Scale all CAPEX line items by a factor (e.g., 0.90 for 10% DW allowance) */
 function reduceCapex(costs: CostProfile, factor: number): CostProfile {
@@ -125,21 +127,12 @@ export function calculateFiscalCashflows(
       return calculatePscLegacy({ ...base, fiscalConfig: regime });
 
     case 'RSC':
-      // RSC (Risk Service Contract) is a fee-based contractual model distinct from PSCs.
-      // For this POC, RSC projects use a simplified corporate-tax-based calculation.
-      // In the production SAC implementation, a dedicated RSC engine will model:
-      // fee-per-barrel, performance bonuses, cost reimbursement, and reduced PITA (25%).
-      return calculateDownstream({
-        ...base,
-        fiscalConfig: {
-          type: 'DOWNSTREAM',
-          royaltyRate: regime.royaltyRate,
-          pitaRate: regime.pitaRate,
-          exportDutyRate: regime.exportDutyRate,
-          researchCessRate: regime.researchCessRate,
-          taxRate: regime.pitaRate, // use PITA rate as corporate tax proxy
-        },
-      });
+      // RSC (Risk Service Contract) — dedicated fee-based engine.
+      // Models: feePerBarrel × oil-equivalent production, cost
+      // reimbursement (capped at 70% of fee revenue), one-shot
+      // performance bonus at 30 MMboe cumulative production threshold,
+      // and reduced 25% PITA on net contractor income. See psc-rsc.ts.
+      return calculateRsc({ ...base, fiscalConfig: regime });
 
     case 'DOWNSTREAM':
       return calculateDownstream({ ...base, fiscalConfig: regime });

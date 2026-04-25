@@ -260,10 +260,17 @@ export default function SettingsPage() {
               <span className="text-[10px] text-text-muted">(Risk Service Contract)</span>
               <InfoIcon entry={edu['ST-18']!} />
             </div>
-            <p className="text-[10px] text-text-secondary">
-              Simplified approximation in POC using corporate-tax model.
-              Full fee-based engine (fee-per-barrel, performance bonuses, cost reimbursement, reduced PITA 25%)
-              to be implemented in SAC production system.
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <Row label="Fee per Barrel" value="USD 12.50/boe" />
+              <Row label="Performance Bonus" value="USD 25 M" />
+              <Row label="Cost Reimbursement" value="60%" />
+              <Row label="PITA (RSC)" value="25%" />
+            </div>
+            <p className="text-[10px] text-text-secondary mt-2">
+              Dedicated RSC engine: <span className="font-data">src/engine/fiscal/psc-rsc.ts</span>.
+              Models fee revenue on oil-equivalent production, cost reimbursement capped at
+              70% of fee revenue, one-shot performance bonus at 30 MMboe cumulative production
+              threshold, and reduced PITA at 25% on net contractor income.
             </p>
           </div>
         </div>

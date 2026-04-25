@@ -143,6 +143,24 @@ export const DOWNSTREAM_TAX: FiscalRegime_DOWNSTREAM = {
   taxRate: 0.24,
 };
 
+// ── RSC (Risk Service Contract) ───────────────────────────────────────
+//
+// Fee-based contractual model — contractor produces under a per-barrel
+// fee, with cost reimbursement (capped) and a performance bonus paid
+// when cumulative production crosses a threshold. PITA reduced to 25%.
+// Numbers below are illustrative for the Berantai-style RSC framework.
+import type { FiscalRegime_RSC } from '@/engine/types';
+export const RSC_CONTRACT: FiscalRegime_RSC = {
+  type: 'RSC',
+  royaltyRate: 0.10,
+  pitaRate: 0.25,
+  exportDutyRate: 0,
+  researchCessRate: 0.005,
+  feePerBarrel: 12.50,           // USD per oil-equivalent barrel produced
+  performanceBonus: 25_000_000,  // USD lump-sum at the 30 MMboe milestone
+  costReimbursementPct: 0.60,    // 60% of contractor's CAPEX/OPEX reimbursed
+};
+
 // ── Lookup map ────────────────────────────────────────────────────────
 
 export const FISCAL_REGIMES = {
@@ -150,5 +168,6 @@ export const FISCAL_REGIMES = {
   PSC_DW: DW_PSC,
   PSC_EPT: EPT_PSC,
   PSC_SFA: SFA_PSC,
+  RSC: RSC_CONTRACT,
   DOWNSTREAM: DOWNSTREAM_TAX,
 } as const;
