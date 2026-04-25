@@ -124,6 +124,19 @@ export default function EconomicsPage() {
                               : 'border-l-2 border-l-danger'
                           }
                           eduEntry={edu['E-17']}
+                          trace={{
+                            formula:
+                              'NPV(r=10%) = Σ NCF(t) / (1+r)^t  for t = 0 .. project_end\n' +
+                              'Year-0 cash flows are undiscounted (industry convention).',
+                            engineSrc: 'src/engine/economics/npv.ts',
+                            reference: 'tests/lib/excel-export-parity.test.ts → "NPV at 10% discount"',
+                            inputs: {
+                              'discount rate': '10.00 %',
+                              'years included': result.yearlyCashflows.length,
+                              'total CAPEX': u.money(result.totalCapex as number, { accounting: true }),
+                              'total revenue': u.money(result.totalRevenue as number, { accounting: true }),
+                            },
+                          }}
                         />
                         <KpiCard
                           label={result.isNonInvestmentPattern ? 'MIRR' : 'IRR'}
@@ -140,17 +153,51 @@ export default function EconomicsPage() {
                                 : 'border-l-2 border-l-danger'
                           }
                           eduEntry={edu['E-18']}
+                          trace={{
+                            formula: result.isNonInvestmentPattern
+                              ? 'MIRR(finance=8%, reinvest=8%) = (FV_positive_CF / |PV_negative_CF|)^(1/N) − 1'
+                              : 'IRR: discount rate r where Σ NCF(t) / (1+r)^t = 0\nSolved with Brent\'s method on bracket [-50%, +200%].',
+                            engineSrc: result.isNonInvestmentPattern
+                              ? 'src/engine/economics/mirr.ts'
+                              : 'src/engine/economics/irr.ts',
+                            reference: 'tests/lib/excel-export-parity.test.ts',
+                            inputs: result.isNonInvestmentPattern
+                              ? { 'finance rate': '8.00 %', 'reinvestment rate': '8.00 %' }
+                              : { 'iteration tolerance': '1e-7', 'max iterations': 100 },
+                          }}
                         />
                         <KpiCard
                           label="Payback"
                           value={fmtYears(result.paybackYears)}
                           unit="yr"
                           eduEntry={edu['E-19']}
+                          trace={{
+                            formula:
+                              'Payback: first year y where Σ NCF(t≤y) ≥ 0\n' +
+                              'Linearly interpolated within the crossover year for fractional yrs.',
+                            engineSrc: 'src/engine/economics/indicators.ts',
+                            reference: 'tests/lib/excel-export-parity.test.ts',
+                            inputs: {
+                              'discounted variant': fmtYears(result.discountedPaybackYears),
+                              'peak funding': u.money(result.peakFunding as number, { accounting: true }),
+                            },
+                          }}
                         />
                         <KpiCard
                           label="PI"
                           value={fmtNum(result.profitabilityIndex as number, 2)}
                           eduEntry={edu['E-20']}
+                          trace={{
+                            formula:
+                              'PI = PV(future positive CF) / PV(CAPEX outflows)\n' +
+                              'Both terms are discounted at 10%. PI > 1 ⇒ project creates value.',
+                            engineSrc: 'src/engine/economics/indicators.ts',
+                            reference: 'tests/lib/excel-export-parity.test.ts',
+                            inputs: {
+                              'NPV₁₀': u.money(result.npv10 as number, { accounting: true }),
+                              'total CAPEX': u.money(result.totalCapex as number, { accounting: true }),
+                            },
+                          }}
                         />
                       </div>
 
