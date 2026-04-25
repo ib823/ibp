@@ -3,6 +3,10 @@
 //
 // Mobile: avatar-only button. Desktop: avatar + name + role chip.
 // Popover closes on outside click or Escape. Keyboard-navigable via tab.
+//
+// The POC has no login; the bottom of the menu lists all five demo
+// personas so a reviewer can switch role on the fly to feel the SoD
+// workflow from each perspective.
 // ════════════════════════════════════════════════════════════════════════
 
 import { useEffect, useRef, useState } from 'react';
@@ -10,12 +14,13 @@ import { useNavigate } from 'react-router';
 import { useAuthStore, useCurrentUser } from '@/store/auth-store';
 import { RoleBadge } from '@/components/shared/RoleBadge';
 import { ROLE_DESCRIPTIONS } from '@/engine/auth/types';
-import { LogOut, ShieldCheck, History, ChevronDown } from 'lucide-react';
+import { PERSONAS } from '@/data/personas';
+import { ShieldCheck, History, ChevronDown, Check, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function UserMenu() {
   const user = useCurrentUser();
-  const signOut = useAuthStore((s) => s.signOut);
+  const switchPersona = useAuthStore((s) => s.switchPersona);
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
@@ -44,14 +49,6 @@ export function UserMenu() {
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
-
-  if (!user) return null;
-
-  const handleSignOut = () => {
-    setOpen(false);
-    signOut();
-    navigate('/login', { replace: true });
-  };
 
   return (
     <div className="relative">
@@ -82,7 +79,7 @@ export function UserMenu() {
           ref={popoverRef}
           role="menu"
           aria-label="User menu"
-          className="absolute right-0 top-full mt-1 w-[280px] bg-white border border-border shadow-lg z-50"
+          className="absolute right-0 top-full mt-1 w-[300px] bg-white border border-border shadow-lg z-50"
         >
           {/* Profile summary */}
           <div className="px-4 py-3 border-b border-border">
@@ -107,7 +104,7 @@ export function UserMenu() {
             </p>
           </div>
 
-          {/* Actions — direct role="menuitem" children of role="menu" popover */}
+          {/* Actions */}
           <div className="py-1">
             <MenuItem
               icon={<History size={14} aria-hidden="true" />}
@@ -122,14 +119,51 @@ export function UserMenu() {
               Security &amp; connections
             </MenuItem>
           </div>
-          <div className="border-t border-border py-1">
-            <MenuItem
-              icon={<LogOut size={14} aria-hidden="true" />}
-              onClick={handleSignOut}
-              variant="destructive"
-            >
-              Sign out
-            </MenuItem>
+
+          {/* Persona switcher */}
+          <div className="border-t border-border">
+            <div className="px-4 pt-3 pb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+              <Users size={12} aria-hidden="true" />
+              Switch persona
+            </div>
+            <div className="pb-1">
+              {PERSONAS.map((p) => {
+                const active = p.id === user.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      if (!active) switchPersona(p);
+                      setOpen(false);
+                    }}
+                    aria-current={active ? 'true' : undefined}
+                    className={cn(
+                      'w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-content-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-petrol',
+                      active && 'bg-content-alt',
+                    )}
+                  >
+                    <span
+                      className="w-7 h-7 rounded-full bg-petrol/10 text-petrol text-[10px] font-semibold flex items-center justify-center shrink-0"
+                      aria-hidden="true"
+                    >
+                      {p.initials}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-xs font-medium text-text-primary truncate">
+                        {p.displayName}
+                      </span>
+                      <span className="block text-[10px] text-text-muted truncate">
+                        {p.department}
+                      </span>
+                    </span>
+                    <RoleBadge role={p.role} />
+                    {active && <Check size={14} className="text-petrol shrink-0" aria-hidden="true" />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -141,22 +175,17 @@ function MenuItem({
   icon,
   children,
   onClick,
-  variant = 'default',
 }: {
   icon: React.ReactNode;
   children: React.ReactNode;
   onClick: () => void;
-  variant?: 'default' | 'destructive';
 }) {
   return (
     <button
       type="button"
       role="menuitem"
       onClick={onClick}
-      className={cn(
-        'w-full flex items-center gap-2 px-4 py-2 text-xs text-left hover:bg-content-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-petrol',
-        variant === 'destructive' ? 'text-danger' : 'text-text-primary',
-      )}
+      className="w-full flex items-center gap-2 px-4 py-2 text-xs text-left text-text-primary hover:bg-content-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-petrol"
     >
       {icon}
       {children}

@@ -29,7 +29,6 @@ export interface Session {
   readonly user: User;
   readonly signedInAt: string; // ISO date
   readonly tenant: string;     // e.g. "petros.onmicrosoft.com"
-  readonly mfaVerifiedAt: string;
 }
 
 // ── Audit Trail ──────────────────────────────────────────────────────

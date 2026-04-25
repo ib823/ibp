@@ -1,11 +1,13 @@
 // ════════════════════════════════════════════════════════════════════════
 // Auth + Audit Store
 //
-// In-memory Zustand store for the POC auth flow. Session is persisted
-// to sessionStorage so the app survives a page reload inside a demo
-// without losing context, but clears on tab close — appropriate for a
-// demo tenant. Production SAC will replace this with a real MSAL
-// integration federated to the PETROS Entra ID tenant.
+// The POC boots already signed in as a default persona — there is no
+// login or MFA screen. The header "Switch persona" menu lets a demo
+// reviewer feel the workflow from each role's perspective. Session is
+// persisted to sessionStorage so a page reload preserves the chosen
+// persona within a tab. Production SAC will replace this with a real
+// MSAL integration federated to the PETROS Entra ID tenant; roles will
+// then come from Entra group membership rather than this picker.
 // ════════════════════════════════════════════════════════════════════════
 
 import { create } from 'zustand';
@@ -15,10 +17,12 @@ import type {
   AuditEntry,
   AuditEventKind,
 } from '@/engine/auth/types';
+import { PERSONAS, DEFAULT_TENANT } from '@/data/personas';
 
 const SESSION_KEY = 'petros-ips-session';
 const AUDIT_KEY = 'petros-ips-audit';
 const AUDIT_MAX = 500;
+const DEFAULT_PERSONA: User = PERSONAS[0]!; // Analyst — Aisha Rahman
 
 function safeRead<T>(key: string): T | null {
   try {
@@ -37,18 +41,21 @@ function safeWrite<T>(key: string, value: T): void {
   }
 }
 
-function safeClear(key: string): void {
-  try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+function createSession(user: User): Session {
+  return {
+    user,
+    tenant: DEFAULT_TENANT,
+    signedInAt: new Date().toISOString(),
+  };
 }
 
 interface AuthStoreState {
-  session: Session | null;
+  session: Session;
   auditLog: AuditEntry[];
 }
 
 interface AuthStoreActions {
-  signIn: (user: User, mfaVerifiedAt: string, tenant: string) => void;
-  signOut: () => void;
+  switchPersona: (user: User) => void;
   recordAudit: (input: Omit<AuditEntry, 'id' | 'timestamp' | 'actorId' | 'actorName' | 'actorRole'> & {
     actor?: User; // optional override; defaults to current session user
   }) => void;
@@ -57,32 +64,20 @@ interface AuthStoreActions {
 
 export type AuthStore = AuthStoreState & AuthStoreActions;
 
+const initialSession = safeRead<Session>(SESSION_KEY) ?? createSession(DEFAULT_PERSONA);
+safeWrite(SESSION_KEY, initialSession);
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
-  session: safeRead<Session>(SESSION_KEY),
+  session: initialSession,
   auditLog: safeRead<AuditEntry[]>(AUDIT_KEY) ?? [],
 
-  signIn: (user, mfaVerifiedAt, tenant) => {
-    const session: Session = {
-      user,
-      tenant,
-      signedInAt: new Date().toISOString(),
-      mfaVerifiedAt,
-    };
+  switchPersona: (user) => {
+    if (user.id === get().session.user.id) return;
+    const session = createSession(user);
     safeWrite(SESSION_KEY, session);
     set({ session });
 
-    const mfaEntry: AuditEntry = {
-      id: cryptoId(),
-      timestamp: mfaVerifiedAt,
-      actorId: user.id,
-      actorName: user.displayName,
-      actorRole: user.role,
-      kind: 'auth.mfa_verified',
-      targetId: user.id,
-      targetLabel: user.email,
-      detail: `MFA verified via Microsoft Authenticator (mock)`,
-    };
-    const signInEntry: AuditEntry = {
+    const entry: AuditEntry = {
       id: cryptoId(),
       timestamp: session.signedInAt,
       actorId: user.id,
@@ -91,38 +86,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       kind: 'auth.signed_in',
       targetId: user.id,
       targetLabel: user.email,
-      detail: `Tenant: ${tenant}`,
+      detail: `Switched persona to ${user.displayName} (${user.role})`,
     };
-    const nextLog = trim([mfaEntry, signInEntry, ...get().auditLog]);
+    const nextLog = trim([entry, ...get().auditLog]);
     safeWrite(AUDIT_KEY, nextLog);
     set({ auditLog: nextLog });
   },
 
-  signOut: () => {
-    const cur = get().session;
-    if (cur) {
-      const entry: AuditEntry = {
-        id: cryptoId(),
-        timestamp: new Date().toISOString(),
-        actorId: cur.user.id,
-        actorName: cur.user.displayName,
-        actorRole: cur.user.role,
-        kind: 'auth.signed_out',
-        targetId: cur.user.id,
-        targetLabel: cur.user.email,
-      };
-      const nextLog = trim([entry, ...get().auditLog]);
-      safeWrite(AUDIT_KEY, nextLog);
-      set({ auditLog: nextLog });
-    }
-    safeClear(SESSION_KEY);
-    set({ session: null });
-  },
-
   recordAudit: (input) => {
-    const cur = get().session;
-    const actor = input.actor ?? cur?.user;
-    if (!actor) return;
+    const actor = input.actor ?? get().session.user;
     const entry: AuditEntry = {
       id: cryptoId(),
       timestamp: new Date().toISOString(),
@@ -140,25 +112,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   clearAudit: () => {
-    safeClear(AUDIT_KEY);
+    try { sessionStorage.removeItem(AUDIT_KEY); } catch { /* ignore */ }
     set({ auditLog: [] });
   },
 }));
 
 // ── Selectors ───────────────────────────────────────────────────────
 
-export function useCurrentUser(): User | null {
-  return useAuthStore((s) => s.session?.user ?? null);
-}
-
-export function useIsAuthenticated(): boolean {
-  return useAuthStore((s) => s.session !== null);
+export function useCurrentUser(): User {
+  return useAuthStore((s) => s.session.user);
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
 function cryptoId(): string {
-  // Use Web Crypto when available, fall back to time + random
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID();
   }
