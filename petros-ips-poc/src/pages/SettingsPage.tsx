@@ -14,6 +14,7 @@ import { getPageEntries } from '@/lib/educational-content';
 import { exportSacBridge } from '@/lib/sac-export';
 import { toast } from '@/lib/toast';
 import { useUiPrefs } from '@/store/ui-prefs-store';
+import { Link } from 'react-router';
 import type { ScenarioVersion, EconomicsResult } from '@/engine/types';
 
 const edu = getPageEntries('settings');
@@ -75,7 +76,8 @@ export default function SettingsPage() {
               account), and sample SAC Data Action scripts for cost recovery,
               NPV, government take, and audit emission. Phase 1a delivery
               ingests these CSVs into SAC's master-data and fact-data import
-              pipelines.
+              pipelines. The full <Link to="/sac-mapping" className="text-petrol underline underline-offset-2 focus-ring">POC ↔ SAC object mapping</Link> document
+              lists every concept and its SAC delivery vehicle.
             </p>
           </div>
           <Button
