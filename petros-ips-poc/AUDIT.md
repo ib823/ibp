@@ -380,3 +380,4 @@ A Playwright-based viewport walk (`scripts/viewport-walk.mjs`) visits all 11 pag
 
 **Owner**: bid team
 **Last updated**: 2026-04-25
+**Vercel auto-deploy**: configured 2026-04-25 — `petros-ips-poc` project linked to `ib823/ibp` on `main` with root directory `petros-ips-poc/`. The duplicate `ibp` project's Git link removed (was producing broken 4-second deploys at `ibp-nine.vercel.app`).
