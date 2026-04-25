@@ -18,6 +18,7 @@ const GlossaryPage = lazy(() => import('@/pages/GlossaryPage'));
 const DataSourcesPage = lazy(() => import('@/pages/DataSourcesPage'));
 const AuditTrailPage = lazy(() => import('@/pages/AuditTrailPage'));
 const SacMappingPage = lazy(() => import('@/pages/SacMappingPage'));
+const DataEntryPage = lazy(() => import('@/pages/DataEntryPage'));
 
 function PageLoader() {
   return (
@@ -69,6 +70,7 @@ const router = createBrowserRouter([
       { path: '/data-sources', element: wrap(DataSourcesPage) },
       { path: '/audit', element: wrap(AuditTrailPage) },
       { path: '/sac-mapping', element: wrap(SacMappingPage) },
+      { path: '/data-entry', element: wrap(DataEntryPage) },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

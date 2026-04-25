@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { path: '/financial',   icon: 'payment-approval',    text: 'Financial' },
   { path: '/reserves',    icon: 'database',            text: 'Reserves' },
   { path: '/monte-carlo', icon: 'bar-chart',           text: 'Monte Carlo' },
+  { path: '/data-entry',  icon: 'edit',                text: 'Data Entry' },
   { path: '/settings',    icon: 'action-settings',     text: 'Settings' },
   { path: '/glossary',    icon: 'learning-assistant',  text: 'Glossary' },
   { path: '/data-sources', icon: 'document',           text: 'Data Sources' },
