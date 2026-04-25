@@ -5,6 +5,7 @@ import { Button } from '@/components/ui5/Ui5Button';
 import { ChevronDown, ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConnectionCard } from '@/components/shared/ConnectionCard';
+import { S4HanaIntegrationPanel } from '@/components/shared/S4HanaIntegrationPanel';
 import { VersionedDataUpload } from '@/components/shared/VersionedDataUpload';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
@@ -431,6 +432,9 @@ export default function DataSourcesPage() {
           the structure, sample data, and downloadable blank template for production upload.
         </p>
       </div>
+
+      {/* SAP S/4HANA integration — Phase 1a feeds */}
+      <S4HanaIntegrationPanel />
 
       {/* Zone 0 — Live connections (POC simulation) */}
       <section className="border border-border bg-white p-4 sm:p-5 space-y-3" aria-labelledby="ds-connections-title">
