@@ -1,4 +1,5 @@
 import { useProjectStore } from '@/store/project-store';
+import { useAuthStore } from '@/store/auth-store';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Badge } from '@/components/ui5/Ui5Badge';
 import { FISCAL_REGIMES } from '@/data/fiscal-regimes';
@@ -10,6 +11,9 @@ import { UnitConversionSection } from '@/components/settings/UnitConversionSecti
 import { Button } from '@/components/ui5/Ui5Button';
 import { fmtPct } from '@/lib/format';
 import { getPageEntries } from '@/lib/educational-content';
+import { exportSacBridge } from '@/lib/sac-export';
+import { toast } from '@/lib/toast';
+import type { ScenarioVersion, EconomicsResult } from '@/engine/types';
 
 const edu = getPageEntries('settings');
 
@@ -17,6 +21,33 @@ export default function SettingsPage() {
   usePageTitle('Settings');
   const projects = useProjectStore((s) => s.projects);
   const activeScenario = useProjectStore((s) => s.activeScenario);
+  const economicsResults = useProjectStore((s) => s.economicsResults);
+  const recordAudit = useAuthStore((s) => s.recordAudit);
+
+  const handleSacExport = () => {
+    // Convert the store's nested Map → plain Record for the export module.
+    const resultsByProject: Record<string, Record<ScenarioVersion, EconomicsResult | null>> = {};
+    for (const [projectId, scenarioMap] of economicsResults) {
+      resultsByProject[projectId] = {
+        base:   scenarioMap.get('base')   ?? null,
+        high:   scenarioMap.get('high')   ?? null,
+        low:    scenarioMap.get('low')    ?? null,
+        stress: scenarioMap.get('stress') ?? null,
+      } satisfies Record<ScenarioVersion, EconomicsResult | null>;
+    }
+    try {
+      const { filename, sheetCount } = exportSacBridge({ resultsByProject });
+      recordAudit({
+        kind: 'data.template_downloaded',
+        targetId: 'sac-bridge',
+        targetLabel: filename,
+        detail: `SAC Bridge workbook exported (${sheetCount} sheets)`,
+      });
+      toast.success(`Downloaded ${filename} (${sheetCount} sheets)`);
+    } catch (e) {
+      toast.error(`SAC export failed: ${String(e instanceof Error ? e.message : e)}`);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -25,6 +56,54 @@ export default function SettingsPage() {
         <p className="text-xs text-text-secondary mt-0.5">
           Model configuration and fiscal regime reference data
         </p>
+      </div>
+
+      {/* SAC Bridge — proposal artifact */}
+      <div className="border border-petrol/30 bg-petrol/5 p-4">
+        <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
+          <div>
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-petrol mb-1">
+              SAC Bridge — Phase 1a Migration Artifact
+            </h4>
+            <p className="text-xs text-text-secondary max-w-2xl">
+              Generates an Excel workbook representing this POC's data model in
+              SAP Analytics Cloud Planning import-ready shape: dimension master
+              data, project master data, fact data (project × scenario × year ×
+              account), and sample SAC Data Action scripts for cost recovery,
+              NPV, government take, and audit emission. Phase 1a delivery
+              ingests these CSVs into SAC's master-data and fact-data import
+              pipelines.
+            </p>
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            className="text-xs shrink-0"
+            icon="download"
+            onClick={handleSacExport}
+            title="Download a multi-sheet Excel workbook structured as SAC dimensions / master data / facts / data actions."
+          >
+            Export to SAC
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-[10px]">
+          <div className="border border-petrol/20 bg-white px-2 py-1.5">
+            <div className="font-semibold text-petrol">8 dimension sheets</div>
+            <div className="text-text-muted">Project, Sector, Type, Account, Time, Version, Scenario, FiscalRegime</div>
+          </div>
+          <div className="border border-petrol/20 bg-white px-2 py-1.5">
+            <div className="font-semibold text-petrol">Master data</div>
+            <div className="text-text-muted">Per-project metadata: regime, status, lifecycle, equity</div>
+          </div>
+          <div className="border border-petrol/20 bg-white px-2 py-1.5">
+            <div className="font-semibold text-petrol">Long-format facts</div>
+            <div className="text-text-muted">Project × Scenario × Year × Account values</div>
+          </div>
+          <div className="border border-petrol/20 bg-white px-2 py-1.5">
+            <div className="font-semibold text-petrol">Data Action stubs</div>
+            <div className="text-text-muted">Cost recovery, NPV, government take, audit emission</div>
+          </div>
+        </div>
       </div>
 
       {/* Model Parameters */}
