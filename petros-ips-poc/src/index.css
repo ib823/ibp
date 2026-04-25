@@ -168,6 +168,88 @@ ui5-dialog * {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── SAC Preview Mode ────────────────────────────────────────────────
+ *
+ * Visual overlay that mirrors SAP Analytics Cloud Story conventions
+ * over the same underlying data. Activated via the UI Prefs store
+ * (Settings → SAC Bridge → SAC Preview toggle); AppShell sets
+ * `data-sac-preview="true"` on <body>. All overrides are scoped to
+ * that selector so the default PETROS theme remains untouched.
+ *
+ * What changes:
+ *   - Slightly more rounded card corners (4px → matches SAC tile)
+ *   - Subtle elevation shadow on cards (matches SAC tile lift)
+ *   - SAC-style tile chrome on KPI cards (left accent → top accent)
+ *   - Section headers use SAC label treatment
+ *   - Story canvas sets a soft grey backdrop (matches SAC story page)
+ *   - A "SAC Story Preview" indicator banner across the top
+ */
+
+body[data-sac-preview="true"] {
+  background-color: #F5F6F7; /* SAC story canvas grey */
+}
+
+/* Indicator banner — pinned at top, always visible */
+body[data-sac-preview="true"]::before {
+  content: 'SAC STORY PREVIEW — visual overlay only; data and engines unchanged';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  background: linear-gradient(90deg, #1E3A5F 0%, #254A78 100%);
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Push the app down to clear the banner */
+body[data-sac-preview="true"] > #root {
+  padding-top: 22px;
+}
+
+/* Cards: SAC tile look — softer corners, subtle shadow, white surface */
+body[data-sac-preview="true"] .border-border.bg-white {
+  border-radius: 4px;
+  box-shadow: 0 1px 3px 0 rgba(15, 32, 53, 0.06), 0 1px 2px 0 rgba(15, 32, 53, 0.04);
+  border-color: #DCDFE4;
+}
+
+/* KPI tile chrome — relocate the petrol left-accent to a top-accent
+ * (SAC tile convention), tighten internal spacing */
+body[data-sac-preview="true"] [class*="border-l-2 border-l-petrol"],
+body[data-sac-preview="true"] [class*="border-l-2 border-l-success"],
+body[data-sac-preview="true"] [class*="border-l-2 border-l-amber"],
+body[data-sac-preview="true"] [class*="border-l-2 border-l-danger"] {
+  border-left-width: 0;
+  border-top-width: 3px;
+  border-top-style: solid;
+}
+body[data-sac-preview="true"] [class*="border-l-2 border-l-petrol"]  { border-top-color: var(--color-petrol); }
+body[data-sac-preview="true"] [class*="border-l-2 border-l-success"] { border-top-color: var(--color-success); }
+body[data-sac-preview="true"] [class*="border-l-2 border-l-amber"]   { border-top-color: var(--color-amber); }
+body[data-sac-preview="true"] [class*="border-l-2 border-l-danger"]  { border-top-color: var(--color-danger); }
+
+/* Page section headers — SAC label treatment (bolder, slightly larger) */
+body[data-sac-preview="true"] h4.uppercase {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #4A5566;
+}
+
+/* Hide the POC badge in SAC Preview — it would visually contradict
+ * the SAC narrative we're showing */
+body[data-sac-preview="true"] [data-poc-badge] {
+  display: none;
+}
+
 /* ── Focus ring utility ──────────────────────────────────────────────
  * Single source of truth for keyboard focus indication. Apply to any
  * interactive element that doesn't already have one (links, custom

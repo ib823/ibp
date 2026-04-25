@@ -5,6 +5,7 @@ import { Footer } from './Footer';
 import { GuidedTour } from '@/components/shared/GuidedTour';
 import { useEffect, useRef } from 'react';
 import { useProjectStore } from '@/store/project-store';
+import { useSacPreviewMode } from '@/store/ui-prefs-store';
 
 export function AppShell() {
   const initialize = useProjectStore((s) => s.initialize);
@@ -12,8 +13,22 @@ export function AppShell() {
   const sidebarCollapsed = useProjectStore((s) => s.sidebarCollapsed);
   const mobileSidebarOpen = useProjectStore((s) => s.mobileSidebarOpen);
   const setMobileSidebarOpen = useProjectStore((s) => s.setMobileSidebarOpen);
+  const sacPreview = useSacPreviewMode();
   const initialized = useRef(false);
   const location = useLocation();
+
+  // Sync SAC Preview mode → body data attribute so CSS overrides apply
+  // globally (across all pages, charts, dialogs, popovers).
+  useEffect(() => {
+    if (sacPreview) {
+      document.body.setAttribute('data-sac-preview', 'true');
+    } else {
+      document.body.removeAttribute('data-sac-preview');
+    }
+    return () => {
+      document.body.removeAttribute('data-sac-preview');
+    };
+  }, [sacPreview]);
 
   useEffect(() => {
     if (initialized.current) return;

@@ -13,6 +13,7 @@ import { fmtPct } from '@/lib/format';
 import { getPageEntries } from '@/lib/educational-content';
 import { exportSacBridge } from '@/lib/sac-export';
 import { toast } from '@/lib/toast';
+import { useUiPrefs } from '@/store/ui-prefs-store';
 import type { ScenarioVersion, EconomicsResult } from '@/engine/types';
 
 const edu = getPageEntries('settings');
@@ -23,6 +24,8 @@ export default function SettingsPage() {
   const activeScenario = useProjectStore((s) => s.activeScenario);
   const economicsResults = useProjectStore((s) => s.economicsResults);
   const recordAudit = useAuthStore((s) => s.recordAudit);
+  const sacPreviewMode = useUiPrefs((s) => s.sacPreviewMode);
+  const toggleSacPreviewMode = useUiPrefs((s) => s.toggleSacPreviewMode);
 
   const handleSacExport = () => {
     // Convert the store's nested Map → plain Record for the export module.
@@ -103,6 +106,49 @@ export default function SettingsPage() {
             <div className="font-semibold text-petrol">Data Action stubs</div>
             <div className="text-text-muted">Cost recovery, NPV, government take, audit emission</div>
           </div>
+        </div>
+
+        {/* SAC Preview toggle — visual overlay onto same data */}
+        <div className="mt-4 pt-4 border-t border-petrol/20 flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0 max-w-2xl">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-petrol mb-1">
+              SAC Story Preview
+            </div>
+            <p className="text-xs text-text-secondary">
+              Re-skin the application with SAP Analytics Cloud Story visual
+              conventions: tile chrome, story canvas, top accent bars,
+              softened card elevation. The data, calculations, and engines
+              do not change — this is what evaluators see when they ask
+              "what will this look like in SAC?"
+            </p>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer shrink-0 select-none">
+            <span className="text-xs font-medium text-text-primary">
+              {sacPreviewMode ? 'On' : 'Off'}
+            </span>
+            <span
+              role="switch"
+              aria-checked={sacPreviewMode}
+              tabIndex={0}
+              onClick={toggleSacPreviewMode}
+              onKeyDown={(e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                  e.preventDefault();
+                  toggleSacPreviewMode();
+                }
+              }}
+              className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-petrol ${
+                sacPreviewMode ? 'bg-petrol' : 'bg-text-muted/40'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                  sacPreviewMode ? 'translate-x-5' : 'translate-x-1'
+                }`}
+              />
+            </span>
+          </label>
         </div>
       </div>
 

@@ -47,7 +47,7 @@ export function Header() {
             S/4HANA" remains visible at every viewport, so the demo
             framing isn't lost; this just frees toolbar room for the
             persona switcher on phones. */}
-        <span className="hidden sm:inline-flex items-center text-[10px] font-semibold tracking-wider uppercase text-amber bg-amber/10 border border-amber/30 px-2 py-0.5 rounded shrink-0">
+        <span data-poc-badge className="hidden sm:inline-flex items-center text-[10px] font-semibold tracking-wider uppercase text-amber bg-amber/10 border border-amber/30 px-2 py-0.5 rounded shrink-0">
           POC
         </span>
         <div className="flex-1" />
