@@ -6,6 +6,7 @@ import { KpiCard } from '@/components/shared/KpiCard';
 import { PortfolioProductionChart } from '@/components/charts/PortfolioProductionChart';
 import { CapexTimelineChart } from '@/components/charts/CapexTimelineChart';
 import { Badge } from '@/components/ui5/Ui5Badge';
+import { Pill } from '@/components/shared/Pill';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { fmtPct } from '@/lib/format';
@@ -176,14 +177,19 @@ export default function DashboardPage() {
                   </td>
                   <td className="px-2 py-2">
                     <EduTooltip entryId={statusTooltipId}>
-                      <Badge variant="outline" className={cn(
-                        'text-[10px] py-0 px-1 cursor-help',
-                        p.project.status === 'producing' && 'bg-success/10 text-success border-success/30',
-                        p.project.status === 'active' && 'bg-petrol/10 text-petrol border-petrol/30',
-                        p.project.status === 'pre-fid' && 'bg-amber/10 text-amber border-amber/30',
-                      )}>
-                        {p.project.status}
-                      </Badge>
+                      <span className="cursor-help inline-block">
+                        <Pill
+                          tone={
+                            p.project.status === 'producing' ? 'success'
+                            : p.project.status === 'active' ? 'petrol'
+                            : p.project.status === 'pre-fid' ? 'amber'
+                            : 'neutral'
+                          }
+                          size="sm"
+                        >
+                          {p.project.status}
+                        </Pill>
+                      </span>
                     </EduTooltip>
                   </td>
                   <td className={cn('px-2 py-2 text-right font-data font-medium', npvRaw >= 0 ? 'text-success' : 'text-danger')}>

@@ -12,17 +12,20 @@ const BASE = 'http://localhost:5173';
 const OUT_DIR = resolve('viewport-walk');
 
 const PAGES = [
-  { slug: 'dashboard',    path: '/' },
-  { slug: 'economics',    path: '/economics' },
-  { slug: 'sensitivity',  path: '/sensitivity' },
-  { slug: 'portfolio',    path: '/portfolio' },
-  { slug: 'financial',    path: '/financial' },
-  { slug: 'reserves',     path: '/reserves' },
-  { slug: 'monte-carlo',  path: '/monte-carlo' },
-  { slug: 'settings',     path: '/settings' },
-  { slug: 'glossary',     path: '/glossary' },
-  { slug: 'data-sources', path: '/data-sources' },
-  { slug: 'audit',        path: '/audit' },
+  { slug: 'dashboard',     path: '/' },
+  { slug: 'economics',     path: '/economics' },
+  { slug: 'sensitivity',   path: '/sensitivity' },
+  { slug: 'portfolio',     path: '/portfolio' },
+  { slug: 'financial',     path: '/financial' },
+  { slug: 'consolidation', path: '/consolidation' },
+  { slug: 'reserves',      path: '/reserves' },
+  { slug: 'monte-carlo',   path: '/monte-carlo' },
+  { slug: 'data-entry',    path: '/data-entry' },
+  { slug: 'settings',      path: '/settings' },
+  { slug: 'glossary',      path: '/glossary' },
+  { slug: 'data-sources',  path: '/data-sources' },
+  { slug: 'audit',         path: '/audit' },
+  { slug: 'sac-mapping',   path: '/sac-mapping' },
 ];
 
 const VIEWPORTS = [

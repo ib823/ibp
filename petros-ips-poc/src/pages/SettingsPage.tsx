@@ -1,7 +1,7 @@
 import { useProjectStore } from '@/store/project-store';
 import { useAuthStore } from '@/store/auth-store';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Badge } from '@/components/ui5/Ui5Badge';
+import { Pill } from '@/components/shared/Pill';
 import { FISCAL_REGIMES } from '@/data/fiscal-regimes';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { InfoIcon } from '@/components/shared/InfoIcon';
@@ -199,9 +199,9 @@ export default function SettingsPage() {
           {Object.entries(FISCAL_REGIMES).map(([key, regime]) => (
             <div key={key} className="border border-border/50 p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline" className="text-[10px] bg-petrol/10 text-petrol border-petrol/30">
+                <Pill tone="petrol" size="sm">
                   {regime.type.replace('_', ' ')}
-                </Badge>
+                </Pill>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <Row label="Royalty" value={fmtPct(regime.royaltyRate, 0)} />
@@ -256,7 +256,7 @@ export default function SettingsPage() {
           ))}
           <div className="border border-border/50 p-3 bg-content-alt/30">
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className="text-[10px]">RSC</Badge>
+              <Pill tone="petrol" size="sm">RSC</Pill>
               <span className="text-[10px] text-text-muted">(Risk Service Contract)</span>
               <InfoIcon entry={edu['ST-18']!} />
             </div>
