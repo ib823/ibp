@@ -15,6 +15,7 @@
   --color-content-alt: #F0F2F5;
   --color-success: #2D8A4E;
   --color-danger: #C0392B;
+  --color-admin: #6B46C1;
   --color-text-primary: #1A1A2E;
   --color-text-secondary: #6B7280;
   --color-text-muted: #9CA3AF;
@@ -165,6 +166,22 @@ ui5-dialog * {
 .font-data {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* ── Focus ring utility ──────────────────────────────────────────────
+ * Single source of truth for keyboard focus indication. Apply to any
+ * interactive element that doesn't already have one (links, custom
+ * buttons, card-as-link wrappers). Replaces ad-hoc focus-visible:outline
+ * declarations scattered across components.
+ *
+ * The 2px offset gives the ring breathing room from the element edge,
+ * which keeps it visible even on tinted backgrounds and avoids visual
+ * collision with row hover states. Petrol matches the brand primary.
+ */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-petrol);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* ── Table scroll indicator ────────────────────────────────────────── */

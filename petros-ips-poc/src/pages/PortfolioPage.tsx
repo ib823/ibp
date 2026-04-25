@@ -10,6 +10,7 @@ import { Switch } from '@ui5/webcomponents-react';
 import { Badge } from '@/components/ui5/Ui5Badge';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { EduTooltip } from '@/components/shared/EduTooltip';
+import { LoadingState } from '@/components/shared/States';
 import { Button } from '@/components/ui5/Ui5Button';
 import { toast } from '@/lib/toast';
 import { fmtPct } from '@/lib/format';
@@ -126,9 +127,11 @@ export default function PortfolioPage() {
 
   if (!portfolioResult) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-sm text-text-muted">Calculating portfolio...</p>
-      </div>
+      <LoadingState
+        label="Calculating portfolio…"
+        detail="Aggregating economics across active projects"
+        size="lg"
+      />
     );
   }
 

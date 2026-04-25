@@ -12,6 +12,7 @@ import { EduTooltip } from '@/components/shared/EduTooltip';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { GranularityToggle } from '@/components/shared/GranularityToggle';
+import { EmptyState } from '@/components/shared/States';
 import { VersionComparisonView } from '@/components/version/VersionComparisonView';
 import { PhaseComparisonView } from '@/components/phase/PhaseComparisonView';
 import { Tabs } from '@/components/ui5/Ui5Tabs';
@@ -73,10 +74,12 @@ export default function EconomicsPage() {
               content: (
                 <div className="space-y-4">
                   {!result && (
-                    <div className="flex items-center justify-center h-64 border border-border bg-white">
-                      <p className="text-sm text-text-muted">
-                        Select a project and click Calculate to view results
-                      </p>
+                    <div className="border border-border bg-white">
+                      <EmptyState
+                        title="No economics result yet"
+                        hint="Select a project and click Calculate to view NPV, IRR, payback, government take, and the full cashflow waterfall."
+                        size="md"
+                      />
                     </div>
                   )}
 

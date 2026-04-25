@@ -15,19 +15,12 @@ import type { SensitivityVariable } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { ChartDataTable } from '@/components/shared/ChartDataTable';
 import { ChartShell } from '@/components/charts/ChartShell';
+import { VARIABLE_COLORS, COLORS } from '@/lib/chart-colors';
 
 
 interface SpiderDiagramChartProps {
   result: SpiderResult;
 }
-
-const VARIABLE_COLORS: Record<SensitivityVariable, string> = {
-  oilPrice: '#2D8A4E',
-  gasPrice: '#1E3A5F',
-  production: '#D4A843',
-  capex: '#C0392B',
-  opex: '#8B5CF6',
-};
 
 const VARIABLE_LABELS: Record<SensitivityVariable, string> = {
   oilPrice: 'Oil Price',
@@ -59,21 +52,21 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
     <ChartShell height={350}>
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data} margin={{ top: 10, right: 50, left: 30, bottom: 25 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
+        <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
         <XAxis
           dataKey="pctChange"
           type="number"
           domain={[-30, 30]}
-          tick={{ fontSize: 11, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: COLORS.textSecondary }}
           tickLine={false}
-          label={{ value: '% Change from Base', position: 'insideBottom', offset: -5, fontSize: 11, fill: '#9CA3AF' }}
+          label={{ value: '% Change from Base', position: 'insideBottom', offset: -5, fontSize: 11, fill: COLORS.textMuted }}
           tickFormatter={(v: number) => `${v > 0 ? '+' : ''}${v}%`}
         />
         <YAxis
-          tick={{ fontSize: 11, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: COLORS.textSecondary }}
           tickLine={false}
           tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`}
-          label={{ value: `NPV (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 11, fill: '#9CA3AF' }}
+          label={{ value: `NPV (${u.currencyCode} M)`, angle: -90, position: 'insideLeft', fontSize: 11, fill: COLORS.textMuted }}
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
@@ -84,8 +77,8 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
           wrapperStyle={{ fontSize: 11 }}
           formatter={(value: string) => VARIABLE_LABELS[value as SensitivityVariable] ?? value}
         />
-        <ReferenceLine x={0} stroke="#1A1A2E" strokeWidth={1} strokeDasharray="6,3" />
-        <ReferenceLine y={0} stroke="#9CA3AF" strokeWidth={1} strokeDasharray="3,3" />
+        <ReferenceLine x={0} stroke={COLORS.chartBaseLine} strokeWidth={1} strokeDasharray="6,3" />
+        <ReferenceLine y={0} stroke={COLORS.chartZero} strokeWidth={1} strokeDasharray="3,3" />
 
         {result.lines.map((line) => (
           <Line

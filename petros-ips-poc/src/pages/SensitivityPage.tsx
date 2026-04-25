@@ -11,6 +11,8 @@ import { ScenarioCashFlowOverlay } from '@/components/charts/ScenarioCashFlowOve
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
+import { EmptyState } from '@/components/shared/States';
+import { CHART_NEG, CHART_POS } from '@/lib/chart-colors';
 import { calculateSpider } from '@/engine/sensitivity/spider';
 import { compareScenarios } from '@/engine/sensitivity/scenario';
 import { fmtPct, fmtYears } from '@/lib/format';
@@ -104,7 +106,13 @@ export default function SensitivityPage() {
             label: 'Tornado',
             icon: 'horizontal-bar-chart',
             content: !tornadoResult ? (
-              <EmptyState message="Click 'Run Sensitivity' to generate tornado chart" />
+              <div className="border border-border bg-white">
+                <EmptyState
+                  title="No tornado yet"
+                  hint="Click Run Sensitivity to compute NPV at ±30 % on each input variable."
+                  size="lg"
+                />
+              </div>
             ) : (
               <div className="border border-border bg-white p-5">
                 <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
@@ -117,12 +125,12 @@ export default function SensitivityPage() {
                 <div className="flex items-center gap-6 mt-3 text-xs text-text-muted">
                   <EduTooltip entryId="S-08">
                     <span className="flex items-center gap-1.5 cursor-help">
-                      <span className="w-3 h-3 inline-block" style={{ backgroundColor: '#E07060' }} />
+                      <span className="w-3 h-3 inline-block" style={{ backgroundColor: CHART_NEG }} />
                       Lower NPV
                     </span>
                   </EduTooltip>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 inline-block" style={{ backgroundColor: '#3B8DBD' }} />
+                    <span className="w-3 h-3 inline-block" style={{ backgroundColor: CHART_POS }} />
                     Higher NPV
                   </span>
                 </div>
@@ -134,7 +142,13 @@ export default function SensitivityPage() {
             label: 'Spider',
             icon: 'line-chart',
             content: !spiderResult ? (
-              <EmptyState message="Click 'Run Sensitivity' to generate spider diagram" />
+              <div className="border border-border bg-white">
+                <EmptyState
+                  title="No spider diagram yet"
+                  hint="Click Run Sensitivity to plot NPV across the ±30 % range for each variable."
+                  size="lg"
+                />
+              </div>
             ) : (
               <div className="border border-border bg-white p-5">
                 <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
@@ -157,7 +171,13 @@ export default function SensitivityPage() {
             label: 'Scenario Comparison',
             icon: 'compare',
             content: !scenarioResults ? (
-              <EmptyState message="Click 'Run Sensitivity' to compare scenarios" />
+              <div className="border border-border bg-white">
+                <EmptyState
+                  title="No scenario comparison yet"
+                  hint="Click Run Sensitivity to compute NPV / IRR / payback under base, high, low and stress price decks."
+                  size="lg"
+                />
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="border border-border bg-white p-4">
@@ -204,13 +224,6 @@ export default function SensitivityPage() {
   );
 }
 
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex items-center justify-center h-64 border border-border bg-white">
-      <p className="text-sm text-text-muted">{message}</p>
-    </div>
-  );
-}
 
 function ScenarioKpiTable({ results }: { results: Record<ScenarioVersion, EconomicsResult> }) {
   const u = useDisplayUnits();

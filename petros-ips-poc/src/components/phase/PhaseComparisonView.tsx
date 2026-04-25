@@ -5,6 +5,7 @@ import { useProjectStore } from '@/store/project-store';
 import { fmtPct, fmtYears } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
+import { COLORS, PHASE_COLORS } from '@/lib/chart-colors';
 import {
   AreaChart,
   Area,
@@ -389,16 +390,16 @@ function ProductionOverlay({ p1, p2 }: { p1: PhaseVersionData; p2: PhaseVersionD
       <ChartShell height={280}>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-            <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#6B7280' }} />
-            <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
+            <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
+            <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
             <Tooltip
               contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
               formatter={(v: number) => [v.toLocaleString() + ' boe/d', '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Area type="monotone" dataKey={p1.label} stroke="#3B8DBD" fill="#3B8DBD" fillOpacity={0.25} strokeDasharray="4,2" isAnimationActive={false} />
-            <Area type="monotone" dataKey={p2.label} stroke="#1E3A5F" fill="#1E3A5F" fillOpacity={0.4} isAnimationActive={false} />
+            <Area type="monotone" dataKey={p1.label} stroke={PHASE_COLORS.before} fill={PHASE_COLORS.before} fillOpacity={0.25} strokeDasharray="4,2" isAnimationActive={false} />
+            <Area type="monotone" dataKey={p2.label} stroke={PHASE_COLORS.after} fill={PHASE_COLORS.after} fillOpacity={0.4} isAnimationActive={false} />
           </AreaChart>
         </ResponsiveContainer>
       </ChartShell>
@@ -435,16 +436,16 @@ function CashFlowOverlay({ result }: { result: PhaseComparisonResult }) {
       <ChartShell height={280}>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-            <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#6B7280' }} />
-            <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(v) => `${u.currencySymbol}${v}M`} />
+            <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
+            <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
+            <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v) => `${u.currencySymbol}${v}M`} />
             <Tooltip
               contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
               formatter={(v: number) => [`${u.currencySymbol}${v.toLocaleString()}M`, '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Line type="monotone" dataKey={result.phase1Label} stroke="#3B8DBD" strokeWidth={2} strokeDasharray="5,3" dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey={result.phase2Label} stroke="#1E3A5F" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={result.phase1Label} stroke={PHASE_COLORS.before} strokeWidth={2} strokeDasharray="5,3" dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={result.phase2Label} stroke={PHASE_COLORS.after} strokeWidth={2} dot={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </ChartShell>

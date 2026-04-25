@@ -1,24 +1,11 @@
-import { Badge } from '@/components/ui5/Ui5Badge';
 import type { DataStatus } from '@/engine/types';
-import { cn } from '@/lib/utils';
+import { Pill, type PillTone } from '@/components/shared/Pill';
 
-const STATUS_CONFIG: Record<DataStatus, { label: string; className: string }> = {
-  open: {
-    label: 'Open',
-    className: 'bg-petrol/10 text-petrol border-petrol/30',
-  },
-  submitted: {
-    label: 'Submitted',
-    className: 'bg-amber/10 text-amber border-amber/30',
-  },
-  approved: {
-    label: 'Approved',
-    className: 'bg-success/10 text-success border-success/30',
-  },
-  to_change: {
-    label: 'To Change',
-    className: 'bg-amber/10 text-amber border-amber/30',
-  },
+const STATUS_CONFIG: Record<DataStatus, { label: string; tone: PillTone }> = {
+  open:      { label: 'Open',      tone: 'petrol' },
+  submitted: { label: 'Submitted', tone: 'amber' },
+  approved:  { label: 'Approved',  tone: 'success' },
+  to_change: { label: 'To Change', tone: 'amber' },
 };
 
 interface StatusBadgeProps {
@@ -28,8 +15,8 @@ interface StatusBadgeProps {
 export function StatusBadge({ status }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status];
   return (
-    <Badge variant="outline" className={cn('text-[10px] font-medium', config.className)}>
+    <Pill tone={config.tone} size="sm">
       {config.label}
-    </Badge>
+    </Pill>
   );
 }

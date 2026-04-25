@@ -12,6 +12,7 @@ import {
 import type { ProductionProfile } from '@/engine/types';
 import { fmtNum } from '@/lib/format';
 import { ChartShell } from '@/components/charts/ChartShell';
+import { COLORS, PRODUCTION_COLORS } from '@/lib/chart-colors';
 
 interface ProductionChartProps {
   production: ProductionProfile;
@@ -41,17 +42,17 @@ export function ProductionChart({ production, startYear, endYear }: ProductionCh
     <ChartShell height={250}>
     <ResponsiveContainer width="100%" height={250}>
       <AreaChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
+        <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
         <XAxis
           dataKey="year"
-          tick={{ fontSize: 11, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: COLORS.textSecondary }}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 11, fill: '#6B7280' }}
+          tick={{ fontSize: 11, fill: COLORS.textSecondary }}
           tickLine={false}
           tickFormatter={(v: number) => fmtNum(v)}
-          label={{ value: 'boe/d', angle: -90, position: 'insideLeft', fontSize: 11, fill: '#9CA3AF' }}
+          label={{ value: 'boe/d', angle: -90, position: 'insideLeft', fontSize: 11, fill: COLORS.textMuted }}
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
@@ -62,8 +63,8 @@ export function ProductionChart({ production, startYear, endYear }: ProductionCh
           type="monotone"
           dataKey="oil"
           stackId="1"
-          stroke="#1B5E20"
-          fill="#2D8A4E"
+          stroke={PRODUCTION_COLORS.oilStroke}
+          fill={PRODUCTION_COLORS.oilFill}
           fillOpacity={0.8}
           name="Oil"
         />
@@ -71,8 +72,8 @@ export function ProductionChart({ production, startYear, endYear }: ProductionCh
           type="monotone"
           dataKey="gas"
           stackId="1"
-          stroke="#1565C0"
-          fill="#1E3A5F"
+          stroke={PRODUCTION_COLORS.gasStroke}
+          fill={PRODUCTION_COLORS.gasFill}
           fillOpacity={0.7}
           name="Gas"
         />
@@ -80,8 +81,8 @@ export function ProductionChart({ production, startYear, endYear }: ProductionCh
           type="monotone"
           dataKey="condensate"
           stackId="1"
-          stroke="#D4A843"
-          fill="#D4A843"
+          stroke={PRODUCTION_COLORS.condensateStroke}
+          fill={PRODUCTION_COLORS.condensateFill}
           fillOpacity={0.6}
           name="Condensate"
         />

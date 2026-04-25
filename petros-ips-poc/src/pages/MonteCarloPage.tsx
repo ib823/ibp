@@ -28,6 +28,8 @@ import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { toast } from '@/lib/toast';
 import { getPageEntries } from '@/lib/educational-content';
 import type { MonteCarloConfig, MonteCarloResult } from '@/engine/types';
+import { COLORS, CHART_NEG, CHART_POS } from '@/lib/chart-colors';
+import { EmptyState, LoadingState } from '@/components/shared/States';
 
 const edu = getPageEntries('monteCarlo');
 
@@ -206,9 +208,21 @@ export default function MonteCarloPage() {
 
         {/* Results */}
         <div className="flex-1 min-w-0 space-y-4">
-          {!mcResult ? (
-            <div className="flex items-center justify-center h-64 border border-border bg-white">
-              <p className="text-sm text-text-muted">Configure and run simulation to see results</p>
+          {isCalculating ? (
+            <div className="border border-border bg-white">
+              <LoadingState
+                label={`Running ${iterations.toLocaleString()} iterations…`}
+                detail="Sampling distributions and computing NPV per trial"
+                size="lg"
+              />
+            </div>
+          ) : !mcResult ? (
+            <div className="border border-border bg-white">
+              <EmptyState
+                title="No simulation result yet"
+                hint="Configure distributions on the left and click Run Simulation to see the NPV distribution, S-curve, and percentile statistics."
+                size="md"
+              />
             </div>
           ) : (
             <MCResults result={mcResult} />
@@ -343,16 +357,16 @@ function MCResults({ result }: { result: MonteCarloResult }) {
         <ChartShell height={260}>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={histData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-            <XAxis dataKey="npv" tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
-            <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
+            <XAxis dataKey="npv" tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
+            <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
             <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [v, 'Count']} labelFormatter={(v: number) => `NPV: ${u.currencySymbol}${v.toFixed(0)}M`} />
-            <ReferenceLine x={p10Display} stroke="#C0392B" strokeDasharray="4,3" label={{ value: 'P10', fontSize: 11, fill: '#C0392B' }} />
-            <ReferenceLine x={p50Display} stroke="#1E3A5F" strokeDasharray="4,3" label={{ value: 'P50', fontSize: 11, fill: '#1E3A5F' }} />
-            <ReferenceLine x={p90Display} stroke="#2D8A4E" strokeDasharray="4,3" label={{ value: 'P90', fontSize: 11, fill: '#2D8A4E' }} />
+            <ReferenceLine x={p10Display} stroke={COLORS.danger} strokeDasharray="4,3" label={{ value: 'P10', fontSize: 11, fill: COLORS.danger }} />
+            <ReferenceLine x={p50Display} stroke={COLORS.petrol} strokeDasharray="4,3" label={{ value: 'P50', fontSize: 11, fill: COLORS.petrol }} />
+            <ReferenceLine x={p90Display} stroke={COLORS.success} strokeDasharray="4,3" label={{ value: 'P90', fontSize: 11, fill: COLORS.success }} />
             <Bar dataKey="count" name="Frequency" isAnimationActive={false}>
               {histData.map((d, i) => (
-                <Cell key={i} fill={d.isAboveP50 ? '#3B8DBD' : '#E07060'} opacity={0.8} />
+                <Cell key={i} fill={d.isAboveP50 ? CHART_POS : CHART_NEG} opacity={0.8} />
               ))}
             </Bar>
           </BarChart>
@@ -370,14 +384,14 @@ function MCResults({ result }: { result: MonteCarloResult }) {
           <ChartShell height={260}>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={sCurveData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-              <XAxis dataKey="npv" tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
-              <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
+              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
+              <XAxis dataKey="npv" tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
+              <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
               <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [`${v.toFixed(1)}%`, 'Probability']} labelFormatter={(v: number) => `NPV: ${u.currencySymbol}${v.toFixed(0)}M`} />
-              <ReferenceLine y={10} stroke="#C0392B" strokeDasharray="3,3" />
-              <ReferenceLine y={50} stroke="#1E3A5F" strokeDasharray="3,3" />
-              <ReferenceLine y={90} stroke="#2D8A4E" strokeDasharray="3,3" />
-              <Line type="monotone" dataKey="prob" stroke="#1E3A5F" strokeWidth={2} dot={false} isAnimationActive={false} />
+              <ReferenceLine y={10} stroke={COLORS.danger} strokeDasharray="3,3" />
+              <ReferenceLine y={50} stroke={COLORS.petrol} strokeDasharray="3,3" />
+              <ReferenceLine y={90} stroke={COLORS.success} strokeDasharray="3,3" />
+              <Line type="monotone" dataKey="prob" stroke={COLORS.petrol} strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
           </ChartShell>

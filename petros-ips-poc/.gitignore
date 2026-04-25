@@ -23,3 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# T260002 extraction workspace — local only, not committed
+_extraction/
+
+# Browser-session walk artefacts — regenerable via scripts/viewport-walk.mjs
+viewport-walk/
+

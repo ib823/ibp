@@ -223,7 +223,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {[
           { to: '/economics', label: 'Economics', desc: 'Project-level cashflows', icon: Calculator },
           { to: '/sensitivity', label: 'Sensitivity', desc: 'Tornado & scenarios', icon: BarChart3 },
@@ -233,7 +233,7 @@ export default function DashboardPage() {
           <Link
             key={link.to}
             to={link.to}
-            className="border border-border bg-white p-3 hover:border-petrol/50 transition-colors group"
+            className="focus-ring border border-border bg-white p-3 hover:border-petrol/50 transition-colors group"
           >
             <div className="flex items-center gap-2 mb-1">
               <link.icon size={14} className="text-petrol" />

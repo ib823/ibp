@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { TornadoResult, SensitivityVariable } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { ChartDataTable } from '@/components/shared/ChartDataTable';
+import { CHART_NEG, CHART_POS, COLORS } from '@/lib/chart-colors';
 
 interface TornadoChartProps {
   result: TornadoResult;
@@ -14,9 +15,6 @@ const VARIABLE_LABELS: Record<SensitivityVariable, string> = {
   capex: 'CAPEX',
   opex: 'OPEX',
 };
-
-const NEG_COLOR = '#E07060';
-const POS_COLOR = '#3B8DBD';
 
 export function TornadoChart({ result }: TornadoChartProps) {
   const u = useDisplayUnits();
@@ -81,13 +79,13 @@ export function TornadoChart({ result }: TornadoChartProps) {
       aria-label={`Tornado sensitivity: impact of each variable on NPV at plus or minus 30 percent. Base NPV ${u.money(baseNpv)}.`}
     >
       {/* Header labels */}
-      <text x={padL} y={14} fontSize={11} fill="#9CA3AF">
+      <text x={padL} y={14} fontSize={11} fill={COLORS.textMuted}>
         {u.money(minNpv)}
       </text>
-      <text x={svgW - padR} y={14} fontSize={11} fill="#9CA3AF" textAnchor="end">
+      <text x={svgW - padR} y={14} fontSize={11} fill={COLORS.textMuted} textAnchor="end">
         {u.money(maxNpv)}
       </text>
-      <text x={baseLine} y={14} fontSize={11} fill="#1A1A2E" textAnchor="middle" fontWeight={600}>
+      <text x={baseLine} y={14} fontSize={11} fill={COLORS.textPrimary} textAnchor="middle" fontWeight={600}>
         Base: {u.money(baseNpv)}
       </text>
 
@@ -97,7 +95,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
         x2={baseLine}
         y1={padT - 5}
         y2={svgH - 10}
-        stroke="#1A1A2E"
+        stroke={COLORS.textPrimary}
         strokeWidth={1.5}
         strokeDasharray="4,3"
       />
@@ -127,7 +125,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
               y={y + barHeight / 2 + 4}
               textAnchor="end"
               fontSize={11}
-              fill="#1A1A2E"
+              fill={COLORS.textPrimary}
               fontWeight={500}
             >
               {VARIABLE_LABELS[variable]}
@@ -140,7 +138,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
                 y={y + 2}
                 width={downBarW}
                 height={barHeight - 4}
-                fill={NEG_COLOR}
+                fill={CHART_NEG}
                 rx={1}
               />
             )}
@@ -152,7 +150,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
                 y={y + 2}
                 width={upBarW}
                 height={barHeight - 4}
-                fill={POS_COLOR}
+                fill={CHART_POS}
                 rx={1}
               />
             )}
@@ -165,7 +163,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
                 y={y + barHeight / 2 + 3}
                 textAnchor="start"
                 fontSize={11}
-                fill="#FFFFFF"
+                fill="#FFFFFF" /* on-bar label */
                 fontWeight={500}
                 className="font-data"
               >
@@ -177,7 +175,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
                 y={y + barHeight / 2 + 3}
                 textAnchor="end"
                 fontSize={11}
-                fill="#6B7280"
+                fill={COLORS.textSecondary}
                 className="font-data"
               >
                 {u.money(downside)}
@@ -189,7 +187,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
                 y={y + barHeight / 2 + 3}
                 textAnchor="end"
                 fontSize={11}
-                fill="#FFFFFF"
+                fill="#FFFFFF" /* on-bar label */
                 fontWeight={500}
                 className="font-data"
               >
@@ -201,7 +199,7 @@ export function TornadoChart({ result }: TornadoChartProps) {
                 y={y + barHeight / 2 + 3}
                 textAnchor="start"
                 fontSize={11}
-                fill="#6B7280"
+                fill={COLORS.textSecondary}
                 className="font-data"
               >
                 {u.money(upside)}
