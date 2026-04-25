@@ -19,6 +19,7 @@ const DataSourcesPage = lazy(() => import('@/pages/DataSourcesPage'));
 const AuditTrailPage = lazy(() => import('@/pages/AuditTrailPage'));
 const SacMappingPage = lazy(() => import('@/pages/SacMappingPage'));
 const DataEntryPage = lazy(() => import('@/pages/DataEntryPage'));
+const ConsolidationPage = lazy(() => import('@/pages/ConsolidationPage'));
 
 function PageLoader() {
   return (
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
       { path: '/audit', element: wrap(AuditTrailPage) },
       { path: '/sac-mapping', element: wrap(SacMappingPage) },
       { path: '/data-entry', element: wrap(DataEntryPage) },
+      { path: '/consolidation', element: wrap(ConsolidationPage) },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

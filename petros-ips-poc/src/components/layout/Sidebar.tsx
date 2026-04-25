@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { path: '/sensitivity', icon: 'horizontal-bar-chart',text: 'Sensitivity' },
   { path: '/portfolio',   icon: 'chain-link',          text: 'Portfolio' },
   { path: '/financial',   icon: 'payment-approval',    text: 'Financial' },
+  { path: '/consolidation', icon: 'group',             text: 'Consolidation' },
   { path: '/reserves',    icon: 'database',            text: 'Reserves' },
   { path: '/monte-carlo', icon: 'bar-chart',           text: 'Monte Carlo' },
   { path: '/data-entry',  icon: 'edit',                text: 'Data Entry' },

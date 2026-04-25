@@ -1,0 +1,10 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const page = await ctx.newPage();
+await page.addInitScript(() => { try { localStorage.setItem('petros_tour_completed','true'); } catch{} });
+await page.goto('http://localhost:5173/consolidation', { waitUntil: 'networkidle', timeout: 20000 });
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'viewport-walk/consolidation.png', fullPage: false });
+await browser.close();
+console.log('done');
