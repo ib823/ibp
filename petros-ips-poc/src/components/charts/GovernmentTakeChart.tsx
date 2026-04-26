@@ -62,7 +62,7 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
             contractor slice cannot render negative); the asterisk and
             footnote below are the disclosed reconciliation. */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-[10px] text-text-muted uppercase tracking-wider">Govt Take</span>
+          <span className="text-caption text-text-muted uppercase tracking-wider">Govt Take</span>
           <span className="text-xl font-semibold font-data text-danger">
             {governmentTakePct.toFixed(1)}%{exceeds100 && '*'}
           </span>
@@ -70,7 +70,7 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
       </div>
 
       {/* Legend row */}
-      <div className="flex justify-center items-center gap-4 text-[11px] text-text-secondary mt-1 flex-wrap">
+      <div className="flex justify-center items-center gap-4 text-caption text-text-secondary mt-1 flex-wrap">
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: SLICE_COLORS[0] }} />
           <span className="whitespace-nowrap">Govt {governmentTakePct.toFixed(1)}%{exceeds100 && '*'}</span>
@@ -82,7 +82,7 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
       </div>
 
       {exceeds100 && (
-        <p className="text-[10px] text-text-muted text-center mt-1">
+        <p className="text-caption text-text-muted text-center mt-1">
           * Government take exceeds 100% — contractor returns are negative for this project under current assumptions.
         </p>
       )}

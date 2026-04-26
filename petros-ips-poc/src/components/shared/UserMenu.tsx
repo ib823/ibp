@@ -62,7 +62,7 @@ export function UserMenu() {
         aria-label={`Account menu for ${user.displayName}`}
       >
         <span
-          className="w-8 h-8 rounded-full bg-petrol text-white text-[11px] font-semibold flex items-center justify-center shrink-0"
+          className="w-8 h-8 rounded-full bg-petrol text-white text-caption font-semibold flex items-center justify-center shrink-0"
           aria-hidden="true"
         >
           {user.initials}
@@ -85,21 +85,21 @@ export function UserMenu() {
           <div className="px-4 py-3 border-b border-border">
             <div className="flex items-center gap-3">
               <div
-                className="w-10 h-10 rounded-full bg-petrol text-white text-sm font-semibold flex items-center justify-center shrink-0"
+                className="w-10 h-10 rounded-full bg-petrol text-white text-body font-semibold flex items-center justify-center shrink-0"
                 aria-hidden="true"
               >
                 {user.initials}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-text-primary truncate">{user.displayName}</div>
-                <div className="text-[10px] text-text-muted truncate">{user.email}</div>
+                <div className="text-body font-semibold text-text-primary truncate">{user.displayName}</div>
+                <div className="text-caption text-text-muted truncate">{user.email}</div>
               </div>
             </div>
             <div className="flex items-center gap-2 mt-2">
               <RoleBadge role={user.role} />
-              <span className="text-[10px] text-text-muted truncate">{user.department}</span>
+              <span className="text-caption text-text-muted truncate">{user.department}</span>
             </div>
-            <p className="text-[10px] text-text-muted mt-2 leading-snug">
+            <p className="text-caption text-text-muted mt-2 leading-snug">
               {ROLE_DESCRIPTIONS[user.role]}
             </p>
           </div>
@@ -122,7 +122,7 @@ export function UserMenu() {
 
           {/* Persona switcher */}
           <div className="border-t border-border">
-            <div className="px-4 pt-3 pb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+            <div className="px-4 pt-3 pb-1 flex items-center gap-2 text-caption font-semibold uppercase tracking-wide text-text-muted">
               <Users size={12} aria-hidden="true" />
               Switch persona
             </div>
@@ -145,7 +145,7 @@ export function UserMenu() {
                     )}
                   >
                     <span
-                      className="w-7 h-7 rounded-full bg-petrol/10 text-petrol text-[10px] font-semibold flex items-center justify-center shrink-0"
+                      className="w-7 h-7 rounded-full bg-petrol/10 text-petrol text-caption font-semibold flex items-center justify-center shrink-0"
                       aria-hidden="true"
                     >
                       {p.initials}
@@ -154,7 +154,7 @@ export function UserMenu() {
                       <span className="block text-xs font-medium text-text-primary truncate">
                         {p.displayName}
                       </span>
-                      <span className="block text-[10px] text-text-muted truncate">
+                      <span className="block text-caption text-text-muted truncate">
                         {p.department}
                       </span>
                     </span>

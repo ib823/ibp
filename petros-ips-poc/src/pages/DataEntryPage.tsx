@@ -221,12 +221,12 @@ export default function DataEntryPage() {
       {/* Workflow status banner */}
       <div className="border border-border bg-white p-3 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+          <span className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
             Status
           </span>
           <StatusBadge status={status} />
           {submittedBy && (
-            <span className="text-[10px] text-text-muted">
+            <span className="text-caption text-text-muted">
               Submitted by{' '}
               <span className="font-medium text-text-primary">
                 {PERSONAS.find((p) => p.id === submittedBy)?.displayName ?? submittedBy}
@@ -234,14 +234,14 @@ export default function DataEntryPage() {
             </span>
           )}
           {reviewComment && (
-            <span className="text-[10px] text-amber inline-flex items-center gap-1">
+            <span className="text-caption text-amber inline-flex items-center gap-1">
               <AlertCircle size={11} aria-hidden="true" />
               {reviewComment}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] text-text-muted hidden sm:inline">
+          <span className="text-caption text-text-muted hidden sm:inline">
             {dirtyCount > 0
               ? `${dirtyCount} unsaved change${dirtyCount === 1 ? '' : 's'}`
               : 'no unsaved changes'}
@@ -262,7 +262,7 @@ export default function DataEntryPage() {
 
       {/* Active editors — mocked presence */}
       <div className="border border-petrol/30 bg-petrol/5 px-3 py-2 flex items-center gap-3 flex-wrap">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-petrol">
+        <span className="inline-flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-petrol">
           <Users size={11} aria-hidden="true" />
           Active editors
         </span>
@@ -274,7 +274,7 @@ export default function DataEntryPage() {
             <PresenceChip key={p.id} name={p.displayName} initials={p.initials} role={p.role} />
           ))}
         </div>
-        <span className="text-[10px] text-text-muted ml-auto">
+        <span className="text-caption text-text-muted ml-auto">
           Live presence is illustrative; SAC Calendar tasks deliver real concurrent-editor
           indicators in production.
         </span>
@@ -283,10 +283,10 @@ export default function DataEntryPage() {
       {/* Grid */}
       <div className="border border-border bg-white">
         <div className="px-4 pt-3 pb-1">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+          <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
             Plan submission — {project.project.name}
           </h4>
-          <p className="text-[11px] text-text-muted mb-2 max-w-3xl">
+          <p className="text-caption text-text-muted mb-2 max-w-3xl">
             Edit individual cells, then Save Draft. Submit transitions the row to a reviewer;
             Approve requires a different user (Segregation of Duty). The Economics page is where
             the full PSC run consumes these inputs.
@@ -386,10 +386,10 @@ function PresenceChip({
 }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white border border-border rounded text-[10px]"
+      className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white border border-border rounded text-caption"
       title={`${name} (${role})${isYou ? ' — you' : ''}`}
     >
-      <span className="w-5 h-5 rounded-full bg-petrol text-white text-[9px] font-semibold flex items-center justify-center shrink-0">
+      <span className="w-5 h-5 rounded-full bg-petrol text-white text-caption font-semibold flex items-center justify-center shrink-0">
         {initials}
       </span>
       <span className="text-text-primary font-medium">{name}</span>
@@ -428,7 +428,7 @@ function GroupRows({
       <tr className="border-b border-border">
         <td
           colSpan={years.length + 2}
-          className="px-3 py-1.5 bg-content-alt/30 text-[10px] font-semibold uppercase tracking-wider text-text-secondary sticky left-0"
+          className="px-3 py-1.5 bg-content-alt/30 text-caption font-semibold uppercase tracking-wider text-text-secondary sticky left-0"
         >
           {groupLabels[group]}
         </td>
@@ -438,7 +438,7 @@ function GroupRows({
           <td className="px-3 py-1.5 sticky left-0 bg-white group-hover:bg-content-alt/30 z-10">
             <span className="text-text-primary">{row.label}</span>
           </td>
-          <td className="px-2 py-1.5 text-text-muted text-[10px]">{row.unit}</td>
+          <td className="px-2 py-1.5 text-text-muted text-caption">{row.unit}</td>
           {years.map((y) => {
             const value = cellValue(row.id, y, projectId);
             const modified = isModified(row.id, y);
@@ -462,7 +462,7 @@ function GroupRows({
                   aria-label={`${row.label} year ${y}`}
                 />
                 {modified && (
-                  <div className="text-[9px] text-amber font-medium mt-0.5 leading-none">
+                  <div className="text-caption text-amber font-medium mt-0.5 leading-none">
                     modified
                   </div>
                 )}

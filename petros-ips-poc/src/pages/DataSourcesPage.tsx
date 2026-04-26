@@ -440,11 +440,11 @@ export default function DataSourcesPage() {
       <section className="border border-border bg-white p-4 sm:p-5 space-y-3" aria-labelledby="ds-connections-title">
         <header className="flex items-start justify-between gap-2 flex-wrap">
           <div>
-            <h2 id="ds-connections-title" className="text-sm font-semibold text-text-primary flex items-center gap-1.5">
+            <h2 id="ds-connections-title" className="text-body font-semibold text-text-primary flex items-center gap-1.5">
               Live connections
               {connEntry && <InfoIcon entry={connEntry} />}
             </h2>
-            <p className="text-[11px] text-text-secondary mt-0.5">
+            <p className="text-caption text-text-secondary mt-0.5">
               Production integration lifecycle — connect / sync / disconnect SAP S/4HANA and SAP Analytics Cloud.
               Microsoft Entra ID shows the current authenticated tenant for reference.
             </p>
@@ -481,10 +481,10 @@ export default function DataSourcesPage() {
 
       {/* Zone 4 — Disclaimer */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-2">
+        <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-2">
           Production Integration Note
         </h4>
-        <div className="text-[10px] text-text-muted space-y-1.5">
+        <div className="text-caption text-text-muted space-y-1.5">
           <p>
             This POC uses hardcoded sample data derived from Sarawak offshore analogues. In the SAC production system,
             these data sources are ingested via <strong>SAP Analytics Cloud Import Data Management</strong> with automated
@@ -525,31 +525,31 @@ const OUTPUT_PAGES_FLOW = [
 function FlowMap() {
   return (
     <div className="border border-border bg-white p-4">
-      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+      <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-3">
         Data Flow: Input Workbooks → Calculation Engine → Output Pages
       </h4>
       <div className="flex items-center gap-3">
         {/* Inputs */}
         <div className="flex-1 space-y-1">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">Input Workbooks</div>
+          <div className="text-caption font-semibold uppercase tracking-wider text-text-muted mb-1">Input Workbooks</div>
           <div className="flex flex-wrap gap-1">
             {INPUT_DOMAINS.map((d) => (
               <span
                 key={d.label}
-                className={cn('text-[10px] text-white px-2 py-0.5 font-medium', d.color)}
+                className={cn('text-caption text-white px-2 py-0.5 font-medium', d.color)}
               >
                 {d.label}
               </span>
             ))}
           </div>
           <div className="flex gap-2 mt-1.5">
-            <span className="flex items-center gap-1 text-[10px] text-text-muted">
+            <span className="flex items-center gap-1 text-caption text-text-muted">
               <span className="w-2 h-2 bg-petrol inline-block" /> Core
             </span>
-            <span className="flex items-center gap-1 text-[10px] text-text-muted">
+            <span className="flex items-center gap-1 text-caption text-text-muted">
               <span className="w-2 h-2 bg-amber inline-block" /> Planning Cycles
             </span>
-            <span className="flex items-center gap-1 text-[10px] text-text-muted">
+            <span className="flex items-center gap-1 text-caption text-text-muted">
               <span className="w-2 h-2 bg-success inline-block" /> Configuration
             </span>
           </div>
@@ -558,17 +558,17 @@ function FlowMap() {
         {/* Arrow */}
         <div className="shrink-0 flex flex-col items-center gap-0.5">
           <ArrowRight size={20} className="text-petrol" />
-          <span className="text-[10px] text-text-muted font-medium">Engine</span>
+          <span className="text-caption text-text-muted font-medium">Engine</span>
         </div>
 
         {/* Outputs */}
         <div className="flex-1">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">Output Pages</div>
+          <div className="text-caption font-semibold uppercase tracking-wider text-text-muted mb-1">Output Pages</div>
           <div className="flex flex-wrap gap-1">
             {OUTPUT_PAGES_FLOW.map((p) => (
               <span
                 key={p}
-                className="text-[10px] bg-content-alt text-text-secondary px-2 py-0.5 border border-border font-medium"
+                className="text-caption bg-content-alt text-text-secondary px-2 py-0.5 border border-border font-medium"
               >
                 {p}
               </span>
@@ -587,11 +587,11 @@ function FlowMap() {
 function CrossReferenceMatrix() {
   return (
     <div className="border border-border bg-white p-4">
-      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+      <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-3">
         Data Source → Page Cross-Reference
       </h4>
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[10px] min-w-[600px]">
+        <table className="w-full border-collapse text-caption min-w-[600px]">
           <thead>
             <tr className="border-b border-border bg-content-alt">
               <th className="text-left px-2 py-1.5 font-semibold text-text-secondary w-[180px]">Data Source</th>
@@ -618,7 +618,7 @@ function CrossReferenceMatrix() {
           </tbody>
         </table>
       </div>
-      <p className="text-[10px] text-text-muted mt-2">
+      <p className="text-caption text-text-muted mt-2">
         Filled dot = this data source is consumed by the page. Settings page (unit preferences, fiscal reference) is excluded from the matrix as it is configuration-only.
       </p>
     </div>
@@ -651,15 +651,15 @@ function WorkbookCard({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-text-primary">{workbook.name}</span>
-            <Badge variant="outline" className="text-[10px] py-0 px-1.5">
+            <span className="text-body font-semibold text-text-primary">{workbook.name}</span>
+            <Badge variant="outline" className="text-caption py-0 px-1.5">
               {workbook.frequency}
             </Badge>
           </div>
           <div className="text-xs text-text-muted mt-0.5">{workbook.purpose}</div>
           <div className="flex flex-wrap gap-1 mt-1">
             {workbook.pages.map((p) => (
-              <span key={p} className="text-[10px] bg-petrol/10 text-petrol px-1.5 py-0 border border-petrol/20 font-medium">
+              <span key={p} className="text-caption bg-petrol/10 text-petrol px-1.5 py-0 border border-petrol/20 font-medium">
                 {p}
               </span>
             ))}
@@ -673,11 +673,11 @@ function WorkbookCard({
           {/* Sheets */}
           {workbook.sheets.map((sheet) => (
             <div key={sheet.name}>
-              <h5 className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary mb-1.5">
+              <h5 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1.5">
                 Sheet: {sheet.name}
               </h5>
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-[10px] min-w-[480px]">
+                <table className="w-full border-collapse text-caption min-w-[480px]">
                   <thead>
                     <tr className="border-b border-border bg-content-alt">
                       <th className="text-left px-2 py-1 font-semibold text-text-secondary">Column</th>
@@ -702,11 +702,11 @@ function WorkbookCard({
           {/* Sample data */}
           {sampleRows.length > 0 && (
             <div>
-              <h5 className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary mb-1.5">
+              <h5 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1.5">
                 Sample Data (from POC)
               </h5>
               <div className="overflow-x-auto bg-content-alt p-2">
-                <table className="w-full border-collapse text-[10px] font-data">
+                <table className="w-full border-collapse text-caption font-data">
                   <tbody>
                     {sampleRows.map((row, i) => (
                       <tr key={i} className={i < sampleRows.length - 1 ? 'border-b border-border/20' : ''}>
@@ -727,7 +727,7 @@ function WorkbookCard({
           {workbook.footnotes && workbook.footnotes.length > 0 && (
             <div className="space-y-1">
               {workbook.footnotes.map((fn, i) => (
-                <p key={i} className="text-[10px] text-text-muted italic">{fn}</p>
+                <p key={i} className="text-caption text-text-muted italic">{fn}</p>
               ))}
             </div>
           )}

@@ -223,12 +223,12 @@ export function GuidedTour() {
         </button>
 
         {/* Step counter */}
-        <div className="text-[10px] font-semibold text-petrol uppercase tracking-wider mb-2">
+        <div className="text-caption font-semibold text-petrol uppercase tracking-wider mb-2">
           Step {step + 1} of {TOUR_STEPS.length}
         </div>
 
         {/* Title */}
-        <h3 className="text-sm font-semibold text-text-primary mb-3 pr-6">
+        <h3 className="text-body font-semibold text-text-primary mb-3 pr-6">
           {currentStep.title}
         </h3>
 
@@ -243,7 +243,7 @@ export function GuidedTour() {
         <div className="flex items-center justify-between mt-5 pt-3 border-t border-border">
           <button
             onClick={handleSkip}
-            className="text-[11px] text-text-muted hover:text-text-primary transition-colors"
+            className="text-caption text-text-muted hover:text-text-primary transition-colors"
           >
             Skip tour
           </button>

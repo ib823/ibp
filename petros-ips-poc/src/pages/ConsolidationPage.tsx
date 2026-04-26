@@ -77,7 +77,7 @@ export default function ConsolidationPage() {
 
   if (!consol) {
     return (
-      <div className="border border-border bg-white p-6 text-center text-sm text-text-muted">
+      <div className="border border-border bg-white p-6 text-center text-body text-text-muted">
         Run economics calculations to populate the consolidation. Click "Recalculate All"
         in the header.
       </div>
@@ -115,11 +115,11 @@ export default function ConsolidationPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(['upstream', 'ccs'] as const).map((col) => (
           <article key={col} className="border border-border bg-white p-3 min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-petrol mb-1">
+            <div className="text-caption font-semibold uppercase tracking-wider text-petrol mb-1">
               {COLUMN_LABEL[col]}
             </div>
             <div className="text-xs text-text-primary truncate">{COLUMN_LEGAL[col]}</div>
-            <div className="text-[10px] text-text-muted mt-1">
+            <div className="text-caption text-text-muted mt-1">
               {consol.projectsByColumn[col].length} project
               {consol.projectsByColumn[col].length === 1 ? '' : 's'} ·{' '}
               {consol.projectsByColumn[col].map((p) => p.project.name).join(', ') || '—'}
@@ -127,11 +127,11 @@ export default function ConsolidationPage() {
           </article>
         ))}
         <article className="border border-petrol/40 bg-petrol/5 p-3 min-w-0">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-petrol mb-1">
+          <div className="text-caption font-semibold uppercase tracking-wider text-petrol mb-1">
             PETROS Group
           </div>
           <div className="text-xs text-text-primary truncate">Petroleum Sarawak Berhad</div>
-          <div className="text-[10px] text-text-muted mt-1">
+          <div className="text-caption text-text-muted mt-1">
             Consolidated entity · {projects.length} projects
           </div>
         </article>
@@ -140,10 +140,10 @@ export default function ConsolidationPage() {
       {/* Consolidation table */}
       <div className="border border-border bg-white">
         <div className="px-4 pt-3 pb-1">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+          <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
             Consolidated Income Statement (sum across project life)
           </h4>
-          <p className="text-[11px] text-text-muted">
+          <p className="text-caption text-text-muted">
             Values aggregate every year of every project's life-cycle P&L.
             Eliminations column is illustrative; production system applies
             per-period intercompany rules.
@@ -211,7 +211,7 @@ export default function ConsolidationPage() {
 
       {/* Eliminations rules */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-2">
+        <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-2">
           Intercompany Elimination Rules (illustrative)
         </h4>
         <table className="w-full text-xs border-collapse">
@@ -232,7 +232,7 @@ export default function ConsolidationPage() {
             ))}
           </tbody>
         </table>
-        <p className="text-[10px] text-text-muted mt-2">
+        <p className="text-caption text-text-muted mt-2">
           Phase 2 implementation: SAC consolidation sub-model with a Trading Partner
           dimension on each entity's transactions, plus per-period elimination data
           actions on intercompany pairs.

@@ -63,12 +63,12 @@ export default function SacMappingPage() {
       <article
         className="prose prose-sm max-w-none border border-border bg-white p-6
                    [&_h1]:text-base [&_h1]:font-semibold [&_h1]:text-text-primary [&_h1]:mt-0
-                   [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-petrol [&_h2]:mt-6 [&_h2]:mb-2 [&_h2]:pb-1 [&_h2]:border-b [&_h2]:border-border
+                   [&_h2]:text-body [&_h2]:font-semibold [&_h2]:text-petrol [&_h2]:mt-6 [&_h2]:mb-2 [&_h2]:pb-1 [&_h2]:border-b [&_h2]:border-border
                    [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:tracking-wider [&_h3]:text-text-secondary [&_h3]:mt-4 [&_h3]:mb-1
                    [&_p]:text-xs [&_p]:text-text-secondary [&_p]:leading-relaxed
                    [&_ul]:text-xs [&_ul]:text-text-secondary [&_ul]:list-disc [&_ul]:pl-5
                    [&_strong]:text-text-primary [&_strong]:font-semibold
-                   [&_code]:text-[11px] [&_code]:font-data [&_code]:bg-content-alt [&_code]:px-1 [&_code]:rounded
+                   [&_code]:text-caption [&_code]:font-data [&_code]:bg-content-alt [&_code]:px-1 [&_code]:rounded
                    [&_a]:text-petrol [&_a]:underline [&_a]:underline-offset-2
                    [&_hr]:border-border [&_hr]:my-4
                    [&_table]:w-full [&_table]:text-xs [&_table]:border-collapse [&_table]:my-3

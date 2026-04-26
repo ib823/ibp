@@ -67,13 +67,13 @@ export function FinancialTable({ years, rows }: FinancialTableProps) {
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="border-b border-border bg-content-alt">
-              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider px-3 py-1.5 sticky left-0 z-20 bg-content-alt shadow-[2px_0_0_0_rgb(226,229,234)] w-[180px] min-w-[180px]">
+              <th className="text-left text-caption font-semibold text-text-secondary uppercase tracking-wider px-3 py-1.5 sticky left-0 z-20 bg-content-alt shadow-[2px_0_0_0_rgb(226,229,234)] w-[180px] min-w-[180px]">
                 {u.currencySymbol}M
               </th>
               {years.map((y) => (
                 <th
                   key={y}
-                  className="text-right text-[10px] font-semibold text-text-secondary px-2 py-1.5 min-w-[72px]"
+                  className="text-right text-caption font-semibold text-text-secondary px-2 py-1.5 min-w-[72px]"
                 >
                   {y}
                 </th>

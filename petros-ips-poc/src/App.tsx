@@ -24,7 +24,7 @@ const ConsolidationPage = lazy(() => import('@/pages/ConsolidationPage'));
 function PageLoader() {
   return (
     <div className="flex items-center justify-center h-32">
-      <p className="text-sm text-text-muted">Loading...</p>
+      <p className="text-body text-text-muted">Loading...</p>
     </div>
   );
 }
@@ -34,8 +34,8 @@ function NotFoundPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 px-4 text-center">
       <h2 className="text-lg font-semibold text-text-primary">Page Not Found</h2>
-      <p className="text-sm text-text-secondary">The page you requested does not exist.</p>
-      <Link to="/" className="text-sm text-petrol hover:underline">Return to Dashboard</Link>
+      <p className="text-body text-text-secondary">The page you requested does not exist.</p>
+      <Link to="/" className="text-body text-petrol hover:underline">Return to Dashboard</Link>
       <div className="mt-8 pt-4 border-t border-border max-w-md">
         <p className="text-xs text-text-muted">
           PETROS IPS — Proof of Concept. Sample data derived from publicly available

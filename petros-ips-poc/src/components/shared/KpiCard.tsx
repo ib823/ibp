@@ -33,10 +33,12 @@ interface KpiCardProps {
 }
 
 export function KpiCard({ label, value, unit, delta, className, eduEntry, trace }: KpiCardProps) {
-  // Progressive sizing so large values don't overflow narrow cards at ≤768 px:
-  //   ≤ 9 chars → text-2xl; ≤ 12 chars → text-xl; else text-lg.
-  const len = value.trim().length;
-  const sizeClass = len <= 9 ? 'text-xl sm:text-2xl' : len <= 12 ? 'text-lg sm:text-xl' : 'text-base sm:text-lg';
+  // KPI numeric size is now a single semantic token (--text-display, 24px).
+  // Previously this branched on value.length to pick from text-base/lg/xl/2xl,
+  // which made the same KPI render at different sizes across pages depending
+  // on the formatted value's character count (audit S9). Long values are now
+  // handled via truncate + title={value} so the full value is still
+  // discoverable on hover / by screen readers.
 
   const [traceOpen, setTraceOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -65,7 +67,7 @@ export function KpiCard({ label, value, unit, delta, className, eduEntry, trace 
 
   return (
     <div className={cn('border border-border bg-white p-4 min-w-0 relative', className)}>
-      <div className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1 flex items-start gap-1 leading-tight">
+      <div className="text-caption font-medium text-text-muted uppercase tracking-wider mb-1 flex items-start gap-1 leading-tight">
         {eduEntry?.tooltip ? (
           <EduTooltip entry={eduEntry}><span className="cursor-help break-words">{label}</span></EduTooltip>
         ) : (
@@ -90,8 +92,7 @@ export function KpiCard({ label, value, unit, delta, className, eduEntry, trace 
       <div className="flex items-baseline gap-1.5 min-w-0">
         <span
           className={cn(
-            'font-semibold font-data whitespace-nowrap tabular-nums tracking-tight',
-            sizeClass,
+            'font-semibold font-data tabular-nums tracking-tight text-display truncate min-w-0',
             value.trim().startsWith('(') && value.trim().endsWith(')')
               ? 'text-danger'
               : 'text-text-primary',
@@ -124,7 +125,7 @@ export function KpiCard({ label, value, unit, delta, className, eduEntry, trace 
           className="absolute top-full left-0 right-0 mt-1 z-30 bg-white border border-petrol/30 shadow-lg p-3 text-xs space-y-2"
         >
           <div className="flex items-start justify-between gap-2">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-petrol">
+            <div className="text-caption font-semibold uppercase tracking-wider text-petrol">
               Trace · {label}
             </div>
             <button
@@ -138,20 +139,20 @@ export function KpiCard({ label, value, unit, delta, className, eduEntry, trace 
           </div>
 
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-0.5">
+            <div className="text-caption font-semibold uppercase tracking-wider text-text-muted mb-0.5">
               Formula
             </div>
-            <div className="font-data text-[11px] text-text-primary bg-content-alt/60 p-2 rounded leading-snug whitespace-pre-wrap break-words">
+            <div className="font-data text-caption text-text-primary bg-content-alt/60 p-2 rounded leading-snug whitespace-pre-wrap break-words">
               {trace.formula}
             </div>
           </div>
 
           {trace.inputs && Object.keys(trace.inputs).length > 0 && (
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-0.5">
+              <div className="text-caption font-semibold uppercase tracking-wider text-text-muted mb-0.5">
                 Bound inputs
               </div>
-              <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-caption">
                 {Object.entries(trace.inputs).map(([k, v]) => (
                   <div key={k} className="contents">
                     <dt className="text-text-secondary truncate">{k}</dt>
@@ -162,20 +163,20 @@ export function KpiCard({ label, value, unit, delta, className, eduEntry, trace 
             </div>
           )}
 
-          <div className="text-[10px] text-text-muted leading-snug">
+          <div className="text-caption text-text-muted leading-snug">
             Result: <span className="font-data text-text-primary">{value}</span>
           </div>
 
           {(trace.engineSrc || trace.reference) && (
             <div className="border-t border-border pt-2 space-y-0.5">
               {trace.engineSrc && (
-                <div className="text-[10px] text-text-muted">
+                <div className="text-caption text-text-muted">
                   Engine:{' '}
                   <span className="font-data text-text-secondary break-words">{trace.engineSrc}</span>
                 </div>
               )}
               {trace.reference && (
-                <div className="text-[10px] text-text-muted">
+                <div className="text-caption text-text-muted">
                   Excel-parity test:{' '}
                   <span className="font-data text-text-secondary break-words">{trace.reference}</span>
                 </div>

@@ -12,7 +12,10 @@
     "test:watch": "vitest",
     "test:audit": "vitest run tests/engine/formula-audit.test.ts tests/engine/consistency-audit.test.ts",
     "test:excel": "vite-node tests/validate-excel-export.ts",
-    "test:all": "vitest run && vite-node tests/validate-excel-export.ts"
+    "test:all": "vitest run && vite-node tests/validate-excel-export.ts",
+    "test:snapshots": "node scripts/typography-snapshots.mjs",
+    "test:snapshots:baseline": "node scripts/typography-snapshots.mjs --baseline",
+    "test:typography-probe": "node scripts/typography-probe.mjs"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",

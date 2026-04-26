@@ -80,7 +80,7 @@ export default function ReservesPage() {
 
       {/* Summary Table */}
       <div className="border border-border bg-white p-4" data-tour="reserves-table">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+        <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
           Reserves by Project (SPE PRMS Classification)
         </h4>
         <SectionHelp entry={edu['R-02']!} />
@@ -88,16 +88,16 @@ export default function ReservesPage() {
           <table className="w-full border-collapse text-xs min-w-[700px] tabular-nums">
             <thead>
               <tr className="border-b border-border bg-content-alt">
-                <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5 w-[160px]">
+                <th className="text-left text-caption font-semibold text-text-secondary uppercase px-3 py-1.5 w-[160px]">
                   Project
                 </th>
-                <th colSpan={3} className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5 border-l border-border">
+                <th colSpan={3} className="text-center text-caption font-semibold text-text-secondary uppercase px-2 py-1.5 border-l border-border">
                   <EduTooltip entryId="R-06"><span className="cursor-help">Oil (MM{u.oilUnit})</span></EduTooltip>
                 </th>
-                <th colSpan={3} className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5 border-l border-border">
+                <th colSpan={3} className="text-center text-caption font-semibold text-text-secondary uppercase px-2 py-1.5 border-l border-border">
                   <EduTooltip entryId="R-07"><span className="cursor-help">Gas ({u.gasUnit})</span></EduTooltip>
                 </th>
-                <th colSpan={3} className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5 border-l border-border">
+                <th colSpan={3} className="text-center text-caption font-semibold text-text-secondary uppercase px-2 py-1.5 border-l border-border">
                   <EduTooltip entryId="R-08"><span className="cursor-help">Total (MMboe)</span></EduTooltip>
                 </th>
               </tr>
@@ -107,7 +107,7 @@ export default function ReservesPage() {
                   const tooltipId = c === '1P' ? 'R-03' : c === '2P' ? 'R-04' : 'R-05';
                   return (
                     <th key={i} className={cn(
-                      'text-right text-[10px] font-medium text-text-secondary px-2 py-1',
+                      'text-right text-caption font-medium text-text-secondary px-2 py-1',
                       i % 3 === 0 && 'border-l border-border',
                     )}>
                       <EduTooltip entryId={tooltipId}><span className="cursor-help">{c}</span></EduTooltip>
@@ -269,7 +269,7 @@ function SrmsSection({ projects }: { projects: readonly import('@/engine/types')
 
   return (
     <div className="border border-border bg-white p-4">
-      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+      <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
         CO₂ Storage Resources (SPE SRMS 2025)
       </h4>
       <SectionHelp entry={edu['R-09']!} />
@@ -279,20 +279,20 @@ function SrmsSection({ projects }: { projects: readonly import('@/engine/types')
       <table className="w-full border-collapse text-xs mb-4 min-w-[600px] tabular-nums">
         <thead>
           <tr className="border-b border-border bg-content-alt">
-            <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5">Site</th>
-            <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+            <th className="text-left text-caption font-semibold text-text-secondary uppercase px-3 py-1.5">Site</th>
+            <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
               <EduTooltip entryId="R-10"><span className="cursor-help">Low (MT)</span></EduTooltip>
             </th>
-            <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+            <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
               <EduTooltip entryId="R-11"><span className="cursor-help">Best (MT)</span></EduTooltip>
             </th>
-            <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+            <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
               <EduTooltip entryId="R-12"><span className="cursor-help">High (MT)</span></EduTooltip>
             </th>
-            <th className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+            <th className="text-center text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
               <EduTooltip entryId="R-13"><span className="cursor-help">Class</span></EduTooltip>
             </th>
-            <th className="text-center text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+            <th className="text-center text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
               <EduTooltip entryId="R-14"><span className="cursor-help">Maturity</span></EduTooltip>
             </th>
           </tr>
@@ -321,11 +321,11 @@ function SrmsSection({ projects }: { projects: readonly import('@/engine/types')
           <table className="w-full border-collapse text-xs mb-3 min-w-[500px] tabular-nums">
             <thead>
               <tr className="border-b border-border bg-content-alt">
-                <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-2 py-1">Year</th>
-                <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1">Opening (MT)</th>
-                <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1">Revisions</th>
-                <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1">Injected (MT)</th>
-                <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1">Closing (MT)</th>
+                <th className="text-left text-caption font-semibold text-text-secondary uppercase px-2 py-1">Year</th>
+                <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1">Opening (MT)</th>
+                <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1">Revisions</th>
+                <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1">Injected (MT)</th>
+                <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1">Closing (MT)</th>
               </tr>
             </thead>
             <tbody>
@@ -343,7 +343,7 @@ function SrmsSection({ projects }: { projects: readonly import('@/engine/types')
         </div>
       ))}
 
-      <p className="text-[10px] text-text-muted mt-2">
+      <p className="text-caption text-text-muted mt-2">
         Classified per SPE CO₂ Storage Resources Management System (SRMS) 2025.
         Estimates are illustrative — not actual assessed storage capacity.
       </p>
@@ -365,10 +365,10 @@ function ContingentSection({ projects }: { projects: readonly import('@/engine/t
   if (rows.length === 0) return null;
   return (
     <div className="border border-border bg-white p-4" data-tour="contingent-table">
-      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+      <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
         Contingent Resources (SPE PRMS Classification)
       </h4>
-      <p className="text-[11px] text-text-muted mb-2">
+      <p className="text-caption text-text-muted mb-2">
         Discovered accumulations not yet commercial — typically pending FID, technical FEED, or
         favourable price recovery. Volumetric estimates use 1C / 2C / 3C bands (analogous to
         1P / 2P / 3P for reserves).
@@ -393,7 +393,7 @@ function ContingentSection({ projects }: { projects: readonly import('@/engine/t
               return (
                 <tr key={c.projectId} className="border-b border-border/50 hover:bg-content-alt/30" title={c.contingencyNote}>
                   <td className="px-3 py-1.5">{proj?.project.name ?? c.projectId}</td>
-                  <td className="px-2 py-1.5 text-[10px] text-text-secondary">{contingentSubclassLabel(c.subclass)}</td>
+                  <td className="px-2 py-1.5 text-caption text-text-secondary">{contingentSubclassLabel(c.subclass)}</td>
                   <td className="px-2 py-1.5 text-right font-data">{fmtReserveValue(c.oil['1C'] * u.oilFactor)}</td>
                   <td className="px-2 py-1.5 text-right font-data">{fmtReserveValue(c.oil['2C'] * u.oilFactor)}</td>
                   <td className="px-2 py-1.5 text-right font-data">{fmtReserveValue(c.oil['3C'] * u.oilFactor)}</td>
@@ -406,7 +406,7 @@ function ContingentSection({ projects }: { projects: readonly import('@/engine/t
           </tbody>
         </table>
       </div>
-      <p className="text-[10px] text-text-muted mt-2">
+      <p className="text-caption text-text-muted mt-2">
         Hover any row to see the specific contingency note. Reclassification to reserves
         requires the contingency to be resolved (FID, FEED, price recovery, etc.).
       </p>
@@ -422,10 +422,10 @@ function ProspectiveSection({ projects }: { projects: readonly import('@/engine/
   if (PROJECT_PROSPECTIVE.length === 0) return null;
   return (
     <div className="border border-border bg-white p-4" data-tour="prospective-table">
-      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+      <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
         Prospective Resources (SPE PRMS Classification — risked & unrisked)
       </h4>
-      <p className="text-[11px] text-text-muted mb-2">
+      <p className="text-caption text-text-muted mb-2">
         Estimated quantities recoverable from <em>undiscovered</em> accumulations. Risk-weighted
         volumes apply Pg × Pc (geological × commercial chance of success); both unrisked
         (Low / Best / High) and risked (CoS-weighted) cases are reported per PRMS §2.1.4.
@@ -452,7 +452,7 @@ function ProspectiveSection({ projects }: { projects: readonly import('@/engine/
                 <tr key={p.projectId} className="border-b border-border/50 hover:bg-content-alt/30">
                   <td className="px-3 py-1.5">
                     <div className="text-text-primary">{proj?.project.name ?? p.projectId}</div>
-                    <div className="text-[10px] text-text-muted">{p.playName}</div>
+                    <div className="text-caption text-text-muted">{p.playName}</div>
                   </td>
                   <td className="px-2 py-1.5 text-right font-data">{(p.pg * 100).toFixed(0)}%</td>
                   <td className="px-2 py-1.5 text-right font-data">{(p.pc * 100).toFixed(0)}%</td>
@@ -467,7 +467,7 @@ function ProspectiveSection({ projects }: { projects: readonly import('@/engine/
           </tbody>
         </table>
       </div>
-      <p className="text-[10px] text-text-muted mt-2">
+      <p className="text-caption text-text-muted mt-2">
         Pg = probability of geological success · Pc = probability of commercial success ·
         CoS = Pg × Pc · Risked = Unrisked × CoS. Estimates are illustrative.
       </p>

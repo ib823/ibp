@@ -121,7 +121,7 @@ export function WorkflowActionBar({ projectId, dataVersion, record, compact }: W
         )}
         {meta.needsComment && (
           <>
-            <label htmlFor="wf-comment" className="text-[10px] uppercase tracking-wider text-text-muted font-semibold">
+            <label htmlFor="wf-comment" className="text-caption uppercase tracking-wider text-text-muted font-semibold">
               Reviewer note <span className="text-danger">*</span>
             </label>
             <textarea
@@ -185,7 +185,7 @@ export function WorkflowActionBar({ projectId, dataVersion, record, compact }: W
               onClick={onClick}
               disabled={disabled}
               className={cn(
-                'inline-flex items-center gap-1 h-7 px-2 text-[11px] font-semibold rounded-none',
+                'inline-flex items-center gap-1 h-7 px-2 text-caption font-semibold rounded-none',
                 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-petrol',
                 disabled
                   ? 'border border-border bg-content-alt/60 text-text-muted cursor-not-allowed'

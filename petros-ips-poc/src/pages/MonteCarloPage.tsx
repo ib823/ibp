@@ -156,7 +156,7 @@ export default function MonteCarloPage() {
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Config panel */}
         <div className="w-full lg:w-[280px] lg:shrink-0 border border-border bg-white p-4 space-y-3" data-tour="montecarlo-config">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+          <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
             Simulation Config
           </h4>
           <SectionHelp entry={edu['MC-03']!} />
@@ -164,7 +164,7 @@ export default function MonteCarloPage() {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <EduTooltip entryId="MC-04">
-                <Label className="text-[10px] cursor-help">Iterations</Label>
+                <Label className="text-caption cursor-help">Iterations</Label>
               </EduTooltip>
               <Input
                 type="number"
@@ -181,7 +181,7 @@ export default function MonteCarloPage() {
             </div>
             <div>
               <EduTooltip entryId="MC-05">
-                <Label className="text-[10px] cursor-help">Seed</Label>
+                <Label className="text-caption cursor-help">Seed</Label>
               </EduTooltip>
               <Input value={seed} onChange={(e) => setSeed(e.target.value)} className="h-7 text-xs font-data" />
             </div>
@@ -244,24 +244,24 @@ function DistRow({ label, tooltipId, v1, v2, v3, s1, s2, s3, h1, h2, h3 }: {
     <div>
       {tooltipId ? (
         <EduTooltip entryId={tooltipId}>
-          <Label className="text-[10px] font-medium text-text-secondary cursor-help">{label}</Label>
+          <Label className="text-caption font-medium text-text-secondary cursor-help">{label}</Label>
         </EduTooltip>
       ) : (
-        <Label className="text-[10px] font-medium text-text-secondary">{label}</Label>
+        <Label className="text-caption font-medium text-text-secondary">{label}</Label>
       )}
       <div className="grid grid-cols-3 gap-1 mt-0.5">
         <div className="min-w-0">
-          <span className="text-[10px] text-text-muted">{h1}</span>
-          <Input type="number" step="0.01" value={v1} onChange={(e) => safeSetNumber(s1, e.target.value)} className="text-[10px] font-data" />
+          <span className="text-caption text-text-muted">{h1}</span>
+          <Input type="number" step="0.01" value={v1} onChange={(e) => safeSetNumber(s1, e.target.value)} className="text-caption font-data" />
         </div>
         <div className="min-w-0">
-          <span className="text-[10px] text-text-muted">{h2}</span>
-          <Input type="number" step="0.01" value={v2} onChange={(e) => safeSetNumber(s2, e.target.value)} className="text-[10px] font-data" />
+          <span className="text-caption text-text-muted">{h2}</span>
+          <Input type="number" step="0.01" value={v2} onChange={(e) => safeSetNumber(s2, e.target.value)} className="text-caption font-data" />
         </div>
         {v3 !== undefined && s3 && h3 && (
           <div className="min-w-0">
-            <span className="text-[10px] text-text-muted">{h3}</span>
-            <Input type="number" step="0.01" value={v3} onChange={(e) => safeSetNumber(s3, e.target.value)} className="text-[10px] font-data" />
+            <span className="text-caption text-text-muted">{h3}</span>
+            <Input type="number" step="0.01" value={v3} onChange={(e) => safeSetNumber(s3, e.target.value)} className="text-caption font-data" />
           </div>
         )}
       </div>
@@ -317,7 +317,7 @@ function MCResults({ result }: { result: MonteCarloResult }) {
       {/* Convention toggle + KPI Cards */}
       <div className="flex items-center justify-end mb-1 gap-2">
         <InfoIcon entry={edu['MC-15']!} />
-        <label className="flex items-center gap-2 text-[10px] text-text-secondary cursor-pointer">
+        <label className="flex items-center gap-2 text-caption text-text-secondary cursor-pointer">
           <input
             type="checkbox"
             checked={speConvention}

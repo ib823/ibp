@@ -231,7 +231,7 @@ export function EconomicsTable({ cashflows, fiscalRegimeType }: EconomicsTablePr
                   <th
                     key={header.id}
                     className={cn(
-                      'text-[10px] font-semibold text-text-secondary uppercase tracking-wider text-right px-2 py-1.5',
+                      'text-caption font-semibold text-text-secondary uppercase tracking-wider text-right px-2 py-1.5',
                       hi === 0 && 'sticky left-0 z-20 bg-content-alt shadow-[2px_0_0_0_rgb(226,229,234)]',
                     )}
                     style={{ width: header.getSize() }}

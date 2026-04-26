@@ -15,7 +15,7 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
   return (
     <div className="space-y-3">
       {/* 4-level hierarchy legend */}
-      <div className="text-[10px] text-text-muted font-medium tracking-wide">
+      <div className="text-caption text-text-muted font-medium tracking-wide">
         L1: Business Entity → L2: Business Sector → L3: Business Type → L4: Project Name
       </div>
 
@@ -24,7 +24,7 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-semibold text-text-primary">
             {aggregation.key}
-            <span className="ml-1.5 text-[10px] font-normal text-text-muted">L1: Business Entity</span>
+            <span className="ml-1.5 text-caption font-normal text-text-muted">L1: Business Entity</span>
           </span>
           <span className={cn(
             'text-xs font-data font-medium',
@@ -42,7 +42,7 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
                 key={sector.key}
                 role="img"
                 aria-label={segmentLabel}
-                className="h-full flex items-center justify-center text-[10px] text-white font-medium"
+                className="h-full flex items-center justify-center text-caption text-white font-medium"
                 style={{
                   width: `${pct}%`,
                   backgroundColor: SECTOR_COLORS[sector.key] ?? COLORS.textSecondary,
@@ -65,18 +65,18 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
         return (
           <div key={sector.key} className="pl-4 border-l-2" style={{ borderColor: color ?? COLORS.textSecondary }}>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-medium text-text-secondary">
+              <span className="text-caption font-medium text-text-secondary">
                 {sector.key}
-                <span className="ml-1 text-[10px] font-normal text-text-muted">L2: Business Sector</span>
+                <span className="ml-1 text-caption font-normal text-text-muted">L2: Business Sector</span>
               </span>
               <span className={cn(
-                'text-[11px] font-data',
+                'text-caption font-data',
                 sectorNpv < 0 ? 'text-danger' : 'text-text-primary',
               )}>{u.money(sectorNpv, { accounting: true })}</span>
             </div>
             {sector.children.map((type) => (
               <div key={type.key} className="pl-3 space-y-0.5">
-                <div className="text-[10px] text-text-muted font-medium mb-0.5">
+                <div className="text-caption text-text-muted font-medium mb-0.5">
                   L3: Business Type — {type.key}
                 </div>
                 {type.children.map((proj) => {
@@ -87,7 +87,7 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
                   const projLabel = `${proj.key}: ${u.money(projNpv, { accounting: true })} (${barPct.toFixed(1)}% of total)`;
                   return (
                     <div key={proj.key} className="flex items-center gap-2" role="group" aria-label={projLabel}>
-                      <span className="text-[10px] text-text-secondary w-[140px] truncate" title={proj.key}>
+                      <span className="text-caption text-text-secondary w-[140px] truncate" title={proj.key}>
                         {proj.key}
                       </span>
                       <div className="flex-1 h-3 bg-content-alt" role="img" aria-label={projLabel} title={projLabel}>
@@ -101,7 +101,7 @@ export function HierarchyBar({ aggregation }: HierarchyBarProps) {
                         />
                       </div>
                       <span className={cn(
-                        'text-[10px] font-data w-[72px] text-right',
+                        'text-caption font-data w-[72px] text-right',
                         projNpv < 0 ? 'text-danger' : 'text-text-primary',
                       )}>
                         {u.money(projNpv, { accounting: true })}

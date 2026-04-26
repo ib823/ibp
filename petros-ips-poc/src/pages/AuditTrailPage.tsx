@@ -223,7 +223,7 @@ export default function AuditTrailPage() {
         </div>
       </div>
 
-      <p className="text-[10px] text-text-muted leading-relaxed">
+      <p className="text-caption text-text-muted leading-relaxed">
         Append-only demo audit log — production SAC will persist entries to a tamper-evident store with retention per
         PETROS IT security policy. Sign-in, approval, and data-change events are emitted automatically; admins can filter
         by event kind or actor and export for forensic review.
@@ -235,7 +235,7 @@ export default function AuditTrailPage() {
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="border border-border bg-white p-3 min-w-0">
-      <div className="text-[10px] font-medium text-text-muted uppercase tracking-wider">{label}</div>
+      <div className="text-caption font-medium text-text-muted uppercase tracking-wider">{label}</div>
       <div className="text-lg sm:text-xl font-semibold font-data text-text-primary mt-1 tabular-nums">{value}</div>
     </div>
   );

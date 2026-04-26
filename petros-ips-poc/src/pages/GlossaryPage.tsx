@@ -76,13 +76,13 @@ export default function GlossaryPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search terms..."
-          className="pl-9 h-9 text-sm"
+          className="pl-9 h-9 text-body"
         />
       </div>
 
       {/* Results count */}
       {search && (
-        <p className="text-[10px] text-text-muted">
+        <p className="text-caption text-text-muted">
           {filtered.length} of {sorted.length} entries
         </p>
       )}
@@ -111,7 +111,7 @@ export default function GlossaryPage() {
                   <ChevronRight size={14} className="text-text-muted mt-0.5 shrink-0" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-text-primary break-words">{highlightMatch(entry.term, search)}</div>
+                  <div className="text-body font-semibold text-text-primary break-words">{highlightMatch(entry.term, search)}</div>
                   <div className="text-xs text-text-muted break-words mt-0.5">{highlightMatch(entry.definition, search)}</div>
                 </div>
               </button>
@@ -141,7 +141,7 @@ export default function GlossaryPage() {
 
       {filtered.length === 0 && (
         <div className="flex items-center justify-center h-32 border border-border bg-white">
-          <p className="text-sm text-text-muted">No entries matching "{search}"</p>
+          <p className="text-body text-text-muted">No entries matching "{search}"</p>
         </div>
       )}
     </div>

@@ -95,7 +95,7 @@ function VersionComparisonViewInner() {
   if (!activeProject) {
     return (
       <div className="flex items-center justify-center h-64 border border-border bg-white">
-        <p className="text-sm text-text-muted">Select a project to compare versions</p>
+        <p className="text-body text-text-muted">Select a project to compare versions</p>
       </div>
     );
   }
@@ -109,7 +109,7 @@ function VersionComparisonViewInner() {
       <div className="border border-border bg-white p-4">
         <div className="flex flex-col lg:flex-row lg:items-end gap-3">
           <div className="flex-1">
-            <label className="text-[10px] uppercase tracking-wider text-text-muted block mb-1">Compare</label>
+            <label className="text-caption uppercase tracking-wider text-text-muted block mb-1">Compare</label>
             <Select
               value={v1}
               onValueChange={(val) => setV1(val as DataVersion)}
@@ -124,7 +124,7 @@ function VersionComparisonViewInner() {
             <GitCompareArrows size={18} className="text-petrol" />
           </div>
           <div className="flex-1">
-            <label className="text-[10px] uppercase tracking-wider text-text-muted block mb-1">Against</label>
+            <label className="text-caption uppercase tracking-wider text-text-muted block mb-1">Against</label>
             <Select
               value={v2}
               onValueChange={(val) => setV2(val as DataVersion)}
@@ -146,7 +146,7 @@ function VersionComparisonViewInner() {
           </Button>
         </div>
         {(!availableVersions.includes(v1) || !availableVersions.includes(v2)) && (
-          <p className="text-[11px] text-amber mt-2 leading-snug">
+          <p className="text-caption text-amber mt-2 leading-snug">
             <strong>Actuals</strong> are sourced from SAP S/4HANA once an asset begins producing.
             Only producing assets (e.g. Balingian) carry Actuals in this POC — selecting Actuals on a
             pre-FID or development project will show "not available" until the project enters production.
@@ -169,7 +169,7 @@ function VersionComparisonViewInner() {
                   <span className="text-text-muted truncate">— {v1Data.modifiedBy}</span>
                 </div>
                 {v1Data.reviewComment && (
-                  <p className="text-[10px] text-amber bg-amber/5 border-l-2 border-amber/40 pl-2 py-1">
+                  <p className="text-caption text-amber bg-amber/5 border-l-2 border-amber/40 pl-2 py-1">
                     Review note: {v1Data.reviewComment}
                   </p>
                 )}
@@ -185,7 +185,7 @@ function VersionComparisonViewInner() {
                   <span className="text-text-muted truncate">— {v2Data.modifiedBy}</span>
                 </div>
                 {v2Data.reviewComment && (
-                  <p className="text-[10px] text-amber bg-amber/5 border-l-2 border-amber/40 pl-2 py-1">
+                  <p className="text-caption text-amber bg-amber/5 border-l-2 border-amber/40 pl-2 py-1">
                     Review note: {v2Data.reviewComment}
                   </p>
                 )}
@@ -198,7 +198,7 @@ function VersionComparisonViewInner() {
 
       {!result && (
         <div className="flex items-center justify-center h-32 border border-border bg-white">
-          <p className="text-sm text-text-muted">Click "Compare Versions" to run the comparison</p>
+          <p className="text-body text-text-muted">Click "Compare Versions" to run the comparison</p>
         </div>
       )}
 
@@ -323,7 +323,7 @@ function DeltaCard({
 
   return (
     <div className={cn('border border-border bg-white p-4 border-l-2 min-w-0', borderClass)}>
-      <div className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1">
+      <div className="text-caption font-medium text-text-muted uppercase tracking-wider mb-1">
         {label}
       </div>
       <div className="flex items-baseline gap-1.5 min-w-0">
@@ -337,7 +337,7 @@ function DeltaCard({
           {primary}
         </span>
       </div>
-      <div className="flex items-center gap-1 mt-1.5 text-[10px]">
+      <div className="flex items-center gap-1 mt-1.5 text-caption">
         <Icon size={11} className={colorClass} />
         <span className={colorClass}>
           {pct !== null && Number.isFinite(pct) ? `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%` : sub}
@@ -418,7 +418,7 @@ function VarianceTable({
           </tbody>
         </table>
       </div>
-      <p className="text-[10px] text-text-muted mt-2">
+      <p className="text-caption text-text-muted mt-2">
         Rows highlighted amber where revenue variance exceeds ±10%.
       </p>
     </div>

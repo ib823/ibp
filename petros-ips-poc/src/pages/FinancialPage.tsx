@@ -167,7 +167,7 @@ export default function FinancialPage() {
         </div>
       </div>
       {granularity !== 'year' && (
-        <div className="text-[11px] text-text-primary bg-amber/15 border border-amber/40 rounded px-3 py-2">
+        <div className="text-caption text-text-primary bg-amber/15 border border-amber/40 rounded px-3 py-2">
           <strong className="text-amber">POC note:</strong> {granularity === 'quarter' ? 'Quarterly' : 'Monthly'} values are derived straight-line from annual figures for demonstration. The production SAC implementation will source true {granularity === 'quarter' ? 'quarterly' : 'monthly'} close data from SAP S/4HANA accrual-based accounting.
         </div>
       )}
@@ -233,7 +233,7 @@ export default function FinancialPage() {
                     ])}
                   />
                   <EduTooltip entryId="F-36">
-                    <p className="text-[10px] text-text-muted mt-3 cursor-help">
+                    <p className="text-caption text-text-muted mt-3 cursor-help">
                       * Reconciliation Adjustment: This POC derives financial statements from a cash-based economic model.
                       In the production SAC implementation, financial statements will be generated from a proper accrual-based
                       accounting engine integrated with SAP S/4HANA, eliminating this adjustment.
@@ -275,7 +275,7 @@ export default function FinancialPage() {
                 <div className="border border-border bg-white p-4 space-y-6">
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
-                      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+                      <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
                         PP&E Roll-Forward
                       </h4>
                       <InfoIcon entry={edu['F-33']!} size={10} />
@@ -293,7 +293,7 @@ export default function FinancialPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
-                      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+                      <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
                         Decommissioning Provision
                       </h4>
                       <InfoIcon entry={edu['F-34']!} size={10} />
@@ -312,7 +312,7 @@ export default function FinancialPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
-                      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+                      <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
                         Retained Earnings
                       </h4>
                       <InfoIcon entry={edu['F-35']!} size={10} />

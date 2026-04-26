@@ -202,7 +202,7 @@ export function UnitConversionSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {(Object.keys(PREFERENCE_OPTIONS) as Array<keyof UnitPreferences>).map((key) => (
             <div key={key}>
-              <Label className="text-[10px] uppercase tracking-wider text-text-muted mb-1 block">
+              <Label className="text-caption uppercase tracking-wider text-text-muted mb-1 block">
                 {PREFERENCE_LABELS[key]}
               </Label>
               <Select
@@ -267,7 +267,7 @@ export function UnitConversionSection() {
                 return (
                   <Fragment key={cat}>
                     <tr className="bg-content-alt/40">
-                      <td colSpan={6} className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                      <td colSpan={6} className="px-3 py-1.5 text-caption font-semibold uppercase tracking-wider text-text-secondary">
                         {CATEGORY_LABELS[cat]}
                       </td>
                     </tr>
@@ -315,7 +315,7 @@ export function UnitConversionSection() {
                           <td className="px-3 py-1.5">
                             <span
                               className={cn(
-                                'text-[10px] px-1.5 py-0.5 rounded border whitespace-nowrap',
+                                'text-caption px-1.5 py-0.5 rounded border whitespace-nowrap',
                                 modified
                                   ? 'bg-amber/10 text-amber border-amber/30'
                                   : c.isDefault
@@ -473,7 +473,7 @@ function ConfirmDialog({
     body = (
       <>
         <p>You're about to change a <strong>System Default</strong> conversion factor. This affects every page that reads this conversion (formatters, exports, and downstream calculations when the factor drives engine math).</p>
-        <ul className="mt-2 space-y-0.5 text-[11px] list-disc pl-4">
+        <ul className="mt-2 space-y-0.5 text-caption list-disc pl-4">
           <li>Current: <span className="font-data">{state.conv.factor}</span></li>
           <li>New: <span className="font-data text-petrol font-semibold">{state.newFactor}</span></li>
         </ul>
@@ -611,16 +611,16 @@ function AddConversionDialog({ open, onOpenChange, onAdd }: AddConversionDialogP
         </p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-[10px] uppercase tracking-wider text-text-muted mb-1 block">From Unit</Label>
+            <Label className="text-caption uppercase tracking-wider text-text-muted mb-1 block">From Unit</Label>
             <Input value={fromUnit} onChange={(e) => setFromUnit(e.target.value)} placeholder="e.g. bbl" className="h-9 text-xs" />
           </div>
           <div>
-            <Label className="text-[10px] uppercase tracking-wider text-text-muted mb-1 block">To Unit</Label>
+            <Label className="text-caption uppercase tracking-wider text-text-muted mb-1 block">To Unit</Label>
             <Input value={toUnit} onChange={(e) => setToUnit(e.target.value)} placeholder="e.g. m³" className="h-9 text-xs" />
           </div>
         </div>
         <div>
-          <Label className="text-[10px] uppercase tracking-wider text-text-muted mb-1 block">Factor (multiply From by this to get To)</Label>
+          <Label className="text-caption uppercase tracking-wider text-text-muted mb-1 block">Factor (multiply From by this to get To)</Label>
           <Input
             type="number"
             step="0.000001"
@@ -631,7 +631,7 @@ function AddConversionDialog({ open, onOpenChange, onAdd }: AddConversionDialogP
           />
         </div>
         <div>
-          <Label className="text-[10px] uppercase tracking-wider text-text-muted mb-1 block">Category</Label>
+          <Label className="text-caption uppercase tracking-wider text-text-muted mb-1 block">Category</Label>
           <Select
             value={category}
             onValueChange={(v) => setCategory(v as UnitConversionCategory)}
@@ -640,7 +640,7 @@ function AddConversionDialog({ open, onOpenChange, onAdd }: AddConversionDialogP
           />
         </div>
         <div>
-          <Label className="text-[10px] uppercase tracking-wider text-text-muted mb-1 block">Description (optional)</Label>
+          <Label className="text-caption uppercase tracking-wider text-text-muted mb-1 block">Description (optional)</Label>
           <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. Barrels to Cubic Meters" className="h-9 text-xs" />
         </div>
       </div>

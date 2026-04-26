@@ -37,8 +37,13 @@ const TONE_CLASS: Record<PillTone, string> = {
 };
 
 const SIZE_CLASS: Record<PillSize, string> = {
-  xs: 'text-[9px] font-semibold tracking-wider uppercase px-1.5 py-0.5',
-  sm: 'text-[10px] font-medium px-2 py-0.5',
+  // xs raised from 9px → text-caption (11px) per S10. 9px breached the
+  // WCAG/Fiori legibility floor; consumers are RoleBadge (every persona
+  // indicator) and the "You" marker on Data Entry. xs stays uppercase +
+  // semibold, so the visual role ("inline marker") still differs from
+  // sm ("mixed-case status chip") despite both now being ≥10px.
+  xs: 'text-caption font-semibold tracking-wider uppercase px-1.5 py-0.5',
+  sm: 'text-caption font-medium px-2 py-0.5',
 };
 
 interface PillProps {

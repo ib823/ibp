@@ -182,7 +182,7 @@ export default function PortfolioPage() {
           eduEntry={edu['P-05']}
         />
       </div>
-      <p className="text-[10px] text-text-muted -mt-1">
+      <p className="text-caption text-text-muted -mt-1">
         Portfolio totals are calculated from full-precision values and may differ from the sum of individually rounded project values by up to $0.1M.
         {totalGovtTake > 100 && (
           <>
@@ -195,7 +195,7 @@ export default function PortfolioPage() {
       {/* PANELS 2 & 3 — Bubble + Toggle List */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 border border-border bg-white p-4">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+          <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
             NPV vs CAPEX (Bubble = Production Scale)
           </h4>
           <SectionHelp entry={edu['P-06']!} />
@@ -203,7 +203,7 @@ export default function PortfolioPage() {
             {bubbleData.length > 0 ? (
               <NpvBubbleChart projects={bubbleData} />
             ) : (
-              <div className="flex items-center justify-center h-[300px] text-sm text-text-muted">
+              <div className="flex items-center justify-center h-[300px] text-body text-text-muted">
                 No active projects
               </div>
             )}
@@ -211,7 +211,7 @@ export default function PortfolioPage() {
         </div>
 
         <div className="border border-border bg-white p-4" data-tour="portfolio-toggles">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+          <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
             Project Inclusion
           </h4>
           <SectionHelp entry={edu['P-07']!} />
@@ -248,7 +248,7 @@ export default function PortfolioPage() {
                       {p.project.name}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <Badge variant="outline" className="text-[10px] py-0 px-1">
+                      <Badge variant="outline" className="text-caption py-0 px-1">
                         {p.fiscalRegimeConfig.type.replace('_', ' ')}
                       </Badge>
                     </div>
@@ -268,7 +268,7 @@ export default function PortfolioPage() {
 
       {/* PANEL 4 — Hierarchy */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+        <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
           Portfolio by Hierarchy
         </h4>
         <SectionHelp entry={edu['P-09']!} />

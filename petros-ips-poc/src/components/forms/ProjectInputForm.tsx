@@ -131,7 +131,7 @@ export function ProjectInputForm({ onCalculate }: ProjectInputFormProps) {
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-[11px] uppercase tracking-wider text-text-muted mb-1.5 block">
+        <Label className="text-caption uppercase tracking-wider text-text-muted mb-1.5 block">
           Select Project
         </Label>
         <Select
@@ -292,8 +292,8 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
       {/* Modified badge */}
       {modified && (
         <div className="flex items-center justify-between">
-          <Badge variant="outline" className="text-[10px] bg-amber/10 text-amber border-amber/30">Modified</Badge>
-          <button onClick={handleReset} className="text-[10px] text-petrol hover:underline flex items-center gap-1">
+          <Badge variant="outline" className="text-caption bg-amber/10 text-amber border-amber/30">Modified</Badge>
+          <button onClick={handleReset} className="text-caption text-petrol hover:underline flex items-center gap-1">
             <RotateCcw size={10} /> Reset
           </button>
         </div>
@@ -362,12 +362,12 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
       <Section title="Fiscal Regime">
         <div className="flex items-center gap-2 mb-2">
           <EduTooltip entryId="E-11">
-            <Badge variant="outline" className="text-[10px] bg-petrol/10 text-petrol border-petrol/30 cursor-help">
+            <Badge variant="outline" className="text-caption bg-petrol/10 text-petrol border-petrol/30 cursor-help">
               {fiscalRegimeConfig.type.replace('_', ' ')}
             </Badge>
           </EduTooltip>
           <EduTooltip entryId="E-12">
-            <Badge variant="outline" className="text-[10px] cursor-help">{proj.status}</Badge>
+            <Badge variant="outline" className="text-caption cursor-help">{proj.status}</Badge>
           </EduTooltip>
           <InfoIcon entry={edu['E-11']!} />
         </div>
@@ -391,7 +391,7 @@ function EditableProjectFields({ project, onCalculate }: { project: ProjectInput
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-2">{title}</h4>
+      <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-2">{title}</h4>
       <div className="space-y-1.5">{children}</div>
     </div>
   );

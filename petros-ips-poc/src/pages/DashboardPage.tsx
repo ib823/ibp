@@ -117,23 +117,23 @@ export default function DashboardPage() {
         <table className="w-full border-collapse text-xs min-w-[640px] tabular-nums">
           <thead>
             <tr className="border-b border-border bg-content-alt">
-              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-3 py-1.5 sticky left-0 bg-content-alt z-20 shadow-[2px_0_0_0_rgb(226,229,234)]">
+              <th className="text-left text-caption font-semibold text-text-secondary uppercase px-3 py-1.5 sticky left-0 bg-content-alt z-20 shadow-[2px_0_0_0_rgb(226,229,234)]">
                 <EduTooltip entryId="D-07"><span className="cursor-help">Project</span></EduTooltip>
               </th>
-              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <th className="text-left text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
                 <EduTooltip entryId="D-08"><span className="cursor-help">Regime</span></EduTooltip>
               </th>
-              <th className="text-left text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">Status</th>
-              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <th className="text-left text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">Status</th>
+              <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
                 <EduTooltip entryId="D-10"><span className="cursor-help">NPV ({u.currencySymbol}M)</span></EduTooltip>
               </th>
-              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
                 <EduTooltip entryId="D-11"><span className="cursor-help">IRR</span></EduTooltip>
               </th>
-              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
                 <EduTooltip entryId="D-12"><span className="cursor-help">CAPEX ({u.currencySymbol}M)</span></EduTooltip>
               </th>
-              <th className="text-right text-[10px] font-semibold text-text-secondary uppercase px-2 py-1.5">
+              <th className="text-right text-caption font-semibold text-text-secondary uppercase px-2 py-1.5">
                 <EduTooltip entryId="D-13"><span className="cursor-help">Payback</span></EduTooltip>
               </th>
             </tr>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                   </td>
                   <td className="px-2 py-2">
                     <EduTooltip entryId={regimeTooltipId}>
-                      <Badge variant="outline" className="text-[10px] py-0 px-1 cursor-help">
+                      <Badge variant="outline" className="text-caption py-0 px-1 cursor-help">
                         {regimeLabel}
                       </Badge>
                     </EduTooltip>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
               <link.icon size={14} className="text-petrol" />
               <span className="text-xs font-semibold text-text-primary group-hover:text-petrol">{link.label}</span>
             </div>
-            <p className="text-[10px] text-text-muted">{link.desc}</p>
+            <p className="text-caption text-text-muted">{link.desc}</p>
           </Link>
         ))}
       </div>

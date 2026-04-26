@@ -66,7 +66,7 @@ export default function SettingsPage() {
       <div className="border border-petrol/30 bg-petrol/5 p-4">
         <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
           <div>
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-petrol mb-1">
+            <h4 className="text-caption font-semibold uppercase tracking-wider text-petrol mb-1">
               SAC Bridge — Phase 1a Migration Artifact
             </h4>
             <p className="text-xs text-text-secondary max-w-2xl">
@@ -91,7 +91,7 @@ export default function SettingsPage() {
             Export to SAC
           </Button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-[10px]">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-caption">
           <div className="border border-petrol/20 bg-white px-2 py-1.5">
             <div className="font-semibold text-petrol">8 dimension sheets</div>
             <div className="text-text-muted">Project, Sector, Type, Account, Time, Version, Scenario, FiscalRegime</div>
@@ -113,7 +113,7 @@ export default function SettingsPage() {
         {/* SAC Preview toggle — visual overlay onto same data */}
         <div className="mt-4 pt-4 border-t border-petrol/20 flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0 max-w-2xl">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-petrol mb-1">
+            <div className="text-caption font-semibold uppercase tracking-wider text-petrol mb-1">
               SAC Story Preview
             </div>
             <p className="text-xs text-text-secondary">
@@ -156,7 +156,7 @@ export default function SettingsPage() {
 
       {/* Model Parameters */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+        <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
           Model Parameters
         </h4>
         <SectionHelp entry={edu['ST-02']!} />
@@ -180,7 +180,7 @@ export default function SettingsPage() {
 
       {/* Unit Conversion Factors (DF-01) */}
       <div>
-        <h3 className="text-sm font-semibold text-text-primary mb-1">Unit Conversion Factors</h3>
+        <h3 className="text-body font-semibold text-text-primary mb-1">Unit Conversion Factors</h3>
         <p className="text-xs text-text-secondary mb-3">
           Configure display unit preferences and customize conversion factors. Reference: SOW DF-01.
         </p>
@@ -191,7 +191,7 @@ export default function SettingsPage() {
 
       {/* Fiscal Regimes Reference */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+        <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
           Fiscal Regime Reference
         </h4>
         <SectionHelp entry={edu['ST-13']!} />
@@ -212,10 +212,10 @@ export default function SettingsPage() {
               {'tranches' in regime && (
                 <div className="mt-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-medium text-text-secondary">R/C Tranches:</span>
+                    <span className="text-caption font-medium text-text-secondary">R/C Tranches:</span>
                     <InfoIcon entry={edu['ST-14']!} />
                   </div>
-                  <div className="grid grid-cols-5 gap-1 mt-1 text-[10px]">
+                  <div className="grid grid-cols-5 gap-1 mt-1 text-caption">
                     <span className="font-medium text-text-secondary">R/C Range</span>
                     <span className="font-medium text-text-secondary text-right">Ceiling</span>
                     <span className="font-medium text-text-secondary text-right">Contractor</span>
@@ -257,7 +257,7 @@ export default function SettingsPage() {
           <div className="border border-border/50 p-3 bg-content-alt/30">
             <div className="flex items-center gap-2 mb-2">
               <Pill tone="petrol" size="sm">RSC</Pill>
-              <span className="text-[10px] text-text-muted">(Risk Service Contract)</span>
+              <span className="text-caption text-text-muted">(Risk Service Contract)</span>
               <InfoIcon entry={edu['ST-18']!} />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
@@ -266,7 +266,7 @@ export default function SettingsPage() {
               <Row label="Cost Reimbursement" value="60%" />
               <Row label="PITA (RSC)" value="25%" />
             </div>
-            <p className="text-[10px] text-text-secondary mt-2">
+            <p className="text-caption text-text-secondary mt-2">
               Dedicated RSC engine: <span className="font-data">src/engine/fiscal/psc-rsc.ts</span>.
               Models fee revenue on oil-equivalent production, cost reimbursement capped at
               70% of fee revenue, one-shot performance bonus at 30 MMboe cumulative production
@@ -278,7 +278,7 @@ export default function SettingsPage() {
 
       {/* Guided Tour */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+        <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-3">
           Guided Tour
         </h4>
         <p className="text-xs text-text-secondary mb-3">
@@ -299,7 +299,7 @@ export default function SettingsPage() {
 
       {/* About */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+        <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-3">
           About This POC
         </h4>
         <div className="text-xs text-text-secondary space-y-2">
@@ -321,7 +321,7 @@ export default function SettingsPage() {
 
       {/* Disclaimer */}
       <div className="border border-border bg-white p-4">
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-3">
+        <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-3">
           Disclaimer
         </h4>
         <p className="text-xs text-text-secondary">

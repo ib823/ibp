@@ -50,7 +50,7 @@ export function EmptyState({
       className={cn(SHELL, SIZE_CLASS[size], 'text-text-muted', className)}
     >
       {icon ?? <FileX size={28} aria-hidden="true" className="text-text-muted/70" />}
-      <p className="text-sm font-medium text-text-secondary">{title}</p>
+      <p className="text-body font-medium text-text-secondary">{title}</p>
       {hint && <p className="text-xs text-text-muted max-w-md">{hint}</p>}
     </div>
   );
@@ -78,7 +78,7 @@ export function LoadingState({
       className={cn(SHELL, SIZE_CLASS[size], 'text-text-secondary', className)}
     >
       <Loader2 size={24} aria-hidden="true" className="animate-spin text-petrol" />
-      <p className="text-sm font-medium">{label}</p>
+      <p className="text-body font-medium">{label}</p>
       {detail && <p className="text-xs text-text-muted">{detail}</p>}
     </div>
   );
@@ -110,7 +110,7 @@ export function ErrorState({
       className={cn(SHELL, SIZE_CLASS[size], className)}
     >
       <AlertTriangle size={28} aria-hidden="true" className="text-danger" />
-      <p className="text-sm font-medium text-danger">{title}</p>
+      <p className="text-body font-medium text-danger">{title}</p>
       {hint && <p className="text-xs text-text-muted max-w-md">{hint}</p>}
       {onRetry && (
         <button

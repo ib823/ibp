@@ -10,7 +10,11 @@
     <title>PETROS IPS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- IBM Plex Mono only. IBM Plex Sans was previously loaded here but
+         never won the cascade against SAP "72" / "72full" (loaded by UI5
+         Assets bundle from cdn.jsdelivr.net). Removed in PR1 of S9 — see
+         AUDIT.md → Typography audit. -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

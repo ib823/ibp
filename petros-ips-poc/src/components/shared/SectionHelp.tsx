@@ -22,12 +22,12 @@ export function SectionHelp({ entry }: SectionHelpProps) {
         {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
       </button>
       {open && (
-        <div className="mt-2 p-3 bg-content-alt/50 border border-border/50 text-[11px] text-text-secondary leading-relaxed space-y-2">
+        <div className="mt-2 p-3 bg-content-alt/50 border border-border/50 text-caption text-text-secondary leading-relaxed space-y-2">
           {entry.sectionHelp.split('\n\n').map((paragraph, i) => (
             <p key={i} className="whitespace-pre-line">{paragraph}</p>
           ))}
           {entry.references.length > 0 && (
-            <p className="text-[10px] text-text-muted mt-2">
+            <p className="text-caption text-text-muted mt-2">
               Ref: {entry.references.join('; ')}
             </p>
           )}

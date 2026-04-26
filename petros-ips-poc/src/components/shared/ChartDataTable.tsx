@@ -51,14 +51,14 @@ export function ChartDataTable({ caption, columns, rows, toggle = false, classNa
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={`${id}-table`}
-          className="text-[10px] text-text-muted hover:text-petrol focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-petrol underline decoration-dotted underline-offset-2"
+          className="text-caption text-text-muted hover:text-petrol focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-petrol underline decoration-dotted underline-offset-2"
         >
           {open ? 'Hide data table' : 'View data table'}
         </button>
       )}
       <div id={`${id}-table`} className={cn(visible ? 'mt-2' : 'sr-only', className)}>
         <table className="w-full text-xs border-collapse tabular-nums">
-          <caption className={cn(visible ? 'text-left text-[10px] text-text-muted mb-1' : 'sr-only')}>
+          <caption className={cn(visible ? 'text-left text-caption text-text-muted mb-1' : 'sr-only')}>
             {caption}
           </caption>
           <thead>

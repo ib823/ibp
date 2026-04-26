@@ -115,7 +115,7 @@ export default function SensitivityPage() {
               </div>
             ) : (
               <div className="border border-border bg-white p-5">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+                <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
                   Tornado Chart — NPV Sensitivity at ±30%
                 </h4>
                 <SectionHelp entry={edu['S-07']!} />
@@ -151,7 +151,7 @@ export default function SensitivityPage() {
               </div>
             ) : (
               <div className="border border-border bg-white p-5">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+                <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary mb-1">
                   Spider Diagram — NPV vs % Change
                 </h4>
                 <SectionHelp entry={edu['S-09']!} />
@@ -182,7 +182,7 @@ export default function SensitivityPage() {
               <div className="space-y-4">
                 <div className="border border-border bg-white p-4">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+                    <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
                       Key Metrics by Scenario
                     </h4>
                   </div>

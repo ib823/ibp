@@ -69,7 +69,7 @@ function PhaseComparisonViewInner() {
   if (!activeProject) {
     return (
       <div className="flex items-center justify-center h-64 border border-border bg-white">
-        <p className="text-sm text-text-muted">Select a project to compare phases</p>
+        <p className="text-body text-text-muted">Select a project to compare phases</p>
       </div>
     );
   }
@@ -78,7 +78,7 @@ function PhaseComparisonViewInner() {
     return (
       <div className="flex flex-col items-center justify-center h-48 border border-border bg-white gap-2 text-center px-4">
         <GitBranch size={24} className="text-text-muted" />
-        <p className="text-sm text-text-secondary">
+        <p className="text-body text-text-secondary">
           No phase versions are available for <strong>{activeProject.project.name}</strong>.
         </p>
         <p className="text-xs text-text-muted">
@@ -98,7 +98,7 @@ function PhaseComparisonViewInner() {
       <div className="border border-border bg-white p-4">
         <div className="flex flex-col lg:flex-row lg:items-end gap-3">
           <div className="flex-1">
-            <label className="text-[10px] uppercase tracking-wider text-text-muted block mb-1">
+            <label className="text-caption uppercase tracking-wider text-text-muted block mb-1">
               Phase 1
             </label>
             <Select
@@ -113,7 +113,7 @@ function PhaseComparisonViewInner() {
             <GitBranch size={18} className="text-petrol" />
           </div>
           <div className="flex-1">
-            <label className="text-[10px] uppercase tracking-wider text-text-muted block mb-1">
+            <label className="text-caption uppercase tracking-wider text-text-muted block mb-1">
               Phase 2
             </label>
             <Select
@@ -137,7 +137,7 @@ function PhaseComparisonViewInner() {
 
       {!phaseComparisonResult && (
         <div className="flex items-center justify-center h-32 border border-border bg-white">
-          <p className="text-sm text-text-muted">Click "Compare Phases" to run the comparison</p>
+          <p className="text-body text-text-muted">Click "Compare Phases" to run the comparison</p>
         </div>
       )}
 
@@ -211,7 +211,7 @@ function ChangeIndicator({
       {delta.toLocaleString('en-US', { maximumFractionDigits: 1 })}
       {unit}
       {pct !== null && pct !== undefined && Number.isFinite(pct) && (
-        <span className="text-[10px] opacity-80">({sign}{pct.toFixed(1)}%)</span>
+        <span className="text-caption opacity-80">({sign}{pct.toFixed(1)}%)</span>
       )}
     </span>
   );
@@ -287,7 +287,7 @@ function AssumptionsCard({
           </tbody>
         </table>
       </div>
-      <div className="mt-3 pt-3 border-t border-border space-y-2 text-[11px] text-text-muted">
+      <div className="mt-3 pt-3 border-t border-border space-y-2 text-caption text-text-muted">
         <div>
           <strong className="text-text-secondary">{p1.label}:</strong> {p1.assumptions}
         </div>
@@ -464,9 +464,9 @@ function PhaseTimeline({ phases }: { phases: readonly PhaseVersionData[] }) {
           <div key={p.phase} className="flex items-center gap-2 shrink-0">
             <div className="flex flex-col items-center">
               <div className="w-3 h-3 rounded-full bg-petrol border-2 border-petrol-light" />
-              <div className="text-[10px] font-semibold text-text-primary mt-1">{p.label}</div>
-              <div className="text-[10px] text-text-muted">{PHASE_LABEL[p.phase]}</div>
-              <div className="text-[10px] text-text-muted">{new Date(p.createdDate).getFullYear()}</div>
+              <div className="text-caption font-semibold text-text-primary mt-1">{p.label}</div>
+              <div className="text-caption text-text-muted">{PHASE_LABEL[p.phase]}</div>
+              <div className="text-caption text-text-muted">{new Date(p.createdDate).getFullYear()}</div>
             </div>
             {i < phases.length - 1 && (
               <div className="w-8 sm:w-16 h-px bg-petrol/40 self-center" />

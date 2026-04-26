@@ -58,7 +58,7 @@ export function Button({
   // on the outer custom-element wrapper.
   const sizeClass =
     size === 'sm' ? 'h-8 text-xs' :
-    size === 'xs' ? 'h-6 text-[10px]' :
+    size === 'xs' ? 'h-6 text-caption' :
     size === 'lg' ? 'h-10' :
     size?.startsWith('icon') ? 'min-w-[36px] min-h-[36px]' :
     '';

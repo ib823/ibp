@@ -127,7 +127,7 @@ export function ReservesWaterfall({ movements, title, unit, valueFactor = 1 }: R
 
   return (
     <div>
-      <div className="text-[11px] font-semibold text-text-secondary mb-1">{title} ({unit})</div>
+      <div className="text-caption font-semibold text-text-secondary mb-1">{title} ({unit})</div>
       <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full" style={{ maxHeight: 220 }}>
         <line x1={padL} x2={svgW - padR} y1={scaleY(0)} y2={scaleY(0)} stroke="#E2E5EA" strokeWidth={1} />
         {bars.map((bar, i) => {

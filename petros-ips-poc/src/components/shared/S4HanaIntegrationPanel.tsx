@@ -99,12 +99,12 @@ export function S4HanaIntegrationPanel() {
           <Database size={16} className="text-petrol shrink-0" aria-hidden="true" />
           <h3
             id="s4hana-heading"
-            className="text-[11px] font-semibold uppercase tracking-wider text-petrol"
+            className="text-caption font-semibold uppercase tracking-wider text-petrol"
           >
             SAP S/4HANA Integration — Phase 1a feeds
           </h3>
         </div>
-        <span className="text-[10px] text-text-muted">
+        <span className="text-caption text-text-muted">
           Live connection via SAC Data Integration agent against{' '}
           <span className="font-data text-text-secondary">s4hana-sandbox.petros.internal</span>
         </span>
@@ -132,7 +132,7 @@ export function S4HanaIntegrationPanel() {
                       {feed.cdsView}
                     </h4>
                   </div>
-                  <div className="text-[10px] text-text-muted">
+                  <div className="text-caption text-text-muted">
                     Source table:{' '}
                     <span className="font-data text-text-secondary">{feed.sourceTable}</span>
                     <span className="mx-1.5">·</span>
@@ -141,23 +141,23 @@ export function S4HanaIntegrationPanel() {
                 </div>
               </header>
 
-              <p className="text-[11px] text-text-secondary leading-snug">
+              <p className="text-caption text-text-secondary leading-snug">
                 {feed.description}
               </p>
 
-              <dl className="grid grid-cols-1 gap-1 text-[10px] mt-1">
+              <dl className="grid grid-cols-1 gap-1 text-caption mt-1">
                 <div>
-                  <dt className="text-text-muted uppercase tracking-wider text-[9px]">Sample columns</dt>
+                  <dt className="text-text-muted uppercase tracking-wider text-caption">Sample columns</dt>
                   <dd className="font-data text-text-primary leading-relaxed mt-0.5">
                     {feed.sampleColumns.join(', ')}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-muted uppercase tracking-wider text-[9px]">Volume estimate</dt>
+                  <dt className="text-text-muted uppercase tracking-wider text-caption">Volume estimate</dt>
                   <dd className="text-text-primary">{feed.rowEstimate}</dd>
                 </div>
                 <div>
-                  <dt className="text-text-muted uppercase tracking-wider text-[9px]">Last sync</dt>
+                  <dt className="text-text-muted uppercase tracking-wider text-caption">Last sync</dt>
                   <dd className="font-data text-text-secondary">
                     {ts
                       ? new Date(ts).toLocaleString('en-GB', {
@@ -175,7 +175,7 @@ export function S4HanaIntegrationPanel() {
                   onClick={() => handleSync(feed)}
                   disabled={!canManage || isSyncing}
                   className={cn(
-                    'inline-flex items-center gap-1.5 h-7 px-3 text-[11px] font-semibold rounded',
+                    'inline-flex items-center gap-1.5 h-7 px-3 text-caption font-semibold rounded',
                     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-petrol',
                     isSyncing
                       ? 'bg-petrol/60 text-white cursor-wait'
@@ -198,7 +198,7 @@ export function S4HanaIntegrationPanel() {
                   )}
                 </button>
                 {ts && !isSyncing && (
-                  <span className="inline-flex items-center gap-1 text-[10px] text-success">
+                  <span className="inline-flex items-center gap-1 text-caption text-success">
                     <CheckCircle2 size={11} aria-hidden="true" />
                     Healthy
                   </span>
@@ -209,7 +209,7 @@ export function S4HanaIntegrationPanel() {
         })}
       </div>
 
-      <footer className="mt-3 text-[10px] text-text-muted">
+      <footer className="mt-3 text-caption text-text-muted">
         SAC Data Integration agent → S/4HANA OData v4 service · CDS view authentication via service
         account in PETROS Entra ID · sync runs are appended to the Audit Trail (
         <span className="font-data">connection.synced</span> event kind).

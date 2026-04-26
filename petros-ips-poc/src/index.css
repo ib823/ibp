@@ -33,9 +33,48 @@
   --color-chart-4: #C0392B;
   --color-chart-5: #8B5CF6;
 
-  /* Typography — SAP 72 (loaded by UI5 ThemeProvider) for SAC fidelity */
-  --font-sans: "72", "72full", "IBM Plex Sans", Arial, Helvetica, sans-serif;
+  /* Typography — SAP 72 (loaded by UI5 ThemeProvider) for SAC fidelity.
+   * IBM Plex Sans was previously in this fallback chain but never won
+   * the cascade against "72" and "72full"; removed in PR1 of S9 to
+   * stop loading an unused font (see AUDIT.md → Typography audit). */
+  --font-sans: "72", "72full", Arial, Helvetica, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* ── Semantic typography scale (S9 — 2026-04-26) ──────────────────
+   * Six-step scale anchored at 14px body. Sizes only; weight is set
+   * per-call-site via Tailwind's font-* utilities (font-normal,
+   * font-medium, font-semibold). Line-height pair is the default for
+   * each step — override with explicit leading-* if needed.
+   *
+   * Migration status: scaffold only (PR1). Existing text-xs/text-sm/
+   * text-[Npx] call sites continue to render unchanged. Migration to
+   * these tokens is tracked in AUDIT.md → Remediation roadmap PR2+.
+   *
+   * Tailwind v4 generates utilities from --text-{name}: text-caption,
+   * text-body, text-subtitle, text-title, text-display, text-numeric. */
+  --text-caption: 11px;
+  --text-caption--line-height: 16px;
+
+  --text-body: 14px;
+  --text-body--line-height: 22px;
+
+  --text-subtitle: 16px;
+  --text-subtitle--line-height: 22px;
+
+  --text-title: 20px;
+  --text-title--line-height: 28px;
+
+  /* Display = KPI numerics. 24px chosen (not 28px) to match the dominant
+   * text-2xl rendering already in use on Dashboard/Economics/Portfolio
+   * KPI tiles. 28px would push tile heights and risk wrapping the
+   * 4-column dashboard grid at 1024–1280px. Audit Trail (currently
+   * 20px) is the outlier that gets unified upward to 24px. */
+  --text-display: 24px;
+  --text-display--line-height: 32px;
+
+  /* Tabular numerics — pair with .font-data for monospace + tnum. */
+  --text-numeric: 12px;
+  --text-numeric--line-height: 18px;
 }
 
 /* ── SAP Horizon Theme Bridge ──────────────────────────────────────── */
@@ -81,13 +120,42 @@
 /* ── Base styles ───────────────────────────────────────────────────── */
 
 :root, html, body, #root {
-  font-family: "72", "72full", "IBM Plex Sans", Arial, Helvetica, sans-serif !important;
+  font-family: "72", "72full", Arial, Helvetica, sans-serif !important;
   background-color: var(--color-background);
   color: var(--color-foreground);
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ── UI5 typography alignment (S11 — 2026-04-26) ──────────────────────
+ *
+ * Verified against node_modules/@sap-theming/theming-base-content (the
+ * canonical SAP Horizon variable definitions) and
+ * node_modules/@ui5/webcomponents/dist/css/themes/PopupsCommon.css
+ * (the dialog/popup header styling).
+ *
+ * SAP Horizon default              → PETROS semantic token            Status
+ * --sapFontFamily   "72", ...      → --font-sans                       MATCH (post-PR1)
+ * --sapFontSize         0.875rem   → --text-body          (14px)       MATCH
+ * --sapFontSmallSize    0.75rem    → --text-numeric       (12px)       MATCH
+ * --sapFontLargeSize    1rem       → --text-subtitle      (16px)       MATCH
+ * --sapFontHeader6Size  0.875rem   → --text-body          (14px)       MATCH
+ * --sapFontHeader5Size  1rem       → --text-subtitle      (16px)       MATCH
+ * --sapFontHeader4Size  1.25rem    → --text-title         (20px)       MATCH
+ * --sapFontHeader3Size  1.5rem     → --text-display       (24px)       MATCH
+ * --sapFontHeader2Size  2rem       → (no token; rare)                  no override
+ * --sapFontHeader1Size  3rem       → (no token; not used in shell)     no override
+ *
+ * Specifically: ui5-dialog header text uses --sapFontHeader5Size = 16px
+ * (.ui5-popup-header-text in PopupsCommon.css). The "audit said dialog
+ * header renders at 11px" claim was rejected by source inspection — no
+ * override needed.
+ *
+ * If a future runtime measurement (scripts/typography-probe.mjs) shows
+ * a UI5 component rendering at a non-default size, add a targeted
+ * override for that component's specific CSS variable here.
+ */
 
 /* ── UI5 Input: respect container width ─────────────────────────────── */
 /*

@@ -110,19 +110,19 @@ export function ConnectionCard({ kind, eduId }: ConnectionCardProps) {
       <header className="flex items-start justify-between gap-3 min-w-0">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold text-text-primary truncate">{connection.label}</h3>
+            <h3 className="text-body font-semibold text-text-primary truncate">{connection.label}</h3>
             {eduEntry && <InfoIcon entry={eduEntry} size={12} />}
-            <span className="text-[9px] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded border border-border bg-content-alt text-text-secondary">
+            <span className="text-caption font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded border border-border bg-content-alt text-text-secondary">
               {connection.environment}
             </span>
           </div>
-          <p className="text-[11px] text-text-secondary mt-0.5 leading-snug">
+          <p className="text-caption text-text-secondary mt-0.5 leading-snug">
             {connection.description}
           </p>
         </div>
         <span
           className={cn(
-            'inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider shrink-0',
+            'inline-flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider shrink-0',
             connection.status === 'connected' && 'text-success',
             connection.status === 'connecting' && 'text-amber',
             connection.status === 'error' && 'text-danger',
@@ -137,19 +137,19 @@ export function ConnectionCard({ kind, eduId }: ConnectionCardProps) {
       </header>
 
       {/* Detail grid */}
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-caption">
         <div className="min-w-0">
-          <dt className="text-text-muted uppercase tracking-wider text-[9px]">Endpoint</dt>
+          <dt className="text-text-muted uppercase tracking-wider text-caption">Endpoint</dt>
           <dd className="font-data text-text-primary truncate" title={connection.endpoint}>
             {connection.endpoint ?? '—'}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-text-muted uppercase tracking-wider text-[9px]">Last sync</dt>
+          <dt className="text-text-muted uppercase tracking-wider text-caption">Last sync</dt>
           <dd className="font-data text-text-primary">{fmtTimestamp(connection.lastSync)}</dd>
         </div>
         <div className="sm:col-span-2 min-w-0">
-          <dt className="text-text-muted uppercase tracking-wider text-[9px]">Data scope</dt>
+          <dt className="text-text-muted uppercase tracking-wider text-caption">Data scope</dt>
           <dd className="text-text-primary leading-snug">{connection.dataScope}</dd>
         </div>
       </dl>
@@ -231,7 +231,7 @@ export function ConnectionCard({ kind, eduId }: ConnectionCardProps) {
             >
               <Unplug size={13} aria-hidden="true" /> Disconnect
             </button>
-            <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-success">
+            <span className="ml-auto inline-flex items-center gap-1 text-caption text-success">
               <CheckCircle2 size={11} aria-hidden="true" /> All health checks passing
             </span>
           </>

@@ -51,16 +51,16 @@ export function InfoIcon({ entry, className, size }: InfoIconProps) {
       >
         <div className="p-4 space-y-3 max-w-lg normal-case" style={{ textTransform: 'none' }}>
           {content.split('\n\n').map((paragraph, i) => (
-            <p key={i} className="whitespace-pre-line text-sm text-text-secondary leading-relaxed normal-case">
+            <p key={i} className="whitespace-pre-line text-body text-text-secondary leading-relaxed normal-case">
               {paragraph}
             </p>
           ))}
           {entry.references.length > 0 && (
             <div className="mt-4 pt-3 border-t border-border">
-              <p className="text-[10px] font-semibold tracking-wider text-text-muted mb-1 normal-case">
+              <p className="text-caption font-semibold tracking-wider text-text-muted mb-1 normal-case">
                 References
               </p>
-              <ul className="text-[10px] text-text-muted space-y-0.5 normal-case">
+              <ul className="text-caption text-text-muted space-y-0.5 normal-case">
                 {entry.references.map((ref, i) => (
                   <li key={i}>{ref}</li>
                 ))}

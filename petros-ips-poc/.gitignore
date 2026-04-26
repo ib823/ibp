@@ -30,3 +30,11 @@ _extraction/
 # Browser-session walk artefacts — regenerable via scripts/viewport-walk.mjs
 viewport-walk/
 
+# Typography probe report — regenerable via npm run test:typography-probe
+typography-probe/
+
+# Typography snapshot drift captures (S9 PR7). The baseline/ subdir IS
+# committed (it locks in the approved typography state). Only current/
+# is regenerable + gitignored.
+tests-e2e/snapshots/current/
+

@@ -207,7 +207,7 @@ export default function EconomicsPage() {
                           data-tour="fiscal-waterfall"
                         >
                           <div className="flex items-center gap-1.5 mb-1">
-                            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+                            <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
                               Fiscal Cashflow Waterfall (Lifecycle)
                             </h4>
                           </div>
@@ -216,7 +216,7 @@ export default function EconomicsPage() {
                         </div>
                         <div className="border border-border bg-white p-4 pr-2">
                           <div className="flex items-center gap-1.5 mb-3">
-                            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary whitespace-nowrap">
+                            <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary whitespace-nowrap">
                               Govt / Contractor Take
                             </h4>
                             <InfoIcon entry={edu['E-28']!} />
@@ -228,7 +228,7 @@ export default function EconomicsPage() {
                           <div className="grid grid-cols-2 gap-2 mt-2 text-center">
                             <div>
                               <EduTooltip entryId="E-29">
-                                <div className="text-[10px] text-text-muted cursor-help">Total Tax</div>
+                                <div className="text-caption text-text-muted cursor-help">Total Tax</div>
                               </EduTooltip>
                               <div className="text-xs font-data font-medium">
                                 {u.money(result.totalTax as number, { accounting: true })}
@@ -236,7 +236,7 @@ export default function EconomicsPage() {
                             </div>
                             <div>
                               <EduTooltip entryId="E-30">
-                                <div className="text-[10px] text-text-muted cursor-help">Peak Funding</div>
+                                <div className="text-caption text-text-muted cursor-help">Peak Funding</div>
                               </EduTooltip>
                               <div className="text-xs font-data font-medium text-danger">
                                 {u.money(result.peakFunding as number, { accounting: true })}
@@ -278,7 +278,7 @@ export default function EconomicsPage() {
 
                       <div className="border border-border bg-white p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+                          <h4 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
                             Year-by-Year Economics
                           </h4>
                           <GranularityToggle
@@ -287,7 +287,7 @@ export default function EconomicsPage() {
                           />
                         </div>
                         {activeTimeGranularity !== 'yearly' && (
-                          <p className="text-[10px] text-text-muted mb-3">
+                          <p className="text-caption text-text-muted mb-3">
                             <strong>{activeTimeGranularity === 'monthly' ? 'Monthly' : 'Quarterly'} view:</strong>{' '}
                             production rates are inherited from the yearly profile (POC simplification);
                             revenue and costs are spread evenly across {activeTimeGranularity === 'monthly' ? '12 months' : '4 quarters'} per year.
@@ -384,22 +384,22 @@ function GranularEconomicsView({
       <table className="w-full border-collapse text-xs tabular-nums min-w-[640px]">
         <thead className="sticky top-0 bg-content-alt z-10">
           <tr className="border-b border-border text-text-secondary">
-            <th className="text-left text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+            <th className="text-left text-caption font-semibold uppercase tracking-wider px-2 py-1.5">
               <EduTooltip entryId="E-44"><span className="cursor-help">Period</span></EduTooltip>
             </th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+            <th className="text-right text-caption font-semibold uppercase tracking-wider px-2 py-1.5">
               <EduTooltip entryId="E-45"><span className="cursor-help">Revenue ({u.currencySymbol}M)</span></EduTooltip>
             </th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+            <th className="text-right text-caption font-semibold uppercase tracking-wider px-2 py-1.5">
               <EduTooltip entryId="E-46"><span className="cursor-help">Cost Rec ({u.currencySymbol}M)</span></EduTooltip>
             </th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+            <th className="text-right text-caption font-semibold uppercase tracking-wider px-2 py-1.5">
               <EduTooltip entryId="E-47"><span className="cursor-help">Profit Split ({u.currencySymbol}M)</span></EduTooltip>
             </th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+            <th className="text-right text-caption font-semibold uppercase tracking-wider px-2 py-1.5">
               <EduTooltip entryId="E-48"><span className="cursor-help">Tax ({u.currencySymbol}M)</span></EduTooltip>
             </th>
-            <th className="text-right text-[10px] font-semibold uppercase tracking-wider px-2 py-1.5">
+            <th className="text-right text-caption font-semibold uppercase tracking-wider px-2 py-1.5">
               <EduTooltip entryId="E-49"><span className="cursor-help">NCF ({u.currencySymbol}M)</span></EduTooltip>
             </th>
           </tr>
