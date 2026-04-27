@@ -38,3 +38,4 @@ typography-probe/
 # is regenerable + gitignored.
 tests-e2e/snapshots/current/
 
+proposal-screenshots/
