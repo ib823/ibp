@@ -1,4 +1,5 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
+import { optimisePortfolio } from '@/engine/portfolio/optimization';
 import { useProjectStore, useEffectiveProjects } from '@/store/project-store';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { KpiCard } from '@/components/shared/KpiCard';
@@ -21,6 +22,75 @@ import { computeCosts } from '@/engine/fiscal/shared';
 import type { EconomicsResult } from '@/engine/types';
 
 const edu = getPageEntries('portfolio');
+
+// ─── Capital-Constrained Optimisation panel (D15) ─────────────────────
+function CapitalConstrainedOptimisationPanel() {
+  const projects = useProjectStore((s) => s.projects);
+  const economicsResults = useProjectStore((s) => s.economicsResults);
+  const activeScenario = useProjectStore((s) => s.activeScenario);
+  const u = useDisplayUnits();
+
+  const [budgetUsdM, setBudgetUsdM] = useState(1500);
+  const [hurdleRate, setHurdleRate] = useState(0.10);
+  const [open, setOpen] = useState(false);
+
+  const optResult = useMemo(() => {
+    if (!open) return null;
+    const results = new Map<string, EconomicsResult>();
+    for (const p of projects) {
+      const r = economicsResults.get(p.project.id)?.get(activeScenario);
+      if (r) results.set(p.project.id, r);
+    }
+    return optimisePortfolio({
+      projects,
+      results,
+      capexBudgetUsd: budgetUsdM * 1e6,
+      hurdleRate,
+    });
+  }, [open, projects, economicsResults, activeScenario, budgetUsdM, hurdleRate]);
+
+  return (
+    <div className="border border-border bg-white p-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex flex-col">
+          <h2 className="text-body font-semibold text-text-primary">
+            Capital-Constrained Portfolio Optimisation
+            <span className="ml-2 text-caption text-text-muted">(D15 — RFP §6 — fixed CAPEX budget)</span>
+          </h2>
+          <p className="text-caption text-text-muted">
+            Solves for the subset of projects that maximises Group NPV under a fixed CAPEX budget,
+            with hurdle-rate filter. Engine: <code className="text-xs">engine/portfolio/optimization.ts</code>.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1 text-caption text-text-secondary">
+            Budget (USD M):
+            <input type="number" value={budgetUsdM} onChange={(e) => setBudgetUsdM(parseFloat(e.target.value) || 0)}
+              className="w-20 px-2 py-1 border border-border text-body text-right tabular-nums" />
+          </label>
+          <label className="flex items-center gap-1 text-caption text-text-secondary">
+            Hurdle:
+            <input type="number" step="0.01" value={hurdleRate} onChange={(e) => setHurdleRate(parseFloat(e.target.value) || 0)}
+              className="w-20 px-2 py-1 border border-border text-body text-right tabular-nums" />
+          </label>
+          <Button size="sm" onClick={() => setOpen(true)}>Optimise</Button>
+        </div>
+      </div>
+      {open && optResult && (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <KpiCard label="Selected NPV" value={u.money(optResult.totalNpv as number, { accounting: true })} className="border-l-2 border-l-success" />
+          <KpiCard label="CAPEX used" value={u.money(optResult.totalCapex as number, { accounting: true })} />
+          <KpiCard label="Budget utilisation" value={fmtPct(optResult.utilisation, 1)} />
+          <div className="col-span-1 sm:col-span-3 text-caption text-text-secondary">
+            <strong>Selected:</strong> {optResult.selectedProjectIds.join(', ') || '(none)'}<br />
+            <strong>Excluded:</strong> {optResult.excludedProjectIds.join(', ') || '(none)'}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 export default function PortfolioPage() {
   usePageTitle('Portfolio');
@@ -150,6 +220,9 @@ export default function PortfolioPage() {
           Export Portfolio
         </Button>
       </div>
+
+      <CapitalConstrainedOptimisationPanel />
+
 
       {/* PANEL 1 — KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">

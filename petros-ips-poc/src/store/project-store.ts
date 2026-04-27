@@ -357,7 +357,14 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const project = getEffectiveProject(state, projectId);
     if (!project) return;
 
-    const result = calculateTornado(project, state.priceDecks[state.activeScenario]);
+    // Extended sensitivity variable set per D36/D38/D40/D41 — adds FX,
+    // discount rate, fiscal-rate, and reserves to the classic IOC 5.
+    // PETROS-Sarawak overlay surfaces the additional drivers.
+    const result = calculateTornado(
+      project,
+      state.priceDecks[state.activeScenario],
+      ['oilPrice', 'gasPrice', 'production', 'capex', 'opex', 'fx', 'pitaRate', 'sarawakSstRate', 'reserves'],
+    );
     const updated = new Map(state.sensitivityResults);
     updated.set(projectId, result);
     set({ sensitivityResults: updated });

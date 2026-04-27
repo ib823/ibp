@@ -152,6 +152,11 @@ export const DOWNSTREAM_TAX: FiscalRegime_DOWNSTREAM = {
   sarawakSstRate: 0, // SST applies to upstream petroleum only; CCS/downstream excluded
   host: 'PETROS' as const,
   taxRate: 0.24,
+  // Malaysian Budget 2024-2025 CCS incentives (D62). M3 CCS qualifies for
+  // Investment Tax Allowance + Pioneer Status. PETROS to confirm exact rates
+  // in Phase 1a Discovery.
+  investmentTaxAllowance: 0.60, // 60% of qualifying capex deductible
+  pioneerStatusExemption: 0.70,  // 70% of statutory income exempt
 };
 
 // ── RSC (Risk Service Contract) ───────────────────────────────────────

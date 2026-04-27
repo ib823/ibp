@@ -7,6 +7,7 @@ import type {
   TimeSeriesData,
 } from '@/engine/types';
 import { RC_PSC, DW_PSC, EPT_PSC, SFA_PSC, DOWNSTREAM_TAX } from './fiscal-regimes';
+import { arpsDeclineCurve } from '@/engine/reserves/decline-curves';
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -28,8 +29,15 @@ function usdZeros(start: number, end: number): TimeSeriesData<USD> {
 }
 
 /**
- * Exponential decline: q(t) = q_plateau * e^(-declineRate * (t - plateauEndYear))
- * Returns annual average rate in the given unit.
+ * Decline curve helper — delegates to the Arps family (D29).
+ * Default b = 0 (exponential, backward-compatible). Caller supplies b for
+ * hyperbolic (0 < b < 1) or harmonic (b = 1) reservoir behaviour.
+ *
+ * Reservoir-driver mapping (rule of thumb):
+ *   b = 0     solution-gas drive   (exponential)
+ *   b ≈ 0.5   gas reservoir / tight (hyperbolic)
+ *   b ≈ 0.7   mature waterflood    (near-harmonic)
+ *   b = 1     full harmonic
  */
 function declineCurve(
   startYear: number,
@@ -38,19 +46,12 @@ function declineCurve(
   plateauEndYear: number,
   plateauRate: number,
   declineRate: number,
+  arpsB: number = 0,
 ): TimeSeriesData<number> {
-  const s: Record<number, number> = {};
-  for (let y = startYear; y <= endYear; y++) {
-    if (y < plateauStartYear) {
-      s[y] = 0;
-    } else if (y <= plateauEndYear) {
-      s[y] = Math.round(plateauRate * 100) / 100;
-    } else {
-      const t = y - plateauEndYear;
-      s[y] = Math.round(plateauRate * Math.exp(-declineRate * t) * 100) / 100;
-    }
-  }
-  return s;
+  return arpsDeclineCurve(
+    startYear, endYear, plateauStartYear, plateauEndYear,
+    plateauRate, declineRate, arpsB,
+  );
 }
 
 /**
@@ -116,8 +117,8 @@ const sk410Project: Project = {
 // Condensate 3800 bpd plateau, same profile
 const sk410Production: ProductionProfile = {
   oil: zeros(2026, 2048),
-  gas: declineCurve(2026, 2048, 2028, 2032, 120, 0.12),
-  condensate: declineCurve(2026, 2048, 2028, 2032, 3800, 0.12),
+  gas: declineCurve(2026, 2048, 2028, 2032, 120, 0.12, 0.5) /* SK-410 gas: hyperbolic b=0.5 */,
+  condensate: declineCurve(2026, 2048, 2028, 2032, 3800, 0.12, 0.5) /* SK-410 condensate */,
   water: (() => {
     // Water production ramps up as gas declines
     const s: Record<number, number> = {};
@@ -188,10 +189,10 @@ const sk612Project: Project = {
 
 // Oil plateau 25,000 bpd for 4 years (2031-2034), then 15% decline
 const sk612Production: ProductionProfile = {
-  oil: declineCurve(2027, 2050, 2031, 2034, 25000, 0.15),
+  oil: declineCurve(2027, 2050, 2031, 2034, 25000, 0.15, 0.4) /* SK-612 deepwater oil: hyperbolic b=0.4 */,
   gas: (() => {
     // Associated gas: GOR ~500 scf/bbl
-    const oilProfile = declineCurve(2027, 2050, 2031, 2034, 25000, 0.15);
+    const oilProfile = declineCurve(2027, 2050, 2031, 2034, 25000, 0.15, 0.4) /* SK-612 deepwater oil: hyperbolic b=0.4 */;
     const s: Record<number, number> = {};
     for (let y = 2027; y <= 2050; y++) {
       s[y] = Math.round(((oilProfile[y] ?? 0) * 500 / 1e6) * 100) / 100; // MMscfd
@@ -352,10 +353,10 @@ const tukauProject: Project = {
 
 // Plateau 5,000 bpd for 3 years (2029-2031), 18% decline
 const tukauProduction: ProductionProfile = {
-  oil: declineCurve(2027, 2040, 2029, 2031, 5000, 0.18),
+  oil: declineCurve(2027, 2040, 2029, 2031, 5000, 0.18, 0.3) /* Tukau marginal: gentle hyperbolic b=0.3 */,
   gas: (() => {
     // Low GOR ~200 scf/bbl
-    const oilProfile = declineCurve(2027, 2040, 2029, 2031, 5000, 0.18);
+    const oilProfile = declineCurve(2027, 2040, 2029, 2031, 5000, 0.18, 0.3) /* Tukau marginal: gentle hyperbolic b=0.3 */;
     const s: Record<number, number> = {};
     for (let y = 2027; y <= 2040; y++) {
       s[y] = Math.round(((oilProfile[y] ?? 0) * 200 / 1e6) * 100) / 100;

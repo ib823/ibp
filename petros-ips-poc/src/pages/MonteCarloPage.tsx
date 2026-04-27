@@ -361,9 +361,9 @@ function MCResults({ result }: { result: MonteCarloResult }) {
             <XAxis dataKey="npv" tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
             <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
             <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [v, 'Count']} labelFormatter={(v: number) => `NPV: ${u.currencySymbol}${v.toFixed(0)}M`} />
-            <ReferenceLine x={p10Display} stroke={COLORS.danger} strokeDasharray="4,3" label={{ value: 'P10', fontSize: 11, fill: COLORS.danger }} />
+            <ReferenceLine x={p10Display} stroke={COLORS.danger} strokeDasharray="4,3" label={{ value: speConvention ? 'P90 (low)' : 'P10 (low)', fontSize: 11, fill: COLORS.danger }} />
             <ReferenceLine x={p50Display} stroke={COLORS.petrol} strokeDasharray="4,3" label={{ value: 'P50', fontSize: 11, fill: COLORS.petrol }} />
-            <ReferenceLine x={p90Display} stroke={COLORS.success} strokeDasharray="4,3" label={{ value: 'P90', fontSize: 11, fill: COLORS.success }} />
+            <ReferenceLine x={p90Display} stroke={COLORS.success} strokeDasharray="4,3" label={{ value: speConvention ? 'P10 (high)' : 'P90 (high)', fontSize: 11, fill: COLORS.success }} />
             <Bar dataKey="count" name="Frequency" isAnimationActive={false}>
               {histData.map((d, i) => (
                 <Cell key={i} fill={d.isAboveP50 ? CHART_POS : CHART_NEG} opacity={0.8} />
@@ -409,8 +409,8 @@ function MCResults({ result }: { result: MonteCarloResult }) {
                 ['Mean NPV', u.money(result.mean as number, { accounting: true }), 'MC-19'],
                 ['Median (P50)', u.money(result.p50 as number, { accounting: true }), undefined],
                 ['Std Deviation', u.money(result.stdDev, { accounting: true }), 'MC-20'],
-                ['P10', u.money(result.p10 as number, { accounting: true }), undefined],
-                ['P90', u.money(result.p90 as number, { accounting: true }), undefined],
+                [speConvention ? 'P90 (low / pessimistic)' : 'P10 (low NPV)', u.money(result.p10 as number, { accounting: true }), undefined],
+                [speConvention ? 'P10 (high / optimistic)' : 'P90 (high NPV)', u.money(result.p90 as number, { accounting: true }), undefined],
                 ['Minimum', u.money(minNpv, { accounting: true }), undefined],
                 ['Maximum', u.money(maxNpv, { accounting: true }), undefined],
                 ['P(NPV > 0)', `${probPositive.toFixed(1)}%`, 'MC-21'],

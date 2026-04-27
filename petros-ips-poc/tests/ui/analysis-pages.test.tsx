@@ -89,9 +89,13 @@ describe('analysis page regressions against engine truth', () => {
     fireEvent.click(screen.getByText('Compare Versions'));
 
     expect(screen.getByText('Year-by-Year Variance')).toBeInTheDocument();
-    expect(screen.getByText(fmtMoney(expected.npvVariance, true))).toBeInTheDocument();
-    expect(screen.getByText(fmtMoney(expected.capexVariance, true))).toBeInTheDocument();
-    expect(screen.getByText(`${(expected.productionVariance / 1e6).toFixed(1)} MMboe`)).toBeInTheDocument();
+    // Variance values may coincidentally render the same money string in
+    // multiple cells (e.g. KPI tile + table cell). `getAllByText` tolerates
+    // collisions while still asserting visibility. (D29 production shift
+    // surfaced this brittleness.)
+    expect(screen.getAllByText(fmtMoney(expected.npvVariance, true)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(fmtMoney(expected.capexVariance, true)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(`${(expected.productionVariance / 1e6).toFixed(1)} MMboe`).length).toBeGreaterThan(0);
   });
 
   it('Phase comparison view matches engine-computed economics deltas', () => {

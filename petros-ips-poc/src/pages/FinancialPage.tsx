@@ -6,10 +6,11 @@ import { Button } from '@/components/ui5/Ui5Button';
 import { useProjectStore, getActiveResult, useEffectiveActiveProject } from '@/store/project-store';
 import { FinancialTable } from '@/components/tables/FinancialTable';
 import type { FinancialRow } from '@/components/tables/FinancialTable';
-import { generateIncomeStatement } from '@/engine/financial/income-statement';
+import { generateIncomeStatement, type DdaMethod } from '@/engine/financial/income-statement';
 import { generateBalanceSheet } from '@/engine/financial/balance-sheet';
 import { generateCashFlowStatement } from '@/engine/financial/cashflow-statement';
 import { generateAccountMovements } from '@/engine/financial/account-movements';
+import { getProjectReserves, gasBcfToMmboe } from '@/engine/reserves/prms';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
 import { EduTooltip } from '@/components/shared/EduTooltip';
@@ -36,19 +37,31 @@ export default function FinancialPage() {
   const activeScenario = useProjectStore((s) => s.activeScenario);
   const u = useDisplayUnits();
   const [granularity, setGranularity] = useState<PeriodGranularity>('year');
+  // D31 — DD&A method toggle. Default backward-compatible 'straight-line';
+  // 'unit-of-production' uses 2P reserves from PRMS engine as the divisor.
+  const [ddaMethod, setDdaMethod] = useState<DdaMethod>('straight-line');
 
   // Use the override-merged project so what-if edits propagate to IS/BS/CF.
   const activeProject = useEffectiveActiveProject() ?? projects.find((p) => p.project.id === activeProjectId);
 
+  // Derive 2P reserves total (BOE) for UoP DD&A from the PRMS engine.
+  // Oil 2P is in MMstb (× 1,000,000), gas 2P is in Bcf (gasBcfToMmboe → MMboe → × 1,000,000).
+  const totalReservesBoe = useMemo(() => {
+    if (!activeProject) return undefined;
+    const r = getProjectReserves(activeProject.project.id);
+    if (!r) return undefined;
+    return r.oil['2P'] * 1_000_000 + gasBcfToMmboe(r.gas['2P']) * 1_000_000;
+  }, [activeProject]);
+
   const statements = useMemo(() => {
     if (!result || !activeProject) return null;
     const cfs = result.yearlyCashflows;
-    const is = generateIncomeStatement(cfs, activeProject);
+    const is = generateIncomeStatement(cfs, activeProject, { ddaMethod, totalReservesBoe });
     const bs = generateBalanceSheet(is, cfs, activeProject);
     const cfStmt = generateCashFlowStatement(is, cfs, activeProject);
     const am = generateAccountMovements(is, bs, cfs, activeProject);
     return { is, bs, cfStmt, am, cfs, years: cfs.map((c) => c.year) };
-  }, [result, activeProject]);
+  }, [result, activeProject, ddaMethod, totalReservesBoe]);
 
   const periodLabels = useMemo(
     () => (statements ? expandYearLabels(statements.years, granularity) : []),
@@ -144,6 +157,18 @@ export default function FinancialPage() {
             ]}
             className="w-[120px]"
             aria-label="Time granularity"
+          />
+          {/* D31 — DD&A method toggle. Default SL preserves backward
+              compatibility; UoP follows industry-standard upstream practice. */}
+          <Select
+            value={ddaMethod}
+            onValueChange={(v) => setDdaMethod(v as DdaMethod)}
+            options={[
+              { value: 'straight-line', label: 'DD&A: Straight-Line' },
+              { value: 'unit-of-production', label: 'DD&A: Unit-of-Production' },
+            ]}
+            className="w-[200px]"
+            aria-label="DD&A method"
           />
           <Select
             value={activeProjectId ?? ''}

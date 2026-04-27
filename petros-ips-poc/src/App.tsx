@@ -20,6 +20,9 @@ const AuditTrailPage = lazy(() => import('@/pages/AuditTrailPage'));
 const SacMappingPage = lazy(() => import('@/pages/SacMappingPage'));
 const DataEntryPage = lazy(() => import('@/pages/DataEntryPage'));
 const ConsolidationPage = lazy(() => import('@/pages/ConsolidationPage'));
+const MAPage = lazy(() => import('@/pages/MAPage'));
+const ProjectFinancePage = lazy(() => import('@/pages/ProjectFinancePage'));
+const ClimateDisclosurePage = lazy(() => import('@/pages/ClimateDisclosurePage'));
 
 function PageLoader() {
   return (
@@ -73,6 +76,9 @@ const router = createBrowserRouter([
       { path: '/sac-mapping', element: wrap(SacMappingPage) },
       { path: '/data-entry', element: wrap(DataEntryPage) },
       { path: '/consolidation', element: wrap(ConsolidationPage) },
+      { path: '/ma', element: wrap(MAPage) },
+      { path: '/project-finance', element: wrap(ProjectFinancePage) },
+      { path: '/climate', element: wrap(ClimateDisclosurePage) },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

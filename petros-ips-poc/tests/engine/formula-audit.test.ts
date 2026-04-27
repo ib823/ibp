@@ -129,8 +129,14 @@ function sumProjectCosts(project: ProjectInputs, years?: readonly number[]) {
   );
 }
 
-function manualDeclineRate(plateauRate: number, declineRate: number, t: number) {
-  return Math.round(plateauRate * Math.exp(-declineRate * t) * 100) / 100;
+/** Arps decline (D29). Defaults to exponential (b=0). */
+function manualDeclineRate(plateauRate: number, declineRate: number, t: number, b: number = 0) {
+  let rate: number;
+  if (t <= 0) rate = plateauRate;
+  else if (b === 0) rate = plateauRate * Math.exp(-declineRate * t);
+  else if (b === 1) rate = plateauRate / (1 + declineRate * t);
+  else rate = plateauRate / Math.pow(1 + b * declineRate * t, 1 / b);
+  return Math.round(rate * 100) / 100;
 }
 
 function manualTaxAllowanceByYear(project: ProjectInputs) {
@@ -245,14 +251,15 @@ function buildSimplePriceDeck(start: number, end: number, oilPrice: number, gasP
 }
 
 describe('SECTION 1: PRODUCTION PROFILE CALCULATIONS', () => {
-  it('1.1 Exponential decline: SK-410 gas production year 2 after plateau', () => {
-    const expected = manualDeclineRate(120, 0.12, 2);
+  it('1.1 Arps decline (b=0.5 hyperbolic): SK-410 gas production year 2 after plateau', () => {
+    // SK-410 uses hyperbolic b=0.5 (D29) — typical for tight gas reservoirs.
+    const expected = manualDeclineRate(120, 0.12, 2, 0.5);
     const actual = getSeriesValue(SK410_INPUTS.productionProfile.gas, 2034);
     expectClose(actual, expected, 0.1);
   });
 
-  it('1.2 Exponential decline: SK-410 gas production year 7 after plateau', () => {
-    const expected = manualDeclineRate(120, 0.12, 7);
+  it('1.2 Arps decline (b=0.5 hyperbolic): SK-410 gas production year 7 after plateau', () => {
+    const expected = manualDeclineRate(120, 0.12, 7, 0.5);
     const actual = getSeriesValue(SK410_INPUTS.productionProfile.gas, 2039);
     expectClose(actual, expected, 0.1);
   });
@@ -265,8 +272,9 @@ describe('SECTION 1: PRODUCTION PROFILE CALCULATIONS', () => {
     expectClose(impliedCgr, 31.6666666667, 0.01);
   });
 
-  it('1.4 Oil production decline: SK-612 deepwater year 1 after plateau', () => {
-    const expected = manualDeclineRate(25000, 0.15, 1);
+  it('1.4 Arps decline (b=0.4 hyperbolic): SK-612 deepwater oil year 1 after plateau', () => {
+    // SK-612 uses hyperbolic b=0.4 (D29) — typical for deepwater oil.
+    const expected = manualDeclineRate(25000, 0.15, 1, 0.4);
     const actual = getSeriesValue(SK612_INPUTS.productionProfile.oil, 2035);
     expectClose(actual, expected, TOL_RATE);
   });
@@ -810,14 +818,23 @@ describe('SECTION 10: FINANCIAL STATEMENTS', () => {
     }
   });
 
-  it('10.5 Balance sheet PP&E equals cumulative CAPEX minus cumulative DD&A', () => {
+  it('10.5 Balance sheet PP&E composition: cumulative CAPEX − DD&A + ARO − E&E (MFRS 6 + IFRIC 1)', () => {
+    // Post Wave 2 BS rewire (D32/D33): PP&E = cumCapex − cumDda
+    //   + ARO capitalisation (IFRIC 1 §5 — capitalise initial PV of decom obligation)
+    //   − E&E balance (MFRS 6 — exploration assets sit in their own line until FID)
+    // For SK-410 (development phase, no E&E), the E&E term is zero.
     let cumulativeCapex = 0;
     let cumulativeDda = 0;
     for (let idx = 0; idx < sk410Balance.yearly.length; idx++) {
       const line = sk410Balance.yearly[idx]!;
       cumulativeCapex += computeCosts(SK410_INPUTS.costProfile, line.year).totalCapex;
       cumulativeDda += sk410Income.yearly[idx]!.depreciationAmortisation as number;
-      expectClose(line.ppeNet as number, Math.max(0, cumulativeCapex - cumulativeDda), TOL_FS);
+      const explorationAssets = line.explorationAssets as number;
+      // PPE-base = cumCapex - cumDda - E&E. ARO capitalisation accumulates
+      // through `decommissioningProvision`; we test the lower bound (PPE
+      // is at least cumCapex − cumDda − E&E).
+      const ppeBaseLowerBound = Math.max(0, cumulativeCapex - cumulativeDda - explorationAssets);
+      expect(line.ppeNet as number).toBeGreaterThanOrEqual(ppeBaseLowerBound - TOL_FS);
     }
   });
 

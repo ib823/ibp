@@ -117,7 +117,12 @@ describe('override propagation regressions', () => {
     state.runSensitivity('sk-410');
 
     const actual = useProjectStore.getState().sensitivityResults.get('sk-410');
-    const expected = calculateTornado(override.expectedProject, state.priceDecks[state.activeScenario]);
+    // Store extended the variable set to include FX / fiscal / reserves (D36/D38/D40).
+    const expected = calculateTornado(
+      override.expectedProject,
+      state.priceDecks[state.activeScenario],
+      ['oilPrice', 'gasPrice', 'production', 'capex', 'opex', 'fx', 'pitaRate', 'sarawakSstRate', 'reserves'],
+    );
     expect(actual).toBeDefined();
     expect(actual!.baseNpv).toBeCloseTo(expected.baseNpv as number, 6);
     expect(actual!.dataPoints).toHaveLength(expected.dataPoints.length);
