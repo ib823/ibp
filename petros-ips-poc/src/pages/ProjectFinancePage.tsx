@@ -6,6 +6,10 @@
 // ════════════════════════════════════════════════════════════════════════
 
 import { useMemo, useState } from 'react';
+import {
+  ComposedChart, AreaChart, Bar, Area, XAxis, YAxis,
+  CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
+} from 'recharts';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { buildDebtServiceSchedule } from '@/engine/financial/project-finance';
 import { useProjectStore, getActiveResult } from '@/store/project-store';
@@ -13,6 +17,8 @@ import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { fmtNum } from '@/lib/format';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { Select } from '@/components/ui5/Ui5Select';
+import { ChartShell } from '@/components/charts/ChartShell';
+import { COLORS, CHART_POS } from '@/lib/chart-colors';
 
 export default function ProjectFinancePage() {
   usePageTitle('Project Finance');
@@ -160,6 +166,93 @@ export default function ProjectFinancePage() {
           <p className="text-caption text-text-muted mt-2">
             Industry DSCR target ≥ 1.20 for upstream; LLCR target ≥ 1.30. Cells flagged red when below threshold.
           </p>
+        </div>
+      )}
+
+      {/* DSCR over time + debt outstanding */}
+      {pf && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="border border-border bg-white p-4">
+            <h3 className="text-body font-semibold text-text-primary mb-2">
+              DSCR trajectory
+              <span className="text-caption text-text-muted ml-2">target ≥ 1.20</span>
+            </h3>
+            <ChartShell height={220}>
+              <ResponsiveContainer width="100%" height={220}>
+                <ComposedChart
+                  data={pf.schedule.map((y) => ({
+                    year: `Y${y.year}`,
+                    dscr: Math.min(y.dscr, 5), // cap visible at 5 to keep chart readable
+                  }))}
+                  margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
+                  <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
+                  <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => v.toFixed(2)} domain={[0, 'auto']} />
+                  <Tooltip formatter={(v: number) => [v.toFixed(2), 'DSCR']} contentStyle={{ fontSize: 11 }} />
+                  <ReferenceLine y={1.20} stroke={COLORS.danger} strokeDasharray="4,3" label={{ value: 'Target 1.20', fontSize: 10, fill: COLORS.danger }} />
+                  <ReferenceLine y={1.30} stroke={COLORS.amber} strokeDasharray="4,3" label={{ value: 'Sweep 1.30', fontSize: 10, fill: COLORS.amber }} />
+                  <Bar dataKey="dscr" fill={CHART_POS} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </ChartShell>
+          </div>
+
+          <div className="border border-border bg-white p-4">
+            <h3 className="text-body font-semibold text-text-primary mb-2">
+              Debt outstanding (USD M)
+            </h3>
+            <ChartShell height={220}>
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart
+                  data={pf.schedule.map((y) => ({
+                    year: `Y${y.year}`,
+                    closing: (y.closing as number) / 1e6,
+                  }))}
+                  margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
+                  <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
+                  <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
+                  <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, 'Closing balance']} contentStyle={{ fontSize: 11 }} />
+                  <Area type="monotone" dataKey="closing" stroke={COLORS.danger} fill={COLORS.danger} fillOpacity={0.2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </ChartShell>
+          </div>
+        </div>
+      )}
+
+      {/* CFADS allocation waterfall */}
+      {pf && (
+        <div className="border border-border bg-white p-4">
+          <h3 className="text-body font-semibold text-text-primary mb-2">
+            Annual CFADS allocation: Interest · Principal · Cash sweep · Equity (post-debt-service)
+          </h3>
+          <ChartShell height={260}>
+            <ResponsiveContainer width="100%" height={260}>
+              <ComposedChart
+                data={pf.schedule.map((y) => ({
+                  year: `Y${y.year}`,
+                  interest: (y.interest as number) / 1e6,
+                  principal: (y.scheduledPrincipal as number) / 1e6,
+                  sweep: (y.cashSweep as number) / 1e6,
+                  equity: Math.max(0, (y.cfadsAfterDebtService as number) / 1e6),
+                }))}
+                margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
+                <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
+                <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
+                <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="interest" stackId="a" fill={COLORS.danger} name="Interest" />
+                <Bar dataKey="principal" stackId="a" fill={COLORS.amber} name="Principal" />
+                <Bar dataKey="sweep" stackId="a" fill={COLORS.petrol} name="Cash sweep" />
+                <Bar dataKey="equity" stackId="a" fill={CHART_POS} name="Available to equity" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </ChartShell>
         </div>
       )}
 

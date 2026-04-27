@@ -7,11 +7,17 @@
 // ════════════════════════════════════════════════════════════════════════
 
 import { useMemo, useState } from 'react';
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell,
+} from 'recharts';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { evaluateAcquisition } from '@/engine/financial/ma';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { fmtPct, fmtNum } from '@/lib/format';
 import { KpiCard } from '@/components/shared/KpiCard';
+import { ChartShell } from '@/components/charts/ChartShell';
+import { CHART_NEG, CHART_POS, COLORS } from '@/lib/chart-colors';
 
 export default function MAPage() {
   usePageTitle('M&A — Acquisition Evaluation');
@@ -139,12 +145,72 @@ export default function MAPage() {
         </div>
       </div>
 
+      {/* Deal value bridge — components of acquisition price + deal NPV */}
+      <div className="border border-border bg-white p-4">
+        <h3 className="text-body font-semibold text-text-primary mb-2">
+          Acquisition value bridge
+          <span className="text-caption text-text-muted ml-2">(USD M)</span>
+        </h3>
+        <ChartShell height={240}>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart
+              data={[
+                { name: 'Target equity', value: (result.targetStandaloneEquityValue as number) / 1e6, kind: 'pos' },
+                { name: 'Synergies', value: (result.synergiesValue as number) / 1e6, kind: 'pos' },
+                { name: 'Control premium', value: -(result.controlPremium as number) / 1e6, kind: 'neg' },
+                { name: 'Deal NPV (acq.)', value: (result.dealNpvToAcquirer as number) / 1e6, kind: (result.dealNpvToAcquirer as number) >= 0 ? 'pos' : 'neg' },
+              ]}
+              margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
+              <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
+              <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, 'Value']} contentStyle={{ fontSize: 11 }} />
+              <ReferenceLine y={0} stroke={COLORS.textSecondary} />
+              <Bar dataKey="value">
+                {(['pos', 'pos', 'neg', 'pos'] as const).map((kind, idx) => (
+                  <Cell key={idx} fill={kind === 'pos' ? CHART_POS : CHART_NEG} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartShell>
+      </div>
+
+      {/* Cashflow comparison — target vs synergies trajectory */}
+      <div className="border border-border bg-white p-4">
+        <h3 className="text-body font-semibold text-text-primary mb-2">
+          Cashflow trajectory: target vs net synergies
+        </h3>
+        <ChartShell height={240}>
+          <ResponsiveContainer width="100%" height={240}>
+            <LineChart
+              data={Array.from({ length: horizonYears }, (_, i) => ({
+                year: `Y${i + 1}`,
+                target: targetAnnualCf,
+                netSynergies: synergyAnnual - (i === 0 ? integrationCost : 0),
+              }))}
+              margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
+              <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
+              <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
+              <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Line type="monotone" dataKey="target" stroke={COLORS.petrol} strokeWidth={2} name="Target NCF" dot={false} />
+              <Line type="monotone" dataKey="netSynergies" stroke={CHART_POS} strokeWidth={2} name="Net synergies (after integration cost)" dot={false} />
+              <ReferenceLine y={0} stroke={COLORS.textSecondary} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartShell>
+      </div>
+
       <div className="text-caption text-text-muted">
         <strong>Phase 1b SAC delivery:</strong> SAC Multi-Action <code>MA_AcquisitionDCF</code> with
         target-cashflow upload + scenario layering. Engine basis: <code>engine/financial/ma.ts</code>.
       </div>
       <div className="text-xs text-text-muted">
-        Sample iteration count: {fmtNum(horizonYears)} years.
+        Horizon: {fmtNum(horizonYears)} years.
       </div>
     </div>
   );
