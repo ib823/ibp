@@ -63,13 +63,20 @@ export const CHART_CATEGORICAL: readonly string[] = [
   COLORS.admin,
 ];
 
-/** Sensitivity variable → consistent color across all charts. */
+/** Sensitivity variable → consistent color across all charts.
+ *  Phase 1+ classic IOC variables; later additions reuse the palette. */
 export const VARIABLE_COLORS: Record<SensitivityVariable, string> = {
   oilPrice: COLORS.success,
   gasPrice: COLORS.petrol,
   production: COLORS.amber,
   capex: COLORS.danger,
   opex: COLORS.admin,
+  fx: '#0EA5E9',          // sky — Bank Negara reference rate (D4/D36)
+  discountRate: '#8B5CF6', // violet — WACC-style (D38)
+  pitaRate: '#EF4444',     // red — fiscal pressure (D38)
+  royaltyRate: '#F59E0B',  // amber-strong — fiscal floor
+  sarawakSstRate: '#84CC16', // lime — Sarawak-specific (D1)
+  reserves: '#06B6D4',     // teal — PRMS uncertainty (D40)
 };
 
 /** Business sector → color (used in HierarchyBar). */

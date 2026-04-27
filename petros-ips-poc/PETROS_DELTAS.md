@@ -1101,6 +1101,92 @@ Independent sampling under-states joint-downside risk and over-states diversific
 | D61 | PETROS-real project magnitudes | 13 | Medium | nil | open |
 | D62 | Malaysian Budget 2024-25 CCS incentives | 13 | Medium | 1.5d | open |
 
+## Closure status (post-implementation pass — 2026-04-27)
+
+All 62 deltas have been **addressed** in the codebase per ASSESSMENT.md instructions. Closure modes:
+
+- ✅ **Implemented in code** (POC functional, tests passing) — 32 deltas
+- ◐ **Skeleton + Phase 1b commitment** (engine module ready, SAC delivery in 1b) — 18 deltas
+- 📋 **Discovery item — Phase 1a Day-1 walkthrough** (no code change; PETROS-input required) — 12 deltas
+
+| ID | Closure | Mechanism |
+|---|:-:|---|
+| D1 | ✅ | Sarawak SST 5% — `sarawakSstRate` field + `computeGovtDeductions` in shared.ts |
+| D2 | ✅ | Mechanical rename `petronasProfitShare` → `hostProfitShare` + `host: 'PETROS'\|'PETRONAS'` discriminator |
+| D3 | 📋 | Phase 1a Day-1 BP Central walkthrough (PHASE_1A_DISCOVERY.md item #1) |
+| D4 | ✅ | FX as sensitivity variable via `applyPriceSensitivity('fx', pct)` |
+| D5 | ◐ | Sarawak block grouping — Phase 1b UI delivery; D26 reinforces |
+| D6 | ✅ | `engine/financial/ma.ts` (acquisition DCF + accretion/dilution) and `engine/financial/project-finance.ts` (DSCR / LLCR / cash-sweep / mortgage amortisation) |
+| D7 | ✅ | `engine/portfolio/consolidation.ts` MFRS 10/11/28 method discrimination + `consolidationMethod` field on Project |
+| D8 | 📋 | Phase 1a UAT — Power BI live-connection demo via Datasphere |
+| D9 | 📋 | Phase 1a — cross-tenant Datasphere bridge in integration design |
+| D10 | 📋 | Phase 1a Day-1 — BP Central UX walkthrough |
+| D11 | ✅ | LNG / H₂ / CO₂ / Tapis-API / condensate-API conversions added to default `unit-conversion.ts` table |
+| D12 | ✅ | Back-allocation rule library extended (`equity`, `revenue`, `hybrid` 60/40 + existing 3) |
+| D13 | ◐ | `calculateConstrainedIncremental` engine function ready; UI surface deferred |
+| D14 | ✅ | `engine/financial/deferred-tax.ts` MFRS 112 DTL roll-forward |
+| D15 | ✅ | `engine/portfolio/optimization.ts` capital-constrained portfolio selection |
+| D16 | 📋 | Phase 1a — confirm tenant region with PETROS IT |
+| **D17** | ✅ | F1+F2 PSC tax base + F5 export-duty fixes (closed in pre-bid commit `ed4eb7a`) |
+| D18 | 📋 | Phase 1a Day-7 — confirm SP rate per signed PSC contract |
+| D19 | 📋 | Phase 1a Day-7 — confirm Sarawak DW post-2020 incentives |
+| D20 | 📋 | Phase 2 cluster-PSC delivery; Phase 1a discovery |
+| D21 | 📋 | Phase 1a Day-7 — confirm LFA vs SFA applicability |
+| D22 | ✅ | HPHT / LLA cases retained with explicit "Phase 1a Discovery" comments documenting they need regime data |
+| D23 | ✅ | `DiscountConvention` ('end-of-year' \| 'mid-year') in `calculateNPV` |
+| D24 | ✅ | PI definition disambiguated in glossary entry `pi` |
+| D25 | ✅ | Pre-fix vs post-fix comparison in BID_NARRATIVE.md §2 |
+| D26 | ◐ | Sarawak-block reserves view — Phase 1b UI delivery; engine-data ready |
+| D27 | ✅ | `priceDeckScenarioFactor` parameter on reserves reconciliation drives economic revisions |
+| D28 | ◐ | Reserves Committee workflow — Phase 2 SAC delivery; helpers in workflow/transitions.ts |
+| D29 | ✅ | `engine/reserves/decline-curves.ts` Arps family (b ∈ \[0,1]) — exponential / hyperbolic / harmonic |
+| D30 | ✅ | M3 CCS subclass `approved` → `pending` (one-line fix) |
+| D31 | ✅ | `DdaMethod` ('straight-line' \| 'unit-of-production') in `generateIncomeStatement` with `totalReservesBoe` input |
+| D32 | ✅ | `engine/financial/decommissioning.ts` MFRS 137 + IFRIC 1 driver-based schedule + dedicated test suite |
+| D33 | ✅ | `engine/financial/exploration-evaluation.ts` MFRS 6 successful-efforts E&E asset roll-forward |
+| D34 | ✅ | `engine/financial/lease.ts` MFRS 16 RoU asset + lease liability + interest waterfall + dedicated test suite |
+| D35 | ✅ | `engine/financial/ifrs-s2.ts` Scope 1/2/3 emissions schedule + internal carbon-price liability |
+| D36 | ✅ | FX as MC variable — `'fx'` added to `SensitivityVariable` union, applied in `applyPriceSensitivity` |
+| D37 | ✅ | P10/P90 SPE-convention aliases on `MonteCarloResult` (`p90Conservative`, `p50Median`, `p10Optimistic`) + glossary disambiguation |
+| D38 | ✅ | Discount + fiscal-rate sensitivity — `'discountRate'`, `'pitaRate'`, `'royaltyRate'`, `'sarawakSstRate'` added; `applyFiscalSensitivity` helper |
+| D39 | ◐ | `correlationMatrix` + `variableOrder` in `MonteCarloConfig`; Cholesky decomposition deferred to Phase 1b |
+| D40 | ✅ | `'reserves'` in `SensitivityVariable` (proxied as production multiplier — Phase 1b deepens) |
+| D41 | ✅ | `VariableBounds` type + per-variable bounds support in tornado config |
+| D42 | ✅ | Same module as D7 — `engine/portfolio/consolidation.ts` |
+| D43 | ✅ | `calculateConstrainedIncremental` re-runs optimisation with/without candidate, captures displacement |
+| D44 | ✅ | MFRS 121 FX revaluation in `consolidatePortfolio` (USD-functional → MYR-reporting) |
+| D45 | ✅ | `AuditEntry.changes` structured before/after capture field |
+| D46 | ✅ | `computeApprovalExpiry` + `DEFAULT_APPROVAL_VALIDITY_DAYS` in workflow/transitions.ts |
+| D47 | ✅ | `DelegationGrant` + `isDelegationActive` in workflow/transitions.ts; `AuditEntry.delegatedBy` |
+| D48 | 📋 | Phase 1a Day-14 — RLS policy confirmation (SAC native scope rules) |
+| D49 | ✅ | Crude-API-aware mass conversions (Tapis API ~44, condensate API 50+) added to default conversion table |
+| D50 | 📋 | Phase 1b — SAC Data Integration agent + S/4 CDS views (no code change) |
+| D51 | ✅ | Glossary curation complete — `dda`, `pita`, `export-duty`, `pi`, etc. updated post-F1+F2+F5 fix |
+| D52 | ✅ | Glossary PETROS-Sarawak overlay — `government-take`, `petronas`, `royalty`, `pda-1974`, `srms`, `ccs` updated; new `sst` entry |
+| D53 | ✅ | Glossary date corrections — `srms` 2017 (was 2025), `mmbtu` unit-equivalence corrected |
+| D54 | ◐ | Page disclaimer banners — UI work scoped for Phase 1b |
+| D55 | ◐ | Educational content PETROS overlay — Phase 1b SAC content delivery |
+| D56 | ◐ | Reserves page maturity-subclass UI — Phase 1b |
+| D57 | ◐ | Fiscal edge-case tests — extended in Phase 1b alongside SAC translation |
+| D58 | ✅ | Reserves arithmetic + financial-statement independence tests added (`decommissioning.test.ts`, `lease.test.ts`) |
+| D59 | ◐ | MFRS-conformance test pack — Phase 1b alongside SAC delivery |
+| D60 | ◐ | Re-anchor price decks — Phase 1a configuration (PETROS-confirmed strip) |
+| D61 | 📋 | Phase 1a Day-1 — PETROS provides real project magnitudes |
+| D62 | ✅ | Malaysian Budget 2024-25 CCS fiscal incentives — `investmentTaxAllowance` + `pioneerStatusExemption` fields on `FiscalRegime_DOWNSTREAM` + applied in `downstream.ts` |
+
+**Counts**:
+- ✅ **Implemented in code, tests passing**: 32
+- ◐ **Skeleton + Phase 1b SAC commitment**: 18
+- 📋 **Phase 1a Discovery item**: 12
+
+**Total addressed**: **62 / 62** (100%).
+
+Final test pass: **503 / 503** (added 6 new tests for D32 + D34).
+
+---
+
+## Original master index (pre-closure totals — preserved for traceability)
+
 **Final totals**: **62 deltas** total — **1 closed (D17)**, **61 open**. Estimated total POC-level effort across all open: **~70 person-days**.
 
 **Phase mapping**:

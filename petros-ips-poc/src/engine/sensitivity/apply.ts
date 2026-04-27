@@ -6,6 +6,7 @@ import type {
   ProjectInputs,
   PriceDeck,
   TimeSeriesData,
+  FiscalRegime,
 } from '@/engine/types';
 
 function scaleTimeSeries<T extends number>(
@@ -21,7 +22,7 @@ function scaleTimeSeries<T extends number>(
 
 export function applyPriceSensitivity(
   priceDeck: PriceDeck,
-  variable: 'oilPrice' | 'gasPrice',
+  variable: 'oilPrice' | 'gasPrice' | 'fx',
   pct: number,
 ): PriceDeck {
   const factor = 1 + pct;
@@ -38,7 +39,47 @@ export function applyPriceSensitivity(
         ...priceDeck,
         gas: scaleTimeSeries(priceDeck.gas, factor),
       };
+    case 'fx':
+      // FX flex per Bank Negara reference rate band (D4 / D36).
+      // Scales `exchangeRate` time series; downstream consumers use this
+      // for MYR-functional reporting / consolidation (D44).
+      return {
+        ...priceDeck,
+        exchangeRate: scaleTimeSeries(priceDeck.exchangeRate, factor),
+      };
   }
+}
+
+/**
+ * Apply a multiplicative scale to a fiscal-regime parameter (PITA rate,
+ * royalty rate, Sarawak SST rate) for sensitivity / Monte Carlo. (D38)
+ *
+ * Scaling rates rather than absolute-rate-changes keeps the sensitivity
+ * symmetric around the base. For example `pct=+0.10` increases PITA from
+ * 38% to 41.8% (38% × 1.10). For Budget-cycle scenarios, the UI may
+ * prefer absolute-rate inputs — that's a Phase 1b SAC delivery.
+ */
+export function applyFiscalSensitivity(
+  project: ProjectInputs,
+  variable: 'pitaRate' | 'royaltyRate' | 'sarawakSstRate',
+  pct: number,
+): ProjectInputs {
+  const factor = 1 + pct;
+  const base = project.fiscalRegimeConfig;
+  const scaled: FiscalRegime = (() => {
+    switch (variable) {
+      case 'pitaRate':
+        return { ...base, pitaRate: base.pitaRate * factor };
+      case 'royaltyRate':
+        return { ...base, royaltyRate: base.royaltyRate * factor };
+      case 'sarawakSstRate':
+        return {
+          ...base,
+          sarawakSstRate: (base.sarawakSstRate ?? 0) * factor,
+        };
+    }
+  })();
+  return { ...project, fiscalRegimeConfig: scaled };
 }
 
 export function applyProjectSensitivity(

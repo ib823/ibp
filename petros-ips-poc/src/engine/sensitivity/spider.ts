@@ -10,7 +10,7 @@ import type {
 } from '@/engine/types';
 import { usd } from '@/engine/fiscal/shared';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
-import { applyPriceSensitivity, applyProjectSensitivity } from './apply';
+import { applyPriceSensitivity, applyProjectSensitivity, applyFiscalSensitivity } from './apply';
 
 export interface SpiderPoint {
   readonly percentChange: number;
@@ -48,11 +48,21 @@ export function calculateSpider(
       let modifiedProject = project;
       let modifiedPriceDeck = priceDeck;
 
-      if (variable === 'oilPrice' || variable === 'gasPrice') {
+      if (variable === 'oilPrice' || variable === 'gasPrice' || variable === 'fx') {
         modifiedPriceDeck = applyPriceSensitivity(priceDeck, variable, pct);
-      } else {
+      } else if (variable === 'production' || variable === 'capex' || variable === 'opex') {
         modifiedProject = applyProjectSensitivity(project, variable, pct);
+      } else if (
+        variable === 'pitaRate' ||
+        variable === 'royaltyRate' ||
+        variable === 'sarawakSstRate'
+      ) {
+        modifiedProject = applyFiscalSensitivity(project, variable, pct);
+      } else if (variable === 'reserves') {
+        // Reserves uncertainty proxied as production scaling (D40).
+        modifiedProject = applyProjectSensitivity(project, 'production', pct);
       }
+      // discountRate handled at calculateProjectEconomics call site, not here.
 
       const result = calculateProjectEconomics(modifiedProject, modifiedPriceDeck);
       points.push({

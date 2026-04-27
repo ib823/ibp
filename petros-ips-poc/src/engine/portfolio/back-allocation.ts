@@ -7,7 +7,22 @@ import type {
   EconomicsResult,
 } from '@/engine/types';
 
-export type AllocationKey = 'npv' | 'capex' | 'production';
+/** Allocation drivers for portfolio-to-project back-allocation (D12).
+ *  - `npv`        : weight by absolute NPV
+ *  - `capex`      : weight by total CAPEX
+ *  - `production` : weight by cumulative BOE production
+ *  - `equity`     : weight by equity share
+ *  - `revenue`    : weight by total revenue (proxy for activity level)
+ *  - `headcount`  : weight by project headcount (requires extension)
+ *  - `hybrid`     : 60% revenue + 40% capex (sample blended rule)
+ */
+export type AllocationKey =
+  | 'npv'
+  | 'capex'
+  | 'production'
+  | 'equity'
+  | 'revenue'
+  | 'hybrid';
 
 /**
  * Distribute a portfolio-level number down to projects proportionally.
@@ -42,6 +57,16 @@ export function backAllocate(
         value = lastCf?.cumulativeProduction ?? 0;
         break;
       }
+      case 'equity':
+        value = proj.project.equityShare;
+        break;
+      case 'revenue':
+        value = result.totalRevenue as number;
+        break;
+      case 'hybrid':
+        // 60% revenue + 40% CAPEX as a sample blended rule.
+        value = 0.60 * (result.totalRevenue as number) + 0.40 * (result.totalCapex as number);
+        break;
     }
 
     projectValues.set(proj.project.id, value);

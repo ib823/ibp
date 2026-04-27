@@ -65,7 +65,16 @@ export function calculateDownstream(inputs: DownstreamInputs): YearlyCashflow[] 
     const capitalAllowance = depreciation.computeAllowance();
 
     // Taxable income = revenue - opex - depreciation
-    const taxableIncome = totalRevenue - cost.totalOpex - cost.abandonmentCost - capitalAllowance;
+    // Apply Investment Tax Allowance (D62 / Malaysian Budget 2024-2025):
+    // ITA reduces taxable income by `investmentTaxAllowance × yearCapex`,
+    // recoverable up to 70% of statutory income (typical Malaysian limit).
+    // Pioneer Status: exempts a fraction of taxable income from tax.
+    const ita = (fiscalConfig.investmentTaxAllowance || 0) * cost.totalCapex;
+    const itaCap = Math.max(0, totalRevenue - cost.totalOpex - cost.abandonmentCost - capitalAllowance) * 0.70;
+    const itaApplied = Math.min(ita, itaCap);
+    const taxableIncomePreExempt = totalRevenue - cost.totalOpex - cost.abandonmentCost - capitalAllowance - itaApplied;
+    const pioneerExemption = (fiscalConfig.pioneerStatusExemption || 0);
+    const taxableIncome = Math.max(0, taxableIncomePreExempt) * (1 - pioneerExemption);
     const tax = Math.max(0, taxableIncome * fiscalConfig.taxRate);
 
     // NCF = revenue - all costs - tax

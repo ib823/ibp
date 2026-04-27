@@ -121,3 +121,61 @@ export function availableActions(status: DataStatus): WorkflowAction[] {
     default:          return [];
   }
 }
+
+
+// ── Approval Expiry (D46) ────────────────────────────────────────────
+//
+// Approved planning versions remain valid for a fixed period (default 365
+// days, per typical Bursa internal-controls / annual-review cycle). After
+// expiry, the version must be re-submitted and re-approved before use in
+// production planning. Phase 1a calibration of validity period.
+
+export const DEFAULT_APPROVAL_VALIDITY_DAYS = 365;
+
+export interface ApprovalExpiryStatus {
+  readonly approved: boolean;
+  readonly expiresAt: string | null; // ISO date
+  readonly daysToExpiry: number | null;
+  readonly requiresReApproval: boolean;
+}
+
+export function computeApprovalExpiry(
+  approvedAt: string | undefined,
+  validityDays: number = DEFAULT_APPROVAL_VALIDITY_DAYS,
+  now: Date = new Date(),
+): ApprovalExpiryStatus {
+  if (!approvedAt) {
+    return { approved: false, expiresAt: null, daysToExpiry: null, requiresReApproval: false };
+  }
+  const approvedTs = new Date(approvedAt).getTime();
+  const expiryTs = approvedTs + validityDays * 24 * 60 * 60 * 1000;
+  const expiresAt = new Date(expiryTs).toISOString();
+  const daysToExpiry = Math.floor((expiryTs - now.getTime()) / (24 * 60 * 60 * 1000));
+  return {
+    approved: true,
+    expiresAt,
+    daysToExpiry,
+    requiresReApproval: daysToExpiry < 0,
+  };
+}
+
+// ── Delegation (D47) ─────────────────────────────────────────────────
+//
+// When an approver is on leave or unavailable, capability can be delegated
+// to another user with explicit start/end dates. The SoD guard still
+// honours the delegating principal's identity for segregation purposes —
+// a delegate cannot approve a version submitted by their principal.
+
+export interface DelegationGrant {
+  readonly delegateUserId: string;
+  readonly principalUserId: string;
+  readonly capability: Capability;
+  readonly effectiveFrom: string;  // ISO date
+  readonly expiresAt: string;      // ISO date
+  readonly reason: string;
+}
+
+export function isDelegationActive(grant: DelegationGrant, now: Date = new Date()): boolean {
+  const t = now.getTime();
+  return new Date(grant.effectiveFrom).getTime() <= t && new Date(grant.expiresAt).getTime() > t;
+}

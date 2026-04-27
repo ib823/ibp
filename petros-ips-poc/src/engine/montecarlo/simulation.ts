@@ -120,14 +120,32 @@ export function runMonteCarlo(
   const npvValues: number[] = [];
 
   for (let i = 0; i < config.iterations; i++) {
-    // Sample factors for each variable
-    const factors: Record<SensitivityVariable, number> = {
-      oilPrice: sampleFactor(prng, config.distributions.oilPrice),
-      gasPrice: sampleFactor(prng, config.distributions.gasPrice),
-      production: sampleFactor(prng, config.distributions.production),
-      capex: sampleFactor(prng, config.distributions.capex),
-      opex: sampleFactor(prng, config.distributions.opex),
+    // Sample factors for each variable. Missing distributions default to
+    // factor = 1 (no change) — supports the `Partial` config shape.
+    const sample = (v: SensitivityVariable): number => {
+      const dist = config.distributions[v];
+      return dist ? sampleFactor(prng, dist) : 1;
     };
+    const factors: Record<SensitivityVariable, number> = {
+      oilPrice: sample('oilPrice'),
+      gasPrice: sample('gasPrice'),
+      production: sample('production'),
+      capex: sample('capex'),
+      opex: sample('opex'),
+      // New variables (D36/D38/D40) — sampled when configured, no-op otherwise
+      fx: sample('fx'),
+      discountRate: sample('discountRate'),
+      pitaRate: sample('pitaRate'),
+      royaltyRate: sample('royaltyRate'),
+      sarawakSstRate: sample('sarawakSstRate'),
+      reserves: sample('reserves'),
+    };
+
+    // Note: correlation-matrix application (D39) is structured in the
+    // config shape (`config.correlationMatrix` + `config.variableOrder`).
+    // Cholesky decomposition for correlated normals is the Phase 1b SAC
+    // delivery. Independent sampling is the POC default.
+    void config.correlationMatrix; void config.variableOrder;
 
     const modified = applyFactors(project, priceDeck, factors);
     const result = calculateProjectEconomics(modified.project, modified.priceDeck);

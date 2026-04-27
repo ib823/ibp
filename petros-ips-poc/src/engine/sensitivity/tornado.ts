@@ -11,7 +11,7 @@ import type {
 } from '@/engine/types';
 import { usd } from '@/engine/fiscal/shared';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
-import { applyPriceSensitivity, applyProjectSensitivity } from './apply';
+import { applyPriceSensitivity, applyProjectSensitivity, applyFiscalSensitivity } from './apply';
 
 const DEFAULT_VARIABLES: SensitivityVariable[] = [
   'oilPrice', 'gasPrice', 'production', 'capex', 'opex',
@@ -85,6 +85,7 @@ function applySensitivity(
   switch (variable) {
     case 'oilPrice':
     case 'gasPrice':
+    case 'fx':
       return {
         modifiedProject: project,
         modifiedPriceDeck: applyPriceSensitivity(priceDeck, variable, pct),
@@ -96,5 +97,24 @@ function applySensitivity(
         modifiedProject: applyProjectSensitivity(project, variable, pct),
         modifiedPriceDeck: priceDeck,
       };
+    case 'pitaRate':
+    case 'royaltyRate':
+    case 'sarawakSstRate':
+      return {
+        modifiedProject: applyFiscalSensitivity(project, variable, pct),
+        modifiedPriceDeck: priceDeck,
+      };
+    case 'discountRate':
+    case 'reserves':
+      // discountRate sensitivity is applied at calculateProjectEconomics
+      // call site (the discount-rate argument), not as an input mutation.
+      // reserves sensitivity scales production as a proxy for reserves
+      // uncertainty (Phase 1b SAC delivery deepens this — D40).
+      return variable === 'reserves'
+        ? {
+            modifiedProject: applyProjectSensitivity(project, 'production', pct),
+            modifiedPriceDeck: priceDeck,
+          }
+        : { modifiedProject: project, modifiedPriceDeck: priceDeck };
   }
 }

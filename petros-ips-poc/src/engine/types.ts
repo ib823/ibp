@@ -120,6 +120,15 @@ export interface FiscalRegime_RSC extends FiscalRegimeBase {
 export interface FiscalRegime_DOWNSTREAM extends FiscalRegimeBase {
   readonly type: 'DOWNSTREAM';
   readonly taxRate: number; // default 0.24
+  /** Investment Tax Allowance (ITA) — Malaysian Budget 2024-2025 introduced
+   *  ITA for qualifying CCS / green-tech projects. Reduces effective tax via
+   *  capital-allowance-style deduction at the eligible-investment rate.
+   *  Default 0; set 0.60 (60% of qualifying capex) for approved CCS projects. */
+  readonly investmentTaxAllowance?: number;
+  /** Pioneer Status — alternative to ITA. Exempts a fraction of statutory
+   *  income from tax for a fixed period. Default 0; set 0.70 (70% exempt)
+   *  for Pioneer Status grantees. (D62) */
+  readonly pioneerStatusExemption?: number;
 }
 
 export type FiscalRegime =
@@ -150,6 +159,13 @@ export type ProjectPhase =
   | 'production'
   | 'abandonment';
 
+/** Consolidation method per MFRS 10 / 11 / 28 (D7/D42).
+ *  - 'full'         — control / subsidiary (>50% control + power); 100% line-by-line
+ *  - 'proportional' — joint operation; equity share line-by-line (POC default)
+ *  - 'equity'       — significant influence / associate (20-50%); single-line equity-method
+ *  Defaults to 'proportional' to preserve backward compatibility. */
+export type ConsolidationMethod = 'full' | 'proportional' | 'equity';
+
 export interface Project {
   readonly id: string;
   readonly name: string;
@@ -163,6 +179,11 @@ export interface Project {
   readonly startYear: number;
   readonly endYear: number;
   readonly equityShare: number; // 0-1
+  /** MFRS 10/11/28 consolidation method. Default 'proportional'. (D42) */
+  readonly consolidationMethod?: ConsolidationMethod;
+  /** Functional currency. Default 'USD'. Affects MFRS 121 translation
+   *  during Group consolidation (D44). */
+  readonly functionalCurrency?: 'USD' | 'MYR';
 }
 
 export interface ProductionProfile {
@@ -284,12 +305,32 @@ export interface EconomicsResult {
 
 // ── Sensitivity Types ─────────────────────────────────────────────────
 
+/** Variables available for sensitivity / Monte Carlo. The first 5 are the
+ *  classic IOC tornado set. The additional variables address PETROS-specific
+ *  asks: FX flex (D4/D36 — Bank Negara reference rate band), discount-rate
+ *  sensitivity for capital-allocation defence (D38), fiscal-rate sensitivity
+ *  for Budget-cycle scenarios (D38), reserves uncertainty linked to PRMS
+ *  P10/P50/P90 bands (D40). */
 export type SensitivityVariable =
   | 'oilPrice'
   | 'gasPrice'
   | 'production'
   | 'capex'
-  | 'opex';
+  | 'opex'
+  | 'fx'
+  | 'discountRate'
+  | 'pitaRate'
+  | 'royaltyRate'
+  | 'sarawakSstRate'
+  | 'reserves';
+
+/** Per-variable asymmetric bound. `lowPct` is typically negative, `highPct`
+ *  positive. Defaults to ±30% for each variable; PETROS-specific overrides
+ *  applied via the tornado config in Phase 1a. (D41) */
+export interface VariableBounds {
+  readonly lowPct: number;
+  readonly highPct: number;
+}
 
 export interface TornadoDataPoint {
   readonly variable: SensitivityVariable;
@@ -331,7 +372,15 @@ export interface LognormalParams {
 export interface MonteCarloConfig {
   readonly iterations: number;
   readonly seed: string;
-  readonly distributions: Record<SensitivityVariable, DistributionConfig>;
+  readonly distributions: Partial<Record<SensitivityVariable, DistributionConfig>>;
+  /** Optional correlation matrix between variables (D39).
+   *  Square matrix with size = number of variables sampled. Entry [i][j]
+   *  is Pearson correlation between variable i and j. Identity matrix
+   *  (independent sampling) used when omitted. Cholesky decomposition
+   *  applied to normal-distributed variables. */
+  readonly correlationMatrix?: ReadonlyArray<ReadonlyArray<number>>;
+  /** Variables to sample, in order matching `correlationMatrix` rows. */
+  readonly variableOrder?: readonly SensitivityVariable[];
 }
 
 export interface HistogramBin {

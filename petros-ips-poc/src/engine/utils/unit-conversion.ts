@@ -37,6 +37,19 @@ export const DEFAULT_CONVERSIONS: readonly UnitConversion[] = [
 
   // BOE equivalence
   { id: 'mscf-boe', fromUnit: 'Mscf', toUnit: 'boe', factor: 1 / 6, category: 'energy', isDefault: true, description: 'Thousand SCF Gas to Barrel Oil Equivalent (6:1 energy basis)' },
+
+  // LNG / Hydrogen / CO2 — PETROS strategic units (D11)
+  { id: 'tonne-lng-mmbtu',  fromUnit: 'tonne LNG', toUnit: 'MMBtu',     factor: 52.0,    category: 'energy', isDefault: true, description: 'Tonne LNG to MMBtu (52 MMBtu/tonne typical)' },
+  { id: 'mt-lng-bcf',       fromUnit: 'MT LNG',   toUnit: 'Bcf',       factor: 49.3,    category: 'volume_gas', isDefault: true, description: 'Million tonnes LNG to Bcf (49.3 Bcf/MT LNG)' },
+  { id: 'kg-h2-mmbtu',      fromUnit: 'kg H2',    toUnit: 'MMBtu',     factor: 0.114,   category: 'energy', isDefault: true, description: 'Kilogram hydrogen to MMBtu (LHV)' },
+  { id: 'tonne-co2-mscf',   fromUnit: 'tonne CO2', toUnit: 'Mscf-CO2', factor: 18.92,   category: 'mass', isDefault: true, description: 'Tonne CO2 to thousand cubic feet at standard conditions' },
+  { id: 'mt-co2-mmt',       fromUnit: 'MT CO2',   toUnit: 'MMT CO2',   factor: 1.0,     category: 'mass', isDefault: true, description: 'Million tonnes CO2 (alias)' },
+
+  // Crude-API-specific bbl-tonne conversions (D49). The standard 0.1364 t/bbl
+  // assumes API 35 (medium crude). Sarawak Tapis is API ~44, condensate API
+  // 50+. Lighter crudes have lower kg/bbl: Tapis ≈ 0.130; Condensate ≈ 0.118.
+  { id: 'bbl-tonne-tapis',     fromUnit: 'bbl Tapis',     toUnit: 'tonne', factor: 0.130,  category: 'mass', isDefault: true, description: 'Sarawak Tapis crude (API ~44) to tonnes' },
+  { id: 'bbl-tonne-condensate', fromUnit: 'bbl condensate', toUnit: 'tonne', factor: 0.118, category: 'mass', isDefault: true, description: 'Sarawak condensate (API 50+) to tonnes' },
 ];
 
 // ── Conversion functions ───────────────────────────────────────────────

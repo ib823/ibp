@@ -14,6 +14,12 @@ const VARIABLE_LABELS: Record<SensitivityVariable, string> = {
   production: 'Production',
   capex: 'CAPEX',
   opex: 'OPEX',
+  fx: 'USD/MYR FX',
+  discountRate: 'Discount Rate',
+  pitaRate: 'PITA Rate',
+  royaltyRate: 'Royalty Rate',
+  sarawakSstRate: 'Sarawak SST',
+  reserves: 'Reserves (P10/P50/P90)',
 };
 
 export function TornadoChart({ result }: TornadoChartProps) {

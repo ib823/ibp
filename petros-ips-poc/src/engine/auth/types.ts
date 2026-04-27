@@ -62,6 +62,16 @@ export interface AuditEntry {
   readonly targetId: string;
   readonly targetLabel: string;
   readonly detail?: string;
+  /** Structured before/after value capture for compliance-grade audit (D45).
+   *  Each entry is a field-level mutation: `{ field: 'capex', from, to }`. */
+  readonly changes?: ReadonlyArray<{
+    readonly field: string;
+    readonly from: number | string | null;
+    readonly to: number | string | null;
+  }>;
+  /** Optional delegated-by — if the actor is acting under delegation from
+   *  another user (D47), records the principal. */
+  readonly delegatedBy?: string;
 }
 
 // ── Role capability matrix ───────────────────────────────────────────
