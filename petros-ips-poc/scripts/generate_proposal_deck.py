@@ -261,15 +261,29 @@ def render_runs_into_paragraph(p, text, base_size=11, base_color=TEXT_DARK):
 # ─────────────────────────────────────────────────────────────────────
 
 def strip_existing_36_to_84(prs):
-    """Remove slides 36-84 (1-indexed) from the template before
-    appending new ones. Operates on OOXML directly because python-pptx
-    doesn't expose a clean delete-slide API."""
+    """Remove slides 36-84 (1-indexed) from the template before appending
+    new ones.  Cleanly drops both the sldIdLst entry AND the underlying
+    relationship, so the saved file has no orphan slide parts.
+
+    Earlier versions of this function only removed the sldIdLst entry —
+    that left 49 orphan slide XML files in the zip + 49 dangling rels in
+    presentation.xml.rels.  Strict PowerPoint validators (and the file-
+    repair dialog) flag that as content corruption."""
+    rels_ns = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
     sldIdLst = prs.slides._sldIdLst
     sld_ids = list(sldIdLst)
     to_delete = [(i, e) for i, e in enumerate(sld_ids) if 35 <= i <= 83]
     if not to_delete:
         return 0
     for idx, elem in reversed(to_delete):
+        rId = elem.attrib.get(f"{rels_ns}id")
+        # Drop the relationship from presentation part; the orphan slide
+        # part is then GC-eligible and python-pptx omits it on save.
+        if rId:
+            try:
+                prs.part.drop_rel(rId)
+            except Exception:
+                pass
         sldIdLst.remove(elem)
     return len(to_delete)
 
