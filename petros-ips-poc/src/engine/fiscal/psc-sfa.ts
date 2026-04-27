@@ -46,7 +46,7 @@ export function calculatePscSfa(inputs: PscSfaInputs): YearlyCashflow[] {
     const yearIndex = year - startYear;
 
     const rev = computeRevenue(yearlyProduction, priceDeck, year, equityShare);
-    const govtDed = computeGovtDeductions(rev.totalGrossRevenue, fiscalConfig);
+    const govtDed = computeGovtDeductions(rev, fiscalConfig);
     const { royalty, exportDuty, researchCess, revenueAfterRoyalty } = govtDed;
 
     // Fixed cost recovery ceiling
@@ -64,10 +64,11 @@ export function calculatePscSfa(inputs: PscSfaInputs): YearlyCashflow[] {
 
     const contractorEntitlement = costRecoveryAmount + contractorProfitShare;
 
-    // Tax (reduced PITA for SFA)
+    // Tax (reduced PITA for SFA) — deduct OPEX + ABEX per PITA 1967 Section 33.
+    // See ASSESSMENT.md F1, F2.
     depreciation.addCapex(cost.totalCapex);
     const capitalAllowance = depreciation.computeAllowance();
-    const taxableIncome = contractorEntitlement - capitalAllowance;
+    const taxableIncome = contractorEntitlement - capitalAllowance - cost.totalOpex - cost.abandonmentCost;
     const pitaTax = Math.max(0, taxableIncome * fiscalConfig.pitaRate);
 
     // NCF

@@ -82,9 +82,11 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
 
     const rev = computeRevenue(yearlyProduction, priceDeck, year, equityShare);
 
-    // Government deductions on gross revenue (apply before contractor calc)
+    // Government deductions on gross revenue (apply before contractor calc).
+    // Export duty applies to liquid petroleum (oil + condensate) only —
+    // see ASSESSMENT.md F5.
     const royalty = rev.totalGrossRevenue * fiscalConfig.royaltyRate;
-    const exportDuty = rev.totalGrossRevenue * fiscalConfig.exportDutyRate;
+    const exportDuty = (rev.grossRevenueOil + rev.grossRevenueCond) * fiscalConfig.exportDutyRate;
     const researchCess = rev.totalGrossRevenue * fiscalConfig.researchCessRate;
     const revenueAfterGovtDeductions =
       rev.totalGrossRevenue - royalty - exportDuty - researchCess;

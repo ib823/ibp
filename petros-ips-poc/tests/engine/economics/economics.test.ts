@@ -133,8 +133,11 @@ describe('TEST 5: Full project economics for SK-410 Gas', () => {
     expect(result.irr).toBeLessThan(0.40);
   });
 
-  it('payback is between 3 and 10 years', () => {
-    expect(result.paybackYears).toBeGreaterThan(3);
+  it('payback is between 2 and 10 years', () => {
+    // Post F1+F2 fix (PITA 1967 §33: OPEX + ABEX deductible from tax base),
+    // SK-410 payback improved from ~3.0 yrs to ~2.99 yrs (lower tax → faster
+    // recovery of contractor's net invested capital). See ASSESSMENT.md F1.
+    expect(result.paybackYears).toBeGreaterThan(2);
     expect(result.paybackYears).toBeLessThan(10);
   });
 

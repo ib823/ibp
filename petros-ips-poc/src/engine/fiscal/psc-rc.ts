@@ -121,8 +121,10 @@ export function calculatePscRc(inputs: PscRcInputs): YearlyCashflow[] {
     const totalGrossRevenue = grossRevenueOil + grossRevenueGasCorrected + grossRevenueCond;
 
     // ── STEP 2: Government deductions from gross revenue ────────────
+    // Export duty: liquid petroleum (oil + condensate) only — see shared.ts /
+    // ASSESSMENT.md F5. Gas/LNG zero-rated under Customs Duties Order.
     const royalty = totalGrossRevenue * fiscalConfig.royaltyRate;
-    const exportDuty = totalGrossRevenue * (fiscalConfig.exportDutyRate || 0);
+    const exportDuty = (grossRevenueOil + grossRevenueCond) * (fiscalConfig.exportDutyRate || 0);
     const researchCess = totalGrossRevenue * (fiscalConfig.researchCessRate || 0);
 
     // ── STEP 3: Revenue After Government Takes ───────────────────────
@@ -194,7 +196,11 @@ export function calculatePscRc(inputs: PscRcInputs): YearlyCashflow[] {
       }
     }
 
-    const taxableIncome = contractorEntitlement - capitalAllowance;
+    // Under PITA 1967 Section 33, OPEX and abandonment are deductible expenses
+    // wholly and exclusively incurred in producing gross income. Cost recovery
+    // is a PSC revenue mechanic, distinct from tax-base treatment. Both apply.
+    // See ASSESSMENT.md F1, F2.
+    const taxableIncome = contractorEntitlement - capitalAllowance - totalOpex - abandonmentCost;
     const pitaTax = Math.max(0, taxableIncome * fiscalConfig.pitaRate);
 
     // ── STEP 11: Net Cash Flow ────────────────────────────────────────

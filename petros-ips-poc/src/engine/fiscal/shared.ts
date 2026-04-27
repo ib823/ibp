@@ -94,15 +94,32 @@ export class DepreciationSchedule {
   }
 }
 
-/** Compute government deductions from gross revenue (royalty, export duty, research cess) */
+/** Compute government deductions from gross revenue.
+ *
+ *   Royalty:        applied to total gross petroleum revenue (oil + gas + condensate)
+ *                   per PETRONAS PSC framework.
+ *   Research cess:  applied to total gross petroleum revenue (Petroleum Research Act).
+ *   Export duty:    applied to LIQUID petroleum (oil + condensate) only. LNG / natural
+ *                   gas exports are governed by a separate framework and are not
+ *                   subject to the 10% petroleum export duty under the Customs Duties
+ *                   Order. Applying it uniformly across gas would over-state government
+ *                   take for any gas-weighted project (every Sarawak gas block).
+ *                   See ASSESSMENT.md F5.
+ */
 export function computeGovtDeductions(
-  totalGrossRevenue: number,
+  revenue: {
+    grossRevenueOil: number;
+    grossRevenueGas: number;
+    grossRevenueCond: number;
+    totalGrossRevenue: number;
+  },
   fiscalConfig: { royaltyRate: number; exportDutyRate?: number; researchCessRate?: number },
 ) {
-  const royalty = totalGrossRevenue * fiscalConfig.royaltyRate;
-  const exportDuty = totalGrossRevenue * (fiscalConfig.exportDutyRate || 0);
-  const researchCess = totalGrossRevenue * (fiscalConfig.researchCessRate || 0);
-  const revenueAfterRoyalty = totalGrossRevenue - royalty - exportDuty - researchCess;
+  const royalty = revenue.totalGrossRevenue * fiscalConfig.royaltyRate;
+  // Export duty applies to oil + condensate only (liquid petroleum).
+  const exportDuty = (revenue.grossRevenueOil + revenue.grossRevenueCond) * (fiscalConfig.exportDutyRate || 0);
+  const researchCess = revenue.totalGrossRevenue * (fiscalConfig.researchCessRate || 0);
+  const revenueAfterRoyalty = revenue.totalGrossRevenue - royalty - exportDuty - researchCess;
   return { royalty, exportDuty, researchCess, revenueAfterRoyalty };
 }
 

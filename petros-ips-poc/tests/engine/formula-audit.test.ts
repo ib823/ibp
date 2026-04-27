@@ -397,9 +397,14 @@ describe('SECTION 3: ROYALTY CALCULATION', () => {
 });
 
 describe('SECTION 4: EXPORT DUTY & RESEARCH CESS', () => {
-  it('4.1 Export duty equals 10% of gross revenue for SK-410', () => {
+  it('4.1 Export duty equals 10% of liquid (oil + condensate) revenue for SK-410 — gas zero-rated under Customs Duties Order', () => {
+    // Per Malaysian Customs Duties Order, the 10% petroleum export duty
+    // applies to crude petroleum oil (and condensate as a liquid hydrocarbon).
+    // Natural gas / LNG exports are governed separately. See ASSESSMENT.md F5.
     for (const cashflow of sk410Cashflows) {
-      expectClose(cashflow.exportDuty as number, (cashflow.totalGrossRevenue as number) * 0.10, 0.01);
+      const liquidRevenue =
+        (cashflow.grossRevenueOil as number) + (cashflow.grossRevenueCond as number);
+      expectClose(cashflow.exportDuty as number, liquidRevenue * 0.10, 0.01);
     }
   });
 
@@ -415,9 +420,16 @@ describe('SECTION 4: EXPORT DUTY & RESEARCH CESS', () => {
     }
   });
 
-  it('4.4 Government takes before cost recovery equal 20.5% of gross revenue for PSC projects', () => {
+  it('4.4 Government takes before cost recovery for SK-410 = 10% royalty + 10% export duty (liquids) + 0.5% cess', () => {
+    // After F5 fix (export duty on liquids only):
+    //   total = totalRev * 10.5%  + liquidRev * 10%
+    // For a gas-dominant project like SK-410, the effective rate is well
+    // below the previous 20.5% blanket rate.
     for (const cashflow of sk410Cashflows) {
-      const expected = (cashflow.totalGrossRevenue as number) * 0.205;
+      const totalRev = cashflow.totalGrossRevenue as number;
+      const liquidRev =
+        (cashflow.grossRevenueOil as number) + (cashflow.grossRevenueCond as number);
+      const expected = totalRev * 0.105 + liquidRev * 0.10;
       const actual =
         (cashflow.royalty as number) + (cashflow.exportDuty as number) + (cashflow.researchCess as number);
       expectClose(actual, expected, 0.01);
@@ -609,9 +621,17 @@ describe('SECTION 7: SFA & DEEPWATER REGIMES', () => {
 });
 
 describe('SECTION 8: PITA TAX CALCULATION', () => {
-  it('8.1 PITA equals 38% of positive taxable income for R/C PSC years', () => {
+  it('8.1 PITA equals 38% of positive taxable income for R/C PSC years — PITA 1967 §33: deduct CA + OPEX + ABEX', () => {
+    // Per PITA 1967 Section 33, allowable deductions include OPEX and abandonment
+    // wholly and exclusively incurred in producing gross income, in addition to
+    // capital allowance. See ASSESSMENT.md F1, F2.
     for (const cashflow of sk410Cashflows) {
-      const taxableIncome = cashflow.contractorEntitlement as number - (cashflow.capitalAllowance as number);
+      const yearCosts = computeCosts(SK410_INPUTS.costProfile, cashflow.year);
+      const taxableIncome =
+        (cashflow.contractorEntitlement as number)
+        - (cashflow.capitalAllowance as number)
+        - yearCosts.totalOpex
+        - yearCosts.abandonmentCost;
       const expectedTax = Math.max(0, taxableIncome * 0.38);
       expectClose(cashflow.pitaTax as number, expectedTax, 0.01);
     }
@@ -630,10 +650,17 @@ describe('SECTION 8: PITA TAX CALCULATION', () => {
     }
   });
 
-  it('8.4 After capital allowance exhaustion, taxable income equals full contractor entitlement', () => {
-    const firstExhausted = sk410Cashflows.find((cashflow) => (cashflow.capitalAllowance as number) === 0 && (cashflow.contractorEntitlement as number) > 0)!;
-    expectClose(firstExhausted.taxableIncome as number, firstExhausted.contractorEntitlement as number, 0.01);
-    expectClose(firstExhausted.pitaTax as number, (firstExhausted.contractorEntitlement as number) * 0.38, 0.01);
+  it('8.4 After capital allowance exhaustion, taxable income equals entitlement minus OPEX minus ABEX', () => {
+    // Post F1+F2 fix: even after CA fully amortises, OPEX and abandonment
+    // remain as PITA Section 33 deductible expenses.
+    const firstExhausted = sk410Cashflows.find(
+      (cashflow) => (cashflow.capitalAllowance as number) === 0 && (cashflow.contractorEntitlement as number) > 0,
+    )!;
+    const yearCosts = computeCosts(SK410_INPUTS.costProfile, firstExhausted.year);
+    const expectedTaxable =
+      (firstExhausted.contractorEntitlement as number) - yearCosts.totalOpex - yearCosts.abandonmentCost;
+    expectClose(firstExhausted.taxableIncome as number, expectedTaxable, 0.01);
+    expectClose(firstExhausted.pitaTax as number, Math.max(0, expectedTaxable) * 0.38, 0.01);
   });
 
   it('8.5 SFA uses a 25% PITA rate', () => {
