@@ -126,9 +126,11 @@ export function calculatePscRc(inputs: PscRcInputs): YearlyCashflow[] {
     const royalty = totalGrossRevenue * fiscalConfig.royaltyRate;
     const exportDuty = (grossRevenueOil + grossRevenueCond) * (fiscalConfig.exportDutyRate || 0);
     const researchCess = totalGrossRevenue * (fiscalConfig.researchCessRate || 0);
+    // Sarawak State Sales Tax 5% on petroleum products from 2019 (D1).
+    const sarawakSst = totalGrossRevenue * (fiscalConfig.sarawakSstRate || 0);
 
     // ── STEP 3: Revenue After Government Takes ───────────────────────
-    const revenueAfterRoyalty = totalGrossRevenue - royalty - exportDuty - researchCess;
+    const revenueAfterRoyalty = totalGrossRevenue - royalty - exportDuty - researchCess - sarawakSst;
 
     // ── STEP 4: R/C Index (lagged — uses prior year cumulatives) ──────
     const rcIndex = cumulativeContractorCost > 0
@@ -161,7 +163,7 @@ export function calculatePscRc(inputs: PscRcInputs): YearlyCashflow[] {
     // ── STEP 7: Profit Oil/Gas Split ──────────────────────────────────
     const profitOilGas = Math.max(0, revenueAfterRoyalty - costRecoveryAmount);
     const contractorProfitShare = profitOilGas * tranche.contractorProfitSharePct;
-    const petronasProfitShare = profitOilGas * (1 - tranche.contractorProfitSharePct);
+    const hostProfitShare = profitOilGas * (1 - tranche.contractorProfitSharePct);
 
     // ── STEP 8: Supplementary Payment ─────────────────────────────────
     // Track cumulative production for THV check
@@ -243,13 +245,14 @@ export function calculatePscRc(inputs: PscRcInputs): YearlyCashflow[] {
       royalty: usd(royalty),
       exportDuty: usd(exportDuty),
       researchCess: usd(researchCess),
+      sarawakSst: usd(sarawakSst),
       revenueAfterRoyalty: usd(revenueAfterRoyalty),
       costRecoveryCeiling: usd(costRecoveryCeiling),
       costRecoveryAmount: usd(costRecoveryAmount),
       unrecoveredCostCF: usd(newUnrecoveredCostCF),
       profitOilGas: usd(profitOilGas),
       contractorProfitShare: usd(contractorProfitShare),
-      petronasProfitShare: usd(petronasProfitShare),
+      hostProfitShare: usd(hostProfitShare),
       contractorEntitlement: usd(contractorEntitlement),
       supplementaryPayment: usd(supplementaryPayment),
       taxableIncome: usd(taxableIncome),

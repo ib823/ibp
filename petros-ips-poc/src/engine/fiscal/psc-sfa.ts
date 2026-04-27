@@ -47,7 +47,7 @@ export function calculatePscSfa(inputs: PscSfaInputs): YearlyCashflow[] {
 
     const rev = computeRevenue(yearlyProduction, priceDeck, year, equityShare);
     const govtDed = computeGovtDeductions(rev, fiscalConfig);
-    const { royalty, exportDuty, researchCess, revenueAfterRoyalty } = govtDed;
+    const { royalty, exportDuty, researchCess, sarawakSst, revenueAfterRoyalty } = govtDed;
 
     // Fixed cost recovery ceiling
     const cost = computeCosts(yearlyCosts, year);
@@ -60,7 +60,7 @@ export function calculatePscSfa(inputs: PscSfaInputs): YearlyCashflow[] {
     // Fixed profit split
     const profitOilGas = Math.max(0, revenueAfterRoyalty - costRecoveryAmount);
     const contractorProfitShare = profitOilGas * fiscalConfig.contractorProfitSharePct;
-    const petronasProfitShare = profitOilGas * fiscalConfig.petronasProfitSharePct;
+    const hostProfitShare = profitOilGas * fiscalConfig.hostProfitSharePct;
 
     const contractorEntitlement = costRecoveryAmount + contractorProfitShare;
 
@@ -94,13 +94,14 @@ export function calculatePscSfa(inputs: PscSfaInputs): YearlyCashflow[] {
       royalty: usd(royalty),
       exportDuty: usd(exportDuty),
       researchCess: usd(researchCess),
+      sarawakSst: usd(sarawakSst),
       revenueAfterRoyalty: usd(revenueAfterRoyalty),
       costRecoveryCeiling: usd(costRecoveryCeiling),
       costRecoveryAmount: usd(costRecoveryAmount),
       unrecoveredCostCF: usd(newUnrecoveredCostCF),
       profitOilGas: usd(profitOilGas),
       contractorProfitShare: usd(contractorProfitShare),
-      petronasProfitShare: usd(petronasProfitShare),
+      hostProfitShare: usd(hostProfitShare),
       contractorEntitlement: usd(contractorEntitlement),
       supplementaryPayment: usd(0),
       taxableIncome: usd(taxableIncome),

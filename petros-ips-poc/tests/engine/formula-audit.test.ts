@@ -511,7 +511,7 @@ describe('SECTION 5: R/C PSC COST RECOVERY & PROFIT SPLIT', () => {
       const expectedProfit = Math.max(0, (cashflow.revenueAfterRoyalty as number) - (cashflow.costRecoveryAmount as number));
       expectClose(cashflow.profitOilGas as number, expectedProfit, 0.01);
       expectClose(
-        (cashflow.contractorProfitShare as number) + (cashflow.petronasProfitShare as number),
+        (cashflow.contractorProfitShare as number) + (cashflow.hostProfitShare as number),
         cashflow.profitOilGas as number,
         0.01,
       );
@@ -586,7 +586,7 @@ describe('SECTION 7: SFA & DEEPWATER REGIMES', () => {
       expectClose(cashflow.costRecoveryCeiling as number, (cashflow.revenueAfterRoyalty as number) * 0.80, 0.01);
       if ((cashflow.profitOilGas as number) > 0) {
         expectClose((cashflow.contractorProfitShare as number) / (cashflow.profitOilGas as number), 0.70, TOL_RATIO);
-        expectClose((cashflow.petronasProfitShare as number) / (cashflow.profitOilGas as number), 0.30, TOL_RATIO);
+        expectClose((cashflow.hostProfitShare as number) / (cashflow.profitOilGas as number), 0.30, TOL_RATIO);
       }
     }
   });
@@ -750,7 +750,7 @@ describe('SECTION 9: NCF & ECONOMIC INDICATORS', () => {
         (cashflow.royalty as number) +
         (cashflow.exportDuty as number) +
         (cashflow.researchCess as number) +
-        (cashflow.petronasProfitShare as number) +
+        (cashflow.hostProfitShare as number) +
         (cashflow.supplementaryPayment as number) +
         (cashflow.pitaTax as number),
       0,

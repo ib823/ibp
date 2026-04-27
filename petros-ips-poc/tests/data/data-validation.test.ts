@@ -121,7 +121,7 @@ describe('Fiscal regime configs have valid percentage ranges (0 to 1)', () => {
         for (const tranche of fr.tranches) {
           assertPctRange(tranche.costRecoveryCeilingPct, 'costRecoveryCeilingPct');
           assertPctRange(tranche.contractorProfitSharePct, 'contractorProfitSharePct');
-          assertPctRange(tranche.petronasProfitSharePct, 'petronasProfitSharePct');
+          assertPctRange(tranche.hostProfitSharePct, 'hostProfitSharePct');
         }
       });
     }
@@ -138,7 +138,7 @@ describe('Fiscal regime configs have valid percentage ranges (0 to 1)', () => {
       it(`${key}: SFA shares in [0, 1]`, () => {
         assertPctRange(fr.costRecoveryCeilingPct, 'costRecoveryCeilingPct');
         assertPctRange(fr.contractorProfitSharePct, 'contractorProfitSharePct');
-        assertPctRange(fr.petronasProfitSharePct, 'petronasProfitSharePct');
+        assertPctRange(fr.hostProfitSharePct, 'hostProfitSharePct');
       });
     }
 

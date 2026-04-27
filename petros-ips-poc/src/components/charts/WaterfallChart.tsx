@@ -38,7 +38,7 @@ export function WaterfallChart({ cashflows, fiscalRegimeType }: WaterfallChartPr
     const totalRoyalty = cashflows.reduce((s, cf) => s + (cf.royalty as number), 0);
     const totalExportDuty = cashflows.reduce((s, cf) => s + (cf.exportDuty as number), 0);
     const totalResearchCess = cashflows.reduce((s, cf) => s + (cf.researchCess as number), 0);
-    const totalPetronasShare = cashflows.reduce((s, cf) => s + (cf.petronasProfitShare as number), 0);
+    const totalPetronasShare = cashflows.reduce((s, cf) => s + (cf.hostProfitShare as number), 0);
     const totalSP = cashflows.reduce((s, cf) => s + (cf.supplementaryPayment as number), 0);
     const totalTax = cashflows.reduce((s, cf) => s + (cf.pitaTax as number), 0);
     const totalNcf = cashflows.reduce((s, cf) => s + (cf.netCashFlow as number), 0);

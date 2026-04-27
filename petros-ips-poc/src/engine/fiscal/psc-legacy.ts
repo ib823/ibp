@@ -78,7 +78,7 @@ export function calculatePscLegacy(inputs: PscLegacyInputs): YearlyCashflow[] {
 
     const rev = computeRevenue(yearlyProduction, priceDeck, year, equityShare);
     const govtDed = computeGovtDeductions(rev, fiscalConfig);
-    const { royalty, exportDuty, researchCess, revenueAfterRoyalty } = govtDed;
+    const { royalty, exportDuty, researchCess, sarawakSst, revenueAfterRoyalty } = govtDed;
 
     // Determine cost recovery ceiling as blend of oil vs gas revenue weights
     const oilCondRevenue = rev.grossRevenueOil + rev.grossRevenueCond;
@@ -102,7 +102,7 @@ export function calculatePscLegacy(inputs: PscLegacyInputs): YearlyCashflow[] {
 
     const profitOilGas = Math.max(0, revenueAfterRoyalty - costRecoveryAmount);
     const contractorProfitShare = profitOilGas * contractorSharePct;
-    const petronasProfitShare = profitOilGas * (1 - contractorSharePct);
+    const hostProfitShare = profitOilGas * (1 - contractorSharePct);
 
     const contractorEntitlement = costRecoveryAmount + contractorProfitShare;
 
@@ -135,13 +135,14 @@ export function calculatePscLegacy(inputs: PscLegacyInputs): YearlyCashflow[] {
       royalty: usd(royalty),
       exportDuty: usd(exportDuty),
       researchCess: usd(researchCess),
+      sarawakSst: usd(sarawakSst),
       revenueAfterRoyalty: usd(revenueAfterRoyalty),
       costRecoveryCeiling: usd(costRecoveryCeiling),
       costRecoveryAmount: usd(costRecoveryAmount),
       unrecoveredCostCF: usd(newUnrecoveredCostCF),
       profitOilGas: usd(profitOilGas),
       contractorProfitShare: usd(contractorProfitShare),
-      petronasProfitShare: usd(petronasProfitShare),
+      hostProfitShare: usd(hostProfitShare),
       contractorEntitlement: usd(contractorEntitlement),
       supplementaryPayment: usd(0),
       taxableIncome: usd(taxableIncome),

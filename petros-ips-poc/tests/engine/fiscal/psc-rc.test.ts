@@ -43,11 +43,11 @@ const RC_CONFIG: FiscalRegime_PSC_RC = {
   exportDutyRate: 0.10,
   researchCessRate: 0.005,
   tranches: [
-    { rcFloor: 0, rcCeiling: 1.0, costRecoveryCeilingPct: 0.70, contractorProfitSharePct: 0.70, petronasProfitSharePct: 0.30 },
-    { rcFloor: 1.0, rcCeiling: 1.4, costRecoveryCeilingPct: 0.60, contractorProfitSharePct: 0.60, petronasProfitSharePct: 0.40 },
-    { rcFloor: 1.4, rcCeiling: 2.0, costRecoveryCeilingPct: 0.50, contractorProfitSharePct: 0.50, petronasProfitSharePct: 0.50 },
-    { rcFloor: 2.0, rcCeiling: 2.5, costRecoveryCeilingPct: 0.30, contractorProfitSharePct: 0.30, petronasProfitSharePct: 0.70 },
-    { rcFloor: 2.5, rcCeiling: Infinity, costRecoveryCeilingPct: 0.20, contractorProfitSharePct: 0.20, petronasProfitSharePct: 0.80 },
+    { rcFloor: 0, rcCeiling: 1.0, costRecoveryCeilingPct: 0.70, contractorProfitSharePct: 0.70, hostProfitSharePct: 0.30 },
+    { rcFloor: 1.0, rcCeiling: 1.4, costRecoveryCeilingPct: 0.60, contractorProfitSharePct: 0.60, hostProfitSharePct: 0.40 },
+    { rcFloor: 1.4, rcCeiling: 2.0, costRecoveryCeilingPct: 0.50, contractorProfitSharePct: 0.50, hostProfitSharePct: 0.50 },
+    { rcFloor: 2.0, rcCeiling: 2.5, costRecoveryCeilingPct: 0.30, contractorProfitSharePct: 0.30, hostProfitSharePct: 0.70 },
+    { rcFloor: 2.5, rcCeiling: Infinity, costRecoveryCeilingPct: 0.20, contractorProfitSharePct: 0.20, hostProfitSharePct: 0.80 },
   ],
 };
 

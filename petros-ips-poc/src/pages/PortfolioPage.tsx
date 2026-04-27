@@ -66,7 +66,7 @@ export default function PortfolioPage() {
           (cf.royalty as number) +
           (cf.exportDuty as number) +
           (cf.researchCess as number) +
-          (cf.petronasProfitShare as number) +
+          (cf.hostProfitShare as number) +
           (cf.supplementaryPayment as number) +
           (cf.pitaTax as number),
         0,

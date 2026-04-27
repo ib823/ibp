@@ -61,7 +61,7 @@ export function calculatePscEpt(inputs: PscEptInputs): YearlyCashflow[] {
 
     const rev = computeRevenue(yearlyProduction, priceDeck, year, equityShare);
     const govtDed = computeGovtDeductions(rev, fiscalConfig);
-    const { royalty, exportDuty, researchCess, revenueAfterRoyalty } = govtDed;
+    const { royalty, exportDuty, researchCess, sarawakSst, revenueAfterRoyalty } = govtDed;
 
     // PI (lagged — prior year cumulatives)
     const pi = cumulativeContractorCost > 0
@@ -81,7 +81,7 @@ export function calculatePscEpt(inputs: PscEptInputs): YearlyCashflow[] {
     // Profit split
     const profitOilGas = Math.max(0, revenueAfterRoyalty - costRecoveryAmount);
     const contractorProfitShare = profitOilGas * contractorSharePct;
-    const petronasProfitShare = profitOilGas * (1 - contractorSharePct);
+    const hostProfitShare = profitOilGas * (1 - contractorSharePct);
 
     // No supplementary payment in EPT
     const supplementaryPayment = 0;
@@ -120,13 +120,14 @@ export function calculatePscEpt(inputs: PscEptInputs): YearlyCashflow[] {
       royalty: usd(royalty),
       exportDuty: usd(exportDuty),
       researchCess: usd(researchCess),
+      sarawakSst: usd(sarawakSst),
       revenueAfterRoyalty: usd(revenueAfterRoyalty),
       costRecoveryCeiling: usd(costRecoveryCeiling),
       costRecoveryAmount: usd(costRecoveryAmount),
       unrecoveredCostCF: usd(newUnrecoveredCostCF),
       profitOilGas: usd(profitOilGas),
       contractorProfitShare: usd(contractorProfitShare),
-      petronasProfitShare: usd(petronasProfitShare),
+      hostProfitShare: usd(hostProfitShare),
       contractorEntitlement: usd(contractorEntitlement),
       supplementaryPayment: usd(supplementaryPayment),
       taxableIncome: usd(taxableIncome),

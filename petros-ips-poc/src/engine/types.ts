@@ -35,6 +35,14 @@ interface FiscalRegimeBase {
   readonly pitaRate: number;
   readonly exportDutyRate: number;
   readonly researchCessRate: number;
+  /** Sarawak State Sales Tax rate. 5% under Sarawak State Sales Tax Act 1998
+   *  (enforcement order 2019 onwards) on petroleum products produced in
+   *  Sarawak waters. Default 0 — set 0.05 for Sarawak blocks. (D1) */
+  readonly sarawakSstRate?: number;
+  /** Optional discriminator: 'PETROS' for Sarawak blocks (post-CSA 2020),
+   *  'PETRONAS' for Peninsular Malaysia / Sabah blocks. Drives reporting
+   *  labels and cross-tenant integration paths; does not change maths. (D2) */
+  readonly host?: 'PETROS' | 'PETRONAS';
 }
 
 export interface RCTranche {
@@ -42,7 +50,7 @@ export interface RCTranche {
   readonly rcCeiling: number;
   readonly costRecoveryCeilingPct: number;
   readonly contractorProfitSharePct: number;
-  readonly petronasProfitSharePct: number;
+  readonly hostProfitSharePct: number;
 }
 
 export interface FiscalRegime_PSC_RC extends FiscalRegimeBase {
@@ -63,21 +71,21 @@ export interface FiscalRegime_PSC_SFA extends FiscalRegimeBase {
   readonly type: 'PSC_SFA';
   readonly costRecoveryCeilingPct: number;
   readonly contractorProfitSharePct: number;
-  readonly petronasProfitSharePct: number;
+  readonly hostProfitSharePct: number;
 }
 
 export interface FiscalRegime_PSC_LLA extends FiscalRegimeBase {
   readonly type: 'PSC_LLA';
   readonly costRecoveryCeilingPct: number;
   readonly contractorProfitSharePct: number;
-  readonly petronasProfitSharePct: number;
+  readonly hostProfitSharePct: number;
 }
 
 export interface ProductionTier {
   readonly volumeFloor: number; // bpd
   readonly volumeCeiling: number;
   readonly contractorSharePct: number;
-  readonly petronaSharePct: number;
+  readonly hostSharePct: number;
 }
 
 export interface FiscalRegime_PSC_1976 extends FiscalRegimeBase {
@@ -212,7 +220,10 @@ export interface YearlyCashflow {
   readonly royalty: USD;
   readonly exportDuty: USD;
   readonly researchCess: USD;
-  readonly revenueAfterRoyalty: USD; // net of royalty + export duty + research cess
+  /** Sarawak State Sales Tax (5% on petroleum products from 2019). 0 for
+   *  non-Sarawak blocks. See `data/glossary.ts` 'sst' entry. (D1) */
+  readonly sarawakSst: USD;
+  readonly revenueAfterRoyalty: USD; // net of royalty + export duty + research cess + SST
 
   // Cost recovery
   readonly costRecoveryCeiling: USD;
@@ -222,7 +233,7 @@ export interface YearlyCashflow {
   // Profit split
   readonly profitOilGas: USD;
   readonly contractorProfitShare: USD;
-  readonly petronasProfitShare: USD;
+  readonly hostProfitShare: USD;
   readonly contractorEntitlement: USD;
 
   // Tax
@@ -331,9 +342,18 @@ export interface HistogramBin {
 
 export interface MonteCarloResult {
   readonly npvValues: readonly USD[];
+  /** Statistical convention: 10th percentile from below = LOW NPV.
+   *  Equivalent to SPE PRMS P90 (90% probability of meeting or exceeding). */
   readonly p10: USD;
   readonly p50: USD;
+  /** Statistical convention: 90th percentile from below = HIGH NPV.
+   *  Equivalent to SPE PRMS P10 (10% probability of meeting or exceeding). */
   readonly p90: USD;
+  /** SPE PRMS aliases — same numbers, named per upstream petroleum convention.
+   *  See `data/glossary.ts` entry `p10-p50-p90` for full disambiguation. (D37) */
+  readonly p90Conservative: USD;
+  readonly p50Median: USD;
+  readonly p10Optimistic: USD;
   readonly mean: USD;
   readonly stdDev: number;
   readonly histogram: readonly HistogramBin[];

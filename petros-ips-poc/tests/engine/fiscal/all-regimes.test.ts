@@ -70,7 +70,7 @@ const SFA_CONFIG: FiscalRegime_PSC_SFA = {
   researchCessRate: 0.005,
   costRecoveryCeilingPct: 0.80,
   contractorProfitSharePct: 0.70,
-  petronasProfitSharePct: 0.30,
+  hostProfitSharePct: 0.30,
 };
 
 const LEGACY_1976_CONFIG: FiscalRegime_PSC_1976 = {
@@ -80,9 +80,9 @@ const LEGACY_1976_CONFIG: FiscalRegime_PSC_1976 = {
   exportDutyRate: 0.10,
   researchCessRate: 0.005,
   productionTiers: [
-    { volumeFloor: 0, volumeCeiling: 10000, contractorSharePct: 0.50, petronaSharePct: 0.50 },
-    { volumeFloor: 10000, volumeCeiling: 20000, contractorSharePct: 0.40, petronaSharePct: 0.60 },
-    { volumeFloor: 20000, volumeCeiling: Infinity, contractorSharePct: 0.30, petronaSharePct: 0.70 },
+    { volumeFloor: 0, volumeCeiling: 10000, contractorSharePct: 0.50, hostSharePct: 0.50 },
+    { volumeFloor: 10000, volumeCeiling: 20000, contractorSharePct: 0.40, hostSharePct: 0.60 },
+    { volumeFloor: 20000, volumeCeiling: Infinity, contractorSharePct: 0.30, hostSharePct: 0.70 },
   ],
 };
 
@@ -538,11 +538,11 @@ describe('TEST 7: Dispatcher routes R/C project to R/C engine and EPT project to
     exportDutyRate: 0.10,
     researchCessRate: 0.005,
     tranches: [
-      { rcFloor: 0, rcCeiling: 1.0, costRecoveryCeilingPct: 0.70, contractorProfitSharePct: 0.70, petronasProfitSharePct: 0.30 },
-      { rcFloor: 1.0, rcCeiling: 1.4, costRecoveryCeilingPct: 0.60, contractorProfitSharePct: 0.60, petronasProfitSharePct: 0.40 },
-      { rcFloor: 1.4, rcCeiling: 2.0, costRecoveryCeilingPct: 0.50, contractorProfitSharePct: 0.50, petronasProfitSharePct: 0.50 },
-      { rcFloor: 2.0, rcCeiling: 2.5, costRecoveryCeilingPct: 0.30, contractorProfitSharePct: 0.30, petronasProfitSharePct: 0.70 },
-      { rcFloor: 2.5, rcCeiling: Infinity, costRecoveryCeilingPct: 0.20, contractorProfitSharePct: 0.20, petronasProfitSharePct: 0.80 },
+      { rcFloor: 0, rcCeiling: 1.0, costRecoveryCeilingPct: 0.70, contractorProfitSharePct: 0.70, hostProfitSharePct: 0.30 },
+      { rcFloor: 1.0, rcCeiling: 1.4, costRecoveryCeilingPct: 0.60, contractorProfitSharePct: 0.60, hostProfitSharePct: 0.40 },
+      { rcFloor: 1.4, rcCeiling: 2.0, costRecoveryCeilingPct: 0.50, contractorProfitSharePct: 0.50, hostProfitSharePct: 0.50 },
+      { rcFloor: 2.0, rcCeiling: 2.5, costRecoveryCeilingPct: 0.30, contractorProfitSharePct: 0.30, hostProfitSharePct: 0.70 },
+      { rcFloor: 2.5, rcCeiling: Infinity, costRecoveryCeilingPct: 0.20, contractorProfitSharePct: 0.20, hostProfitSharePct: 0.80 },
     ],
   };
 

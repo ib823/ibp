@@ -19,7 +19,10 @@ export const CO2_STORAGE_RESOURCES: readonly CO2StorageResource[] = [
     bestEstimate: 15,     // MT CO2
     highEstimate: 22,     // MT CO2
     resourceClass: 'contingent',
-    maturitySubclass: 'approved',
+    // Pre-FID development phase (per `data/projects.ts:421`); SRMS
+    // "approved" reserved for projects that have authority approvals
+    // in place. M3 CCS is at "Development Pending" → SRMS pending. (D30)
+    maturitySubclass: 'pending',
   },
 ];
 

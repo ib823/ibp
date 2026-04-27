@@ -151,7 +151,7 @@ export function buildEconomicsWorkbook(
     convert(cf.unrecoveredCostCF as number),
     convert(cf.profitOilGas as number),
     convert(cf.contractorProfitShare as number),
-    convert(cf.petronasProfitShare as number),
+    convert(cf.hostProfitShare as number),
     convert(cf.supplementaryPayment as number),
     convert(cf.contractorEntitlement as number),
     convert(cf.capitalAllowance as number),

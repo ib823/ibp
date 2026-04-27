@@ -145,6 +145,9 @@ export function runMonteCarlo(
       p10: usd(0),
       p50: usd(0),
       p90: usd(0),
+      p90Conservative: usd(0),
+      p50Median: usd(0),
+      p10Optimistic: usd(0),
       mean: usd(0),
       stdDev: 0,
       histogram: [],
@@ -172,6 +175,12 @@ export function runMonteCarlo(
     p10: usd(p10),
     p50: usd(p50),
     p90: usd(p90),
+    // SPE PRMS aliases (D37): petroleum convention is P10 = high / optimistic,
+    // P90 = low / conservative — opposite to the statistical convention used
+    // for the bare p10/p50/p90 fields above.
+    p90Conservative: usd(p10),
+    p50Median: usd(p50),
+    p10Optimistic: usd(p90),
     mean: usd(mean),
     stdDev,
     histogram,

@@ -98,7 +98,7 @@ function totalGovtReceipts(result: EconomicsResult) {
       (cashflow.royalty as number) +
       (cashflow.exportDuty as number) +
       (cashflow.researchCess as number) +
-      (cashflow.petronasProfitShare as number) +
+      (cashflow.hostProfitShare as number) +
       (cashflow.supplementaryPayment as number) +
       (cashflow.pitaTax as number),
     0,

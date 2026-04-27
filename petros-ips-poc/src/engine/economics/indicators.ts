@@ -107,7 +107,7 @@ export function calculateIndicators(inputs: IndicatorInputs): EconomicIndicators
   // Govt receipts = Royalty + Export Duty + Research Cess + PETRONAS Profit Share + SP + PITA Tax
   // Divided by pre-tax project cash flow (Revenue - CAPEX - OPEX - ABEX)
   const totalGovtReceipts = cashflows.reduce(
-    (s, cf) => s + cf.royalty + cf.exportDuty + cf.researchCess + cf.petronasProfitShare + cf.supplementaryPayment + cf.pitaTax, 0,
+    (s, cf) => s + cf.royalty + cf.exportDuty + cf.researchCess + cf.hostProfitShare + cf.supplementaryPayment + cf.pitaTax, 0,
   );
   let totalAbex = 0;
   for (const cf of cashflows) {

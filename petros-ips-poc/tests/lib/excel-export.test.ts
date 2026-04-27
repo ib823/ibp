@@ -21,7 +21,7 @@ function makeCashflow(year: number): YearlyCashflow {
     unrecoveredCostCF: usd(0),
     profitOilGas: usd(64_000_000),
     contractorProfitShare: usd(19_200_000),
-    petronasProfitShare: usd(44_800_000),
+    hostProfitShare: usd(44_800_000),
     contractorEntitlement: usd(99_200_000),
     supplementaryPayment: usd(0),
     capitalAllowance: usd(5_000_000),

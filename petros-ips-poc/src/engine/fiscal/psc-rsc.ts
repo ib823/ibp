@@ -88,8 +88,9 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
     const royalty = rev.totalGrossRevenue * fiscalConfig.royaltyRate;
     const exportDuty = (rev.grossRevenueOil + rev.grossRevenueCond) * fiscalConfig.exportDutyRate;
     const researchCess = rev.totalGrossRevenue * fiscalConfig.researchCessRate;
+    const sarawakSst = rev.totalGrossRevenue * (fiscalConfig.sarawakSstRate || 0);
     const revenueAfterGovtDeductions =
-      rev.totalGrossRevenue - royalty - exportDuty - researchCess;
+      rev.totalGrossRevenue - royalty - exportDuty - researchCess - sarawakSst;
 
     // ── Fee revenue ─────────────────────────────────────────────────
     // Convert gas MMscfd → boe-equivalent so the fee applies on a single
@@ -155,6 +156,7 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
       royalty: usd(royalty),
       exportDuty: usd(exportDuty),
       researchCess: usd(researchCess),
+      sarawakSst: usd(sarawakSst),
       revenueAfterRoyalty: usd(revenueAfterGovtDeductions),
       // RSC has no cost-recovery pool / profit-oil split — surface the
       // fee + reimbursement + bonus structure on the existing schema.
@@ -163,7 +165,7 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
       unrecoveredCostCF: usd(Math.max(0, reimbursementUncapped - costReimbursement)),
       profitOilGas: usd(0),
       contractorProfitShare: usd(feeRevenue + performanceBonus),
-      petronasProfitShare: usd(revenueAfterGovtDeductions - contractorEntitlement),
+      hostProfitShare: usd(revenueAfterGovtDeductions - contractorEntitlement),
       contractorEntitlement: usd(contractorEntitlement),
       supplementaryPayment: usd(performanceBonus),
       taxableIncome: usd(netContractorIncome),

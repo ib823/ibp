@@ -86,7 +86,10 @@ export function calculateFiscalCashflows(
       });
 
     case 'PSC_HPHT':
-      // HPHT: apply HPHT allowance as CAPEX reduction, then use R/C engine
+      // HPHT: apply HPHT allowance as CAPEX reduction, then use R/C engine.
+      // No PSC_HPHT regime data exported in `data/fiscal-regimes.ts` — this
+      // branch is reachable only when callers pass HPHT config directly.
+      // Phase 1a Discovery: confirm HPHT applicability with PETROS. (D22)
       return calculatePscRc({
         ...base,
         yearlyCosts: reduceCapex(costProfile, 1 - regime.hphtAllowance),
@@ -107,7 +110,10 @@ export function calculateFiscalCashflows(
       return calculatePscSfa({ ...base, fiscalConfig: regime });
 
     case 'PSC_LLA':
-      // LLA uses SFA engine with same fixed-percentage mechanics
+      // LLA (Late Life Asset) uses SFA engine with same fixed-percentage
+      // mechanics. No PSC_LLA regime data is currently exported in
+      // `data/fiscal-regimes.ts`. Phase 1a Discovery: confirm with PETROS
+      // whether mature-field LLA terms differ from generic SFA. (D22)
       return calculatePscSfa({
         ...base,
         fiscalConfig: {
@@ -118,7 +124,7 @@ export function calculateFiscalCashflows(
           researchCessRate: regime.researchCessRate,
           costRecoveryCeilingPct: regime.costRecoveryCeilingPct,
           contractorProfitSharePct: regime.contractorProfitSharePct,
-          petronasProfitSharePct: regime.petronasProfitSharePct,
+          hostProfitSharePct: regime.hostProfitSharePct,
         },
       });
 

@@ -97,7 +97,7 @@ export class DepreciationSchedule {
 /** Compute government deductions from gross revenue.
  *
  *   Royalty:        applied to total gross petroleum revenue (oil + gas + condensate)
- *                   per PETRONAS PSC framework.
+ *                   per PETRONAS PSC framework / PDA 1974 §4.
  *   Research cess:  applied to total gross petroleum revenue (Petroleum Research Act).
  *   Export duty:    applied to LIQUID petroleum (oil + condensate) only. LNG / natural
  *                   gas exports are governed by a separate framework and are not
@@ -105,6 +105,11 @@ export class DepreciationSchedule {
  *                   Order. Applying it uniformly across gas would over-state government
  *                   take for any gas-weighted project (every Sarawak gas block).
  *                   See ASSESSMENT.md F5.
+ *   Sarawak SST:    Sarawak State Sales Tax 5% under Sarawak State Sales Tax Act 1998
+ *                   (enforced from 1 January 2019) on petroleum products produced in
+ *                   Sarawak. Applied to total gross revenue. Set `sarawakSstRate: 0.05`
+ *                   for Sarawak blocks; 0 for Peninsular / Sabah / non-Malaysian.
+ *                   See ASSESSMENT.md D1 / glossary 'sst'.
  */
 export function computeGovtDeductions(
   revenue: {
@@ -113,14 +118,20 @@ export function computeGovtDeductions(
     grossRevenueCond: number;
     totalGrossRevenue: number;
   },
-  fiscalConfig: { royaltyRate: number; exportDutyRate?: number; researchCessRate?: number },
+  fiscalConfig: {
+    royaltyRate: number;
+    exportDutyRate?: number;
+    researchCessRate?: number;
+    sarawakSstRate?: number;
+  },
 ) {
   const royalty = revenue.totalGrossRevenue * fiscalConfig.royaltyRate;
   // Export duty applies to oil + condensate only (liquid petroleum).
   const exportDuty = (revenue.grossRevenueOil + revenue.grossRevenueCond) * (fiscalConfig.exportDutyRate || 0);
   const researchCess = revenue.totalGrossRevenue * (fiscalConfig.researchCessRate || 0);
-  const revenueAfterRoyalty = revenue.totalGrossRevenue - royalty - exportDuty - researchCess;
-  return { royalty, exportDuty, researchCess, revenueAfterRoyalty };
+  const sarawakSst = revenue.totalGrossRevenue * (fiscalConfig.sarawakSstRate || 0);
+  const revenueAfterRoyalty = revenue.totalGrossRevenue - royalty - exportDuty - researchCess - sarawakSst;
+  return { royalty, exportDuty, researchCess, sarawakSst, revenueAfterRoyalty };
 }
 
 /** Compute BOE production for a year */

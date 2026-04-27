@@ -226,7 +226,7 @@ export default function SettingsPage() {
                         <span className="font-data">{t.rcFloor.toFixed(1)} — {t.rcCeiling === Infinity ? '∞' : t.rcCeiling.toFixed(1)}</span>
                         <span className="font-data text-right">{fmtPct(t.costRecoveryCeilingPct, 0)}</span>
                         <span className="font-data text-right">{fmtPct(t.contractorProfitSharePct, 0)}</span>
-                        <span className="font-data text-right">{fmtPct(t.petronasProfitSharePct, 0)}</span>
+                        <span className="font-data text-right">{fmtPct(t.hostProfitSharePct, 0)}</span>
                         <span />
                       </div>
                     ))}
@@ -244,7 +244,7 @@ export default function SettingsPage() {
                 <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                   <Row label="Cost Recovery" value={fmtPct(regime.costRecoveryCeilingPct, 0)} />
                   <Row label="Contractor Share" value={fmtPct(regime.contractorProfitSharePct, 0)} />
-                  <Row label="PETRONAS Share" value={fmtPct(regime.petronasProfitSharePct, 0)} />
+                  <Row label="PETRONAS Share" value={fmtPct(regime.hostProfitSharePct, 0)} />
                 </div>
               )}
               {'taxRate' in regime && (
