@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import {
-  useReactTable,
-  getCoreRowModel,
+  useTable,
+  tableFeatures,
+  columnSizingFeature,
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
@@ -31,7 +32,11 @@ interface Row {
   rcIndex: number;
 }
 
-const col = createColumnHelper<Row>();
+// TanStack Table v9: features are opt-in. Column sizing provides
+// header.getSize() / column.getSize(); the core row model is implicit.
+const features = tableFeatures({ columnSizingFeature });
+
+const col = createColumnHelper<typeof features, Row>();
 
 /** Render a column header with optional tooltip and InfoIcon */
 function ColHeader({ text, entryId }: { text: string; entryId: string }) {
@@ -129,7 +134,7 @@ function buildColumns(
     );
   }
 
-  return base;
+  return col.columns(base);
 }
 
 function NumCell({
@@ -208,16 +213,10 @@ export function EconomicsTable({ cashflows, fiscalRegimeType }: EconomicsTablePr
     [fiscalRegimeType, currencyLabel, moneyFormat],
   );
 
-  // The React Compiler lint rule flags `useReactTable` as incompatible
-  // because TanStack Table returns functions that it cannot memoize
-  // safely. The warning is library-level and there is no alternative API
-  // — this table is consumed locally in the render and its instance
-  // does not leak to memoized children.
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
   });
 
   return (
@@ -245,7 +244,7 @@ export function EconomicsTable({ cashflows, fiscalRegimeType }: EconomicsTablePr
           <tbody>
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id} className="group border-b border-border/50 hover:bg-content-alt/50">
-                {row.getVisibleCells().map((cell, ci) => (
+                {row.getAllCells().map((cell, ci) => (
                   <td
                     key={cell.id}
                     className={cn(

@@ -18,7 +18,7 @@
     "test:typography-probe": "node scripts/typography-probe.mjs"
   },
   "dependencies": {
-    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-table": "^9.2.4",
     "@ui5/webcomponents": "^2.26.0",
     "@ui5/webcomponents-fiori": "^2.26.0",
     "@ui5/webcomponents-icons": "^2.26.0",
