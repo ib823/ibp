@@ -165,7 +165,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
   while (i < text.length) {
     const idx = lower.indexOf(needle, i);
     if (idx === -1) {
-      parts.push(<span key={`t-${segmentIndex++}`}>{text.slice(i)}</span>);
+      parts.push(<span key={`t-${segmentIndex}`}>{text.slice(i)}</span>);
       break;
     }
     if (idx > i) {

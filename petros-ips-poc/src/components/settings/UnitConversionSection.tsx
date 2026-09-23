@@ -463,10 +463,10 @@ function ConfirmDialog({
   const open = state !== null;
   if (!open) return null;
 
-  let title = '';
-  let body: React.ReactNode = null;
-  let confirmLabel = 'Confirm';
-  let tone: 'petrol' | 'amber' | 'danger' = 'petrol';
+  let title: string;
+  let body: React.ReactNode;
+  let confirmLabel: string;
+  let tone: 'petrol' | 'amber' | 'danger';
 
   if (state.kind === 'save') {
     title = `Overwrite ${state.conv.fromUnit} → ${state.conv.toUnit}?`;

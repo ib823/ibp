@@ -473,9 +473,7 @@ function VarianceWaterfall({
     // Residual captures fiscal/tax variance not explained by price+volume+cost
     const residual = endNcf - running;
     if (Math.abs(residual) > 0.05) {
-      const newRunning = running + residual;
-      out.push({ label: 'Tax & Other Δ', value: residual, start: running, end: newRunning, color: residual >= 0 ? '#2D8A4E' : '#8B5CF6' });
-      running = newRunning;
+      out.push({ label: 'Tax & Other Δ', value: residual, start: running, end: running + residual, color: residual >= 0 ? '#2D8A4E' : '#8B5CF6' });
     }
     out.push({ label: `${VERSION_LABELS[v2]} NCF`, value: endNcf, start: 0, end: endNcf, color: '#254A78', isFinal: true });
     return out;
