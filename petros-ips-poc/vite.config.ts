@@ -21,9 +21,20 @@ export default defineConfig({
         // Keeping them in one chunk ensures the init order is correct.
         // (Vite 8 / Rolldown: `codeSplitting.groups` replaces the deprecated
         // Rollup `manualChunks` function.)
+        //
+        // The JSON assets (CLDR locale data, i18n bundles, theme parameters)
+        // that `@ui5/webcomponents-react/dist/Assets.js` registers are loaded
+        // on demand via dynamic import() and are leaf modules, so leave them
+        // out of the group: they become small lazy chunks and only the active
+        // locale/theme is downloaded, instead of ~12 MB of every locale being
+        // inlined into the eagerly-loaded ui5 chunk.
         codeSplitting: {
           groups: [
-            { name: 'ui5', test: /node_modules[\\/]@ui5[\\/]/ },
+            {
+              name: 'ui5',
+              test: (id) =>
+                /node_modules[\\/]@ui5[\\/]/.test(id) && !/[\\/]assets[\\/].+\.json$/.test(id),
+            },
             { name: 'recharts', test: /node_modules[\\/]recharts/ },
           ],
         },
