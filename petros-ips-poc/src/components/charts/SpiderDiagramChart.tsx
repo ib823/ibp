@@ -5,11 +5,10 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
   ReferenceLine,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import type { SpiderResult } from '@/engine/sensitivity/spider';
 import type { SensitivityVariable } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
@@ -76,8 +75,8 @@ export function SpiderDiagramChart({ result }: SpiderDiagramChartProps) {
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, undefined]}
-          labelFormatter={(v: number) => `${v > 0 ? '+' : ''}${v}% change`}
+          formatter={(v) => [`${u.currencySymbol}${Number(v).toFixed(1)}M`, undefined]}
+          labelFormatter={(v) => `${Number(v) > 0 ? '+' : ''}${Number(v)}% change`}
         />
         <Legend
           wrapperStyle={{ fontSize: 11 }}

@@ -5,10 +5,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import type { ProjectInputs } from '@/engine/types';
 import { fmtNum } from '@/lib/format';
 import { ChartDataTable } from '@/components/shared/ChartDataTable';
@@ -58,7 +57,7 @@ export function PortfolioProductionChart({ projects, activeIds }: PortfolioProdu
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number, name: string) => [`${fmtNum(v)} boe/d`, name]}
+          formatter={(v, name) => [`${fmtNum(Number(v))} boe/d`, name]}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         {activeProjects.map((proj, i) => (

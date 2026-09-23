@@ -14,10 +14,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import { GitBranch, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ChartShell } from '@/components/charts/ChartShell';
 import type {
@@ -395,7 +394,7 @@ function ProductionOverlay({ p1, p2 }: { p1: PhaseVersionData; p2: PhaseVersionD
             <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
             <Tooltip
               contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-              formatter={(v: number) => [v.toLocaleString() + ' boe/d', '']}
+              formatter={(v) => [Number(v).toLocaleString() + ' boe/d', '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Area type="monotone" dataKey={p1.label} stroke={PHASE_COLORS.before} fill={PHASE_COLORS.before} fillOpacity={0.25} strokeDasharray="4,2" isAnimationActive={false} />
@@ -441,7 +440,7 @@ function CashFlowOverlay({ result }: { result: PhaseComparisonResult }) {
             <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v) => `${u.currencySymbol}${v}M`} />
             <Tooltip
               contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-              formatter={(v: number) => [`${u.currencySymbol}${v.toLocaleString()}M`, '']}
+              formatter={(v) => [`${u.currencySymbol}${Number(v).toLocaleString()}M`, '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey={result.phase1Label} stroke={PHASE_COLORS.before} strokeWidth={2} strokeDasharray="5,3" dot={false} isAnimationActive={false} />

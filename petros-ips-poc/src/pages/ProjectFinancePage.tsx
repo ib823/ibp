@@ -8,8 +8,9 @@
 import { useMemo, useState } from 'react';
 import {
   ComposedChart, AreaChart, Bar, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
+  CartesianGrid, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { buildDebtServiceSchedule } from '@/engine/financial/project-finance';
 import { useProjectStore, getActiveResult } from '@/store/project-store';
@@ -189,7 +190,7 @@ export default function ProjectFinancePage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
                   <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
                   <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => v.toFixed(2)} domain={[0, 'auto']} />
-                  <Tooltip formatter={(v: number) => [v.toFixed(2), 'DSCR']} contentStyle={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v) => [Number(v).toFixed(2), 'DSCR']} contentStyle={{ fontSize: 11 }} />
                   <ReferenceLine y={1.20} stroke={COLORS.danger} strokeDasharray="4,3" label={{ value: 'Target 1.20', fontSize: 10, fill: COLORS.danger }} />
                   <ReferenceLine y={1.30} stroke={COLORS.amber} strokeDasharray="4,3" label={{ value: 'Sweep 1.30', fontSize: 10, fill: COLORS.amber }} />
                   <Bar dataKey="dscr" fill={CHART_POS} />
@@ -214,7 +215,7 @@ export default function ProjectFinancePage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
                   <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
                   <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
-                  <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, 'Closing balance']} contentStyle={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v) => [`$${Number(v).toFixed(1)}M`, 'Closing balance']} contentStyle={{ fontSize: 11 }} />
                   <Area type="monotone" dataKey="closing" stroke={COLORS.danger} fill={COLORS.danger} fillOpacity={0.2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -244,7 +245,7 @@ export default function ProjectFinancePage() {
                 <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
                 <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
                 <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
-                <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
+                <Tooltip formatter={(v) => [`$${Number(v).toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="interest" stackId="a" fill={COLORS.danger} name="Interest" />
                 <Bar dataKey="principal" stackId="a" fill={COLORS.amber} name="Principal" />

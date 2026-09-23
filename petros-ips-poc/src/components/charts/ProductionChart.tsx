@@ -5,10 +5,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import type { ProductionProfile } from '@/engine/types';
 import { fmtNum } from '@/lib/format';
 import { ChartShell } from '@/components/charts/ChartShell';
@@ -56,7 +55,7 @@ export function ProductionChart({ production, startYear, endYear }: ProductionCh
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [fmtNum(v), undefined]}
+          formatter={(v) => [fmtNum(Number(v)), undefined]}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         <Area

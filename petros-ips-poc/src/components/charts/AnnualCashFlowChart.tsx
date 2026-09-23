@@ -6,11 +6,10 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
   ReferenceLine,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import type { YearlyCashflow, CostProfile } from '@/engine/types';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { computeCosts } from '@/engine/fiscal/shared';
@@ -67,7 +66,7 @@ export function AnnualCashFlowChart({ cashflows, costProfile }: AnnualCashFlowCh
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, undefined]}
+          formatter={(v) => [`${u.currencySymbol}${Number(v).toFixed(1)}M`, undefined]}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         <ReferenceLine y={0} stroke="#9CA3AF" strokeWidth={1} />

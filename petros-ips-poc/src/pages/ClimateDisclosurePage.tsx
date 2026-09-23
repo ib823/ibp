@@ -10,8 +10,9 @@
 import { useMemo, useState } from 'react';
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  CartesianGrid, ResponsiveContainer,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { generateIFRSS2Schedule, aggregatePortfolioEmissions, DEFAULT_EMISSIONS_FACTORS } from '@/engine/financial/ifrs-s2';
 import { useProjectStore } from '@/store/project-store';
@@ -177,7 +178,7 @@ export default function ClimateDisclosurePage() {
               <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
               <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
               <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${v.toFixed(0)}`} label={{ value: 'kt CO₂e', position: 'insideLeft', angle: -90, fontSize: 11, fill: COLORS.textSecondary }} />
-              <Tooltip formatter={(v: number) => [`${v.toFixed(1)} kt`, '']} contentStyle={{ fontSize: 11 }} />
+              <Tooltip formatter={(v) => [`${Number(v).toFixed(1)} kt`, '']} contentStyle={{ fontSize: 11 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Area type="monotone" dataKey="scope1" stackId="1" stroke={COLORS.danger} fill={COLORS.danger} fillOpacity={0.7} name="Scope 1 (operational)" />
               <Area type="monotone" dataKey="scope2" stackId="1" stroke={COLORS.amber} fill={COLORS.amber} fillOpacity={0.7} name="Scope 2 (purchased energy)" />
@@ -202,7 +203,7 @@ export default function ClimateDisclosurePage() {
               <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
               <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
               <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
-              <Tooltip formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
+              <Tooltip formatter={(v) => [`${u.currencySymbol}${Number(v).toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="cumulative" stroke={COLORS.danger} strokeWidth={2} name="Cumulative liability" dot={false} />
               <Line type="monotone" dataKey="annual" stroke={COLORS.amber} strokeWidth={1} strokeDasharray="3,3" name="Annual increment" dot={false} />
@@ -229,7 +230,7 @@ export default function ClimateDisclosurePage() {
               <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
               <XAxis dataKey="name" tick={{ fontSize: 10, fill: COLORS.textSecondary }} angle={-15} textAnchor="end" height={60} />
               <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${v.toFixed(0)}`} />
-              <Tooltip formatter={(v: number) => [`${v.toFixed(1)} kt CO₂e`, 'Scope 1']} contentStyle={{ fontSize: 11 }} />
+              <Tooltip formatter={(v) => [`${Number(v).toFixed(1)} kt CO₂e`, 'Scope 1']} contentStyle={{ fontSize: 11 }} />
               <Bar dataKey="scope1" fill={COLORS.danger} />
             </BarChart>
           </ResponsiveContainer>

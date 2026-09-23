@@ -15,10 +15,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import { GitCompareArrows, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type {
   DataVersion,
@@ -567,7 +566,7 @@ function ProductionOverlayChart({
             <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} />
             <Tooltip
               contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-              formatter={(v: number) => [v.toLocaleString() + ' boe/d', '']}
+              formatter={(v) => [Number(v).toLocaleString() + ' boe/d', '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey={v1L} stroke="#1E3A5F" strokeWidth={2} dot={false} isAnimationActive={false} />
