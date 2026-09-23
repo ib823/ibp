@@ -84,8 +84,15 @@ export function evaluateAcquisition(inputs: MAInputs): MAResult {
   const acquisitionPrice = targetEquity + controlPremium;
   const dealNpv = synergiesValue - controlPremium;
 
-  // Combined CF for IRR: acquisition outflow at t=0, then synergies stream
-  const dealCf: number[] = [-acquisitionPrice, ...synergiesCf];
+  // Deal cash flows for IRR, on the same time axis as the NPVs (index 0 =
+  // valuation date, undiscounted): price paid at t=0, then the acquired
+  // target cash flows plus synergies. Paying fair value with no premium or
+  // synergies returns exactly the target WACC.
+  const dealHorizon = Math.max(inputs.targetCashflows.length, synergiesCf.length);
+  const dealCf: number[] = [];
+  for (let t = 0; t < dealHorizon; t++) {
+    dealCf.push((inputs.targetCashflows[t] ?? 0) + (synergiesCf[t] ?? 0) - (t === 0 ? acquisitionPrice : 0));
+  }
   const dealIrr = calculateIRR(dealCf);
 
   const acquirerStandaloneNpv = calculateNPV(inputs.acquirerCashflows, inputs.acquirerWacc);

@@ -14,11 +14,12 @@ import { EduTooltip } from '@/components/shared/EduTooltip';
 import { LoadingState } from '@/components/shared/States';
 import { Button } from '@/components/ui5/Ui5Button';
 import { toast } from '@/lib/toast';
-import { fmtPct } from '@/lib/format';
+import { fmtPct, fmtPctOrNa } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
 import { getPageEntries } from '@/lib/educational-content';
-import { computeCosts } from '@/engine/fiscal/shared';
+import { computeCosts, workingInterestCosts } from '@/engine/fiscal/shared';
+import { governmentReceipts } from '@/engine/economics/indicators';
 import type { EconomicsResult } from '@/engine/types';
 
 const edu = getPageEntries('portfolio');
@@ -115,10 +116,8 @@ export default function PortfolioPage() {
     return map;
   }, [economicsResults, activeScenario]);
 
-  // Compute portfolio-level weighted IRR
-  const { weightedIrr, totalGovtTake } = useMemo(() => {
-    let capexWeightedIrr = 0;
-    let totalCapex = 0;
+  // Portfolio government take (IRR comes from portfolioResult.portfolioIrr)
+  const { totalGovtTake } = useMemo(() => {
     let totalGovtReceipts = 0;
     let totalPreTaxCashFlow = 0;
 
@@ -126,27 +125,13 @@ export default function PortfolioPage() {
       const r = projectResults.get(id);
       const project = projects.find((p) => p.project.id === id);
       if (!r) continue;
-      const capex = r.totalCapex as number;
-      capexWeightedIrr += (r.irr ?? r.mirr) * capex;
-      totalCapex += capex;
-
-      totalGovtReceipts += r.yearlyCashflows.reduce(
-        (sum, cf) =>
-          sum +
-          (cf.royalty as number) +
-          (cf.exportDuty as number) +
-          (cf.researchCess as number) +
-          (cf.hostProfitShare as number) +
-          (cf.supplementaryPayment as number) +
-          (cf.pitaTax as number),
-        0,
-      );
+      totalGovtReceipts += r.yearlyCashflows.reduce((sum, cf) => sum + governmentReceipts(cf), 0);
 
       if (project) {
         const preTaxForProject =
           (r.totalRevenue as number) -
           r.yearlyCashflows.reduce((sum, cf) => {
-            const cost = computeCosts(project.costProfile, cf.year);
+            const cost = computeCosts(workingInterestCosts(project), cf.year);
             return sum + cost.totalCapex + cost.totalOpex + cost.abandonmentCost;
           }, 0);
         totalPreTaxCashFlow += preTaxForProject;
@@ -154,7 +139,6 @@ export default function PortfolioPage() {
     }
 
     return {
-      weightedIrr: totalCapex > 0 ? capexWeightedIrr / totalCapex : 0,
       totalGovtTake:
         totalPreTaxCashFlow > 0
           ? (totalGovtReceipts / totalPreTaxCashFlow) * 100
@@ -244,9 +228,9 @@ export default function PortfolioPage() {
           eduEntry={edu['P-03']}
         />
         <KpiCard
-          label="Wtd Avg IRR"
-          value={fmtPct(weightedIrr)}
-          className={weightedIrr >= 0.10 ? 'border-l-2 border-l-success' : 'border-l-2 border-l-danger'}
+          label="Portfolio IRR"
+          value={fmtPctOrNa(portfolioResult.portfolioIrr)}
+          className={(portfolioResult.portfolioIrr ?? -Infinity) >= 0.10 ? 'border-l-2 border-l-success' : 'border-l-2 border-l-danger'}
           eduEntry={edu['P-04']}
         />
         <KpiCard

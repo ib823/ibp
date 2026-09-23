@@ -19,6 +19,9 @@ const DEFAULT_VARIABLES: SensitivityVariable[] = [
 
 const DEFAULT_PERCENTAGES = [-0.30, -0.20, -0.10, 0.10, 0.20, 0.30];
 
+/** Base discount rate of the economics engine (NPV10). */
+const BASE_DISCOUNT_RATE = 0.10;
+
 export function calculateTornado(
   project: ProjectInputs,
   priceDeck: PriceDeck,
@@ -36,7 +39,9 @@ export function calculateTornado(
       const { modifiedProject, modifiedPriceDeck } = applySensitivity(
         project, priceDeck, variable, pct,
       );
-      const result = calculateProjectEconomics(modifiedProject, modifiedPriceDeck);
+      const result = calculateProjectEconomics(
+        modifiedProject, modifiedPriceDeck, 'base', sensitivityDiscountRate(variable, pct),
+      );
       const npvValue = result.npv10 as number;
 
       dataPoints.push({
@@ -76,6 +81,11 @@ export function calculateTornado(
   };
 }
 
+/** Discount rate for a sensitivity case: flexed only for 'discountRate'. */
+export function sensitivityDiscountRate(variable: SensitivityVariable, pct: number): number {
+  return variable === 'discountRate' ? BASE_DISCOUNT_RATE * (1 + pct) : BASE_DISCOUNT_RATE;
+}
+
 function applySensitivity(
   project: ProjectInputs,
   priceDeck: PriceDeck,
@@ -106,8 +116,8 @@ function applySensitivity(
       };
     case 'discountRate':
     case 'reserves':
-      // discountRate sensitivity is applied at calculateProjectEconomics
-      // call site (the discount-rate argument), not as an input mutation.
+      // discountRate sensitivity is applied at the calculateProjectEconomics
+      // call site (sensitivityDiscountRate), not as an input mutation.
       // reserves sensitivity scales production as a proxy for reserves
       // uncertainty (Phase 1b SAC delivery deepens this — D40).
       return variable === 'reserves'

@@ -4,6 +4,7 @@ import { calculateIncremental } from '@/engine/portfolio/incremental';
 import { backAllocate } from '@/engine/portfolio/back-allocation';
 import { calculateDownstreamEconomics } from '@/engine/portfolio/downstream-margin';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
+import { npvAtValuationYear } from '@/engine/economics/valuation';
 import { ALL_PROJECTS } from '@/data/projects';
 import { BASE_PRICE_DECK } from '@/data/price-decks';
 import { PROJECT_HIERARCHY } from '@/data/hierarchy';
@@ -28,12 +29,15 @@ describe('TEST 1: Portfolio NPV = sum of included project NPVs', () => {
   const threeIds = new Set(['sk-410', 'sk-612', 'balingian']);
   const portfolio = aggregatePortfolio(ALL_PROJECTS, allResults, threeIds, PROJECT_HIERARCHY);
 
-  it('totalNpv = sum of 3 project NPVs', () => {
+  it('totalNpv = sum of 3 project NPVs re-valued at the common valuation year', () => {
     let expectedNpv = 0;
     for (const id of threeIds) {
-      expectedNpv += allResults.get(id)!.npv10 as number;
+      expectedNpv += npvAtValuationYear(allResults.get(id)!, 0.10, portfolio.valuationYear);
     }
     expect(portfolio.totalNpv as number).toBeCloseTo(expectedNpv, 2);
+    // SK-410 starts in the valuation year, so its contribution is its own NPV.
+    expect(npvAtValuationYear(allResults.get('sk-410')!, 0.10, portfolio.valuationYear))
+      .toBeCloseTo(allResults.get('sk-410')!.npv10 as number, 2);
   });
 
   it('totalCapex = sum of 3 project CAPEX', () => {

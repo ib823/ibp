@@ -13,7 +13,6 @@ import { generateAccountMovements } from '@/engine/financial/account-movements';
 import { getProjectReserves, gasBcfToMmboe } from '@/engine/reserves/prms';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
-import { EduTooltip } from '@/components/shared/EduTooltip';
 import { EmptyState } from '@/components/shared/States';
 import { getPageEntries } from '@/lib/educational-content';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
@@ -46,6 +45,8 @@ export default function FinancialPage() {
 
   // Derive 2P reserves total (BOE) for UoP DD&A from the PRMS engine.
   // Oil 2P is in MMstb (× 1,000,000), gas 2P is in Bcf (gasBcfToMmboe → MMboe → × 1,000,000).
+  // generateIncomeStatement uses the plan's own production instead when the
+  // booked 2P is lower, so the asset is not written off before production ends.
   const totalReservesBoe = useMemo(() => {
     if (!activeProject) return undefined;
     const r = getProjectReserves(activeProject.project.id);
@@ -67,8 +68,11 @@ export default function FinancialPage() {
     () => (statements ? expandYearLabels(statements.years, granularity) : []),
     [statements, granularity],
   );
-  const expandRows = (rows: Array<FinancialRow & { kind?: RowKind }>): FinancialRow[] =>
-    rows.map((r) => ({ ...r, values: expandValues(r.values, granularity, r.kind ?? 'flow') }));
+  const expandRows = (rows: Array<FinancialRow & { kind?: RowKind; closingValues?: number[] }>): FinancialRow[] =>
+    rows.map(({ kind, closingValues, ...r }) => ({
+      ...r,
+      values: expandValues(r.values, granularity, kind ?? 'flow', closingValues),
+    }));
 
   const handleExport = () => {
     if (!statements || !activeProject) return;
@@ -79,33 +83,39 @@ export default function FinancialPage() {
         {
           years: statements.years,
           incomeStatement: [
-            { label: 'Revenue', values: statements.is.yearly.map((l) => l.revenue as number) },
-            { label: 'Royalty', values: statements.is.yearly.map((_, idx) => -(statements.cfs[idx]?.royalty as number ?? 0)) },
+            { label: 'Revenue (Entitlement)', values: statements.is.yearly.map((l) => l.revenue as number) },
             { label: 'Cost of Sales', values: statements.is.yearly.map((l) => -(l.costOfSales as number)) },
             { label: 'Gross Profit', values: statements.is.yearly.map((l) => l.grossProfit as number) },
+            { label: 'Exploration Write-off', values: statements.is.yearly.map((l) => -(l.explorationExpense as number)) },
             { label: 'DD&A', values: statements.is.yearly.map((l) => -(l.depreciationAmortisation as number)) },
             { label: 'Operating Profit', values: statements.is.yearly.map((l) => l.operatingProfit as number) },
+            { label: 'Finance Cost (Unwinding)', values: statements.is.yearly.map((l) => -(l.financeCost as number)) },
             { label: 'Profit Before Tax', values: statements.is.yearly.map((l) => l.profitBeforeTax as number) },
             { label: 'Tax Expense', values: statements.is.yearly.map((l) => -(l.taxExpense as number)) },
             { label: 'Net Income', values: statements.is.yearly.map((l) => l.profitAfterTax as number) },
           ],
           balanceSheet: [
             { label: 'PP&E (net)', values: statements.bs.yearly.map((l) => l.ppeNet as number) },
+            { label: 'E&E Assets', values: statements.bs.yearly.map((l) => l.explorationAssets as number) },
+            { label: 'Deferred Tax Asset', values: statements.bs.yearly.map((l) => l.otherNonCurrentAssets as number) },
             { label: 'Cash', values: statements.bs.yearly.map((l) => l.cash as number) },
             { label: 'Total Assets', values: statements.bs.yearly.map((l) => l.totalAssets as number) },
             { label: 'Retained Earnings', values: statements.bs.yearly.map((l) => l.retainedEarnings as number) },
-            { label: 'Reconciliation Adj. (POC)', values: statements.bs.yearly.map((l) => l.otherReserves as number) },
             { label: 'Total Equity', values: statements.bs.yearly.map((l) => l.totalEquity as number) },
             { label: 'Decomm. Provision', values: statements.bs.yearly.map((l) => l.decommissioningProvision as number) },
+            { label: 'Deferred Tax Liability', values: statements.bs.yearly.map((l) => l.deferredTaxLiability as number) },
             { label: 'Total Liabilities', values: statements.bs.yearly.map((l) => l.totalLiabilities as number) },
             { label: 'Equity + Liabilities', values: statements.bs.yearly.map((l) => l.totalEquityAndLiabilities as number) },
           ],
           cashFlow: [
             { label: 'Profit Before Tax', values: statements.cfStmt.yearly.map((l) => l.profitBeforeTax as number) },
             { label: 'Add: Depreciation', values: statements.cfStmt.yearly.map((l) => l.depreciation as number) },
+            { label: 'Add: Non-cash Items', values: statements.cfStmt.yearly.map((l) => l.otherOperatingAdjustments as number) },
             { label: 'Tax Paid', values: statements.cfStmt.yearly.map((l) => -(l.taxPaid as number)) },
             { label: 'Operating Cash Flow', values: statements.cfStmt.yearly.map((l) => l.netOperatingCashFlow as number) },
-            { label: 'CAPEX', values: statements.cfStmt.yearly.map((l) => l.netInvestingCashFlow as number) },
+            { label: 'CAPEX (PP&E + E&E)', values: statements.cfStmt.yearly.map((l) => -((l.capexPPE as number) + (l.capexExploration as number))) },
+            { label: 'Decommissioning Spend', values: statements.cfStmt.yearly.map((l) => l.otherInvesting as number) },
+            { label: 'Investing Cash Flow', values: statements.cfStmt.yearly.map((l) => l.netInvestingCashFlow as number) },
             { label: 'Net Cash Change', values: statements.cfStmt.yearly.map((l) => l.netCashChange as number) },
             { label: 'Opening Cash', values: statements.cfStmt.yearly.map((l) => l.openingCash as number) },
             { label: 'Closing Cash', values: statements.cfStmt.yearly.map((l) => l.closingCash as number) },
@@ -222,12 +232,15 @@ export default function FinancialPage() {
                   <FinancialTable
                     years={periodLabels}
                     rows={expandRows([
-                      { label: 'Revenue', values: statements.is.yearly.map((l) => l.revenue as number), eduEntryId: 'F-07' },
-                      { label: 'Royalty', values: statements.is.yearly.map((_, idx) => -(statements.cfs[idx]?.royalty as number ?? 0)), eduEntryId: 'F-08' },
+                      { label: 'Revenue (Entitlement)', values: statements.is.yearly.map((l) => l.revenue as number), eduEntryId: 'F-07' },
                       { label: 'Cost of Sales', values: statements.is.yearly.map((l) => -(l.costOfSales as number)), eduEntryId: 'F-09' },
                       { label: 'Gross Profit', values: statements.is.yearly.map((l) => l.grossProfit as number), isSubtotal: true, eduEntryId: 'F-10' },
+                      ...(statements.is.yearly.some((l) => (l.explorationExpense as number) !== 0)
+                        ? [{ label: 'Exploration Write-off', values: statements.is.yearly.map((l) => -(l.explorationExpense as number)) }]
+                        : []),
                       { label: 'DD&A', values: statements.is.yearly.map((l) => -(l.depreciationAmortisation as number)), eduEntryId: 'F-11' },
                       { label: 'Operating Profit', values: statements.is.yearly.map((l) => l.operatingProfit as number), isSubtotal: true, eduEntryId: 'F-12' },
+                      { label: 'Finance Cost (Unwinding)', values: statements.is.yearly.map((l) => -(l.financeCost as number)) },
                       { label: 'Profit Before Tax', values: statements.is.yearly.map((l) => l.profitBeforeTax as number), isSubtotal: true, eduEntryId: 'F-13' },
                       { label: 'Tax Expense', values: statements.is.yearly.map((l) => -(l.taxExpense as number)), eduEntryId: 'F-14' },
                       { label: 'Net Income', values: statements.is.yearly.map((l) => l.profitAfterTax as number), isTotal: true, eduEntryId: 'F-15' },
@@ -246,24 +259,26 @@ export default function FinancialPage() {
                     years={periodLabels}
                     rows={expandRows([
                       { label: 'PP&E (net)', values: statements.bs.yearly.map((l) => l.ppeNet as number), kind: 'stock', eduEntryId: 'F-16' },
+                      ...(statements.bs.yearly.some((l) => (l.explorationAssets as number) !== 0)
+                        ? [{ label: 'E&E Assets', values: statements.bs.yearly.map((l) => l.explorationAssets as number), kind: 'stock' as const }]
+                        : []),
+                      { label: 'Deferred Tax Asset', values: statements.bs.yearly.map((l) => l.otherNonCurrentAssets as number), kind: 'stock' },
                       { label: 'Cash', values: statements.bs.yearly.map((l) => l.cash as number), kind: 'stock', eduEntryId: 'F-17' },
                       { label: 'Total Assets', values: statements.bs.yearly.map((l) => l.totalAssets as number), kind: 'stock', isSubtotal: true, eduEntryId: 'F-18' },
                       { label: '', values: statements.years.map(() => 0), kind: 'stock' },
                       { label: 'Retained Earnings', values: statements.bs.yearly.map((l) => l.retainedEarnings as number), kind: 'stock', eduEntryId: 'F-19' },
-                      { label: 'Reconciliation Adj. (POC)*', values: statements.bs.yearly.map((l) => l.otherReserves as number), kind: 'stock', eduEntryId: 'F-20' },
                       { label: 'Total Equity', values: statements.bs.yearly.map((l) => l.totalEquity as number), kind: 'stock', isSubtotal: true, eduEntryId: 'F-21' },
                       { label: 'Decomm. Provision', values: statements.bs.yearly.map((l) => l.decommissioningProvision as number), kind: 'stock', eduEntryId: 'F-22' },
+                      { label: 'Deferred Tax Liability', values: statements.bs.yearly.map((l) => l.deferredTaxLiability as number), kind: 'stock' },
                       { label: 'Total Liabilities', values: statements.bs.yearly.map((l) => l.totalLiabilities as number), kind: 'stock', isSubtotal: true, eduEntryId: 'F-23' },
                       { label: 'Equity + Liabilities', values: statements.bs.yearly.map((l) => l.totalEquityAndLiabilities as number), kind: 'stock', isTotal: true, eduEntryId: 'F-24' },
                     ])}
                   />
-                  <EduTooltip entryId="F-36">
-                    <p className="text-caption text-text-muted mt-3 cursor-help">
-                      * Reconciliation Adjustment: This POC derives financial statements from a cash-based economic model.
-                      In the production SAC implementation, financial statements will be generated from a proper accrual-based
-                      accounting engine integrated with SAP S/4HANA, eliminating this adjustment.
-                    </p>
-                  </EduTooltip>
+                  <p className="text-caption text-text-muted mt-3">
+                    Working-interest basis. Assets = Liabilities + Equity by construction: PP&amp;E, E&amp;E, the
+                    decommissioning provision (MFRS 137 / IFRIC 1) and deferred tax (MFRS 112) are driven by the
+                    same schedules as the income statement; cash is the cumulative net cash flow.
+                  </p>
                 </div>
               ),
             },
@@ -278,17 +293,20 @@ export default function FinancialPage() {
                     rows={expandRows([
                       { label: 'Profit Before Tax', values: statements.cfStmt.yearly.map((l) => l.profitBeforeTax as number), eduEntryId: 'F-25' },
                       { label: 'Add: Depreciation', values: statements.cfStmt.yearly.map((l) => l.depreciation as number), eduEntryId: 'F-26' },
+                      { label: 'Add: Non-cash Items', values: statements.cfStmt.yearly.map((l) => l.otherOperatingAdjustments as number) },
                       { label: 'Tax Paid', values: statements.cfStmt.yearly.map((l) => -(l.taxPaid as number)), eduEntryId: 'F-27' },
                       { label: 'Operating Cash Flow', values: statements.cfStmt.yearly.map((l) => l.netOperatingCashFlow as number), isSubtotal: true, eduEntryId: 'F-28' },
-                      { label: 'CAPEX', values: statements.cfStmt.yearly.map((l) => l.netInvestingCashFlow as number), eduEntryId: 'F-29' },
+                      { label: 'CAPEX (PP&E + E&E)', values: statements.cfStmt.yearly.map((l) => -((l.capexPPE as number) + (l.capexExploration as number))), eduEntryId: 'F-29' },
+                      { label: 'Decommissioning Spend', values: statements.cfStmt.yearly.map((l) => l.otherInvesting as number) },
                       { label: 'Net Cash Change', values: statements.cfStmt.yearly.map((l) => l.netCashChange as number), isSubtotal: true, eduEntryId: 'F-30' },
-                      { label: 'Opening Cash', values: statements.cfStmt.yearly.map((l) => l.openingCash as number), kind: 'stock', eduEntryId: 'F-31' },
+                      { label: 'Opening Cash', values: statements.cfStmt.yearly.map((l) => l.openingCash as number), kind: 'opening', closingValues: statements.cfStmt.yearly.map((l) => l.closingCash as number), eduEntryId: 'F-31' },
                       { label: 'Closing Cash', values: statements.cfStmt.yearly.map((l) => l.closingCash as number), kind: 'stock', isTotal: true, eduEntryId: 'F-32' },
                     ])}
                   />
-                  <div className="mt-3 p-3 bg-amber/15 border border-amber/40 rounded text-xs text-text-primary">
-                    <strong className="text-amber">Note:</strong> Closing Cash in this statement is derived from accounting cash flows (Profit Before Tax + Depreciation − Tax − CAPEX). The Balance Sheet Cash row is derived from the economics model's cumulative Net Cash Flow, which includes fiscal items (royalty, export duty, cost recovery, profit split) not captured in this simplified accounting cash flow. In the production SAC implementation, both statements will be generated from a unified accrual-based accounting engine integrated with SAP S/4HANA, eliminating this divergence.
-                  </div>
+                  <p className="text-caption text-text-muted mt-3">
+                    Indirect method (MFRS 107). Net cash change equals the fiscal net cash flow, so Closing Cash ties
+                    to Balance Sheet Cash. Non-cash items: decommissioning unwinding and any E&amp;E write-off.
+                  </p>
                 </div>
               ),
             },
@@ -309,7 +327,7 @@ export default function FinancialPage() {
                     <FinancialTable
                       years={periodLabels}
                       rows={expandRows([
-                        { label: 'Opening', values: statements.am.ppe.map((l) => l.opening as number), kind: 'stock', eduEntryId: 'F-38' },
+                        { label: 'Opening', values: statements.am.ppe.map((l) => l.opening as number), kind: 'opening', closingValues: statements.am.ppe.map((l) => l.closing as number), eduEntryId: 'F-38' },
                         { label: 'Additions', values: statements.am.ppe.map((l) => l.additions as number), eduEntryId: 'F-39' },
                         { label: 'Depreciation', values: statements.am.ppe.map((l) => -(l.depreciation as number)), eduEntryId: 'F-40' },
                         { label: 'Closing', values: statements.am.ppe.map((l) => l.closing as number), kind: 'stock', isTotal: true, eduEntryId: 'F-41' },
@@ -327,7 +345,7 @@ export default function FinancialPage() {
                     <FinancialTable
                       years={periodLabels}
                       rows={expandRows([
-                        { label: 'Opening', values: statements.am.decommissioningProvision.map((l) => l.opening as number), kind: 'stock', eduEntryId: 'F-42' },
+                        { label: 'Opening', values: statements.am.decommissioningProvision.map((l) => l.opening as number), kind: 'opening', closingValues: statements.am.decommissioningProvision.map((l) => l.closing as number), eduEntryId: 'F-42' },
                         { label: 'Additions', values: statements.am.decommissioningProvision.map((l) => l.additions as number), eduEntryId: 'F-43' },
                         { label: 'Unwinding', values: statements.am.decommissioningProvision.map((l) => l.unwinding as number), eduEntryId: 'F-44' },
                         { label: 'Utilisations', values: statements.am.decommissioningProvision.map((l) => -(l.utilisations as number)), eduEntryId: 'F-45' },
@@ -346,7 +364,7 @@ export default function FinancialPage() {
                     <FinancialTable
                       years={periodLabels}
                       rows={expandRows([
-                        { label: 'Opening', values: statements.am.retainedEarnings.map((l) => l.opening as number), kind: 'stock', eduEntryId: 'F-47' },
+                        { label: 'Opening', values: statements.am.retainedEarnings.map((l) => l.opening as number), kind: 'opening', closingValues: statements.am.retainedEarnings.map((l) => l.closing as number), eduEntryId: 'F-47' },
                         { label: 'Profit After Tax', values: statements.am.retainedEarnings.map((l) => l.profitAfterTax as number), eduEntryId: 'F-48' },
                         { label: 'Closing', values: statements.am.retainedEarnings.map((l) => l.closing as number), kind: 'stock', isTotal: true, eduEntryId: 'F-49' },
                       ])}

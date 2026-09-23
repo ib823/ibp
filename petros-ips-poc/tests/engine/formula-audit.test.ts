@@ -33,8 +33,11 @@ import {
   computeRevenue,
   computeCosts,
   computeYearlyBoe,
+  workingInterestCosts,
   CAPEX_DEPRECIATION_YEARS,
 } from '@/engine/fiscal/shared';
+import { calculatePscRc } from '@/engine/fiscal/psc-rc';
+import { generateDecommissioningSchedule, DECOMM_DISCOUNT_RATE } from '@/engine/financial/decommissioning';
 import type {
   MonteCarloConfig,
   PriceDeck,
@@ -119,7 +122,7 @@ function sumProjectCosts(project: ProjectInputs, years?: readonly number[]) {
 
   return range.reduce(
     (acc, year) => {
-      const cost = computeCosts(project.costProfile, year);
+      const cost = computeCosts(workingInterestCosts(project), year);
       acc.capex += cost.totalCapex;
       acc.opex += cost.totalOpex;
       acc.abex += cost.abandonmentCost;
@@ -143,7 +146,7 @@ function manualTaxAllowanceByYear(project: ProjectInputs) {
   const map = new Map<number, number>();
 
   for (let year = project.project.startYear; year <= project.project.endYear; year++) {
-    const capex = computeCosts(project.costProfile, year).totalCapex;
+    const capex = computeCosts(workingInterestCosts(project), year).totalCapex;
     if (capex <= 0) continue;
 
     for (let offset = 0; offset < CAPEX_DEPRECIATION_YEARS; offset++) {
@@ -156,27 +159,43 @@ function manualTaxAllowanceByYear(project: ProjectInputs) {
   return map;
 }
 
-function manualIncomeDdaByYear(project: ProjectInputs) {
-  const years = Array.from(
-    { length: project.project.endYear - project.project.startYear + 1 },
-    (_, idx) => project.project.startYear + idx,
-  );
-  const fieldLife = project.project.endYear - project.project.startYear + 1;
+/** Straight-line book DD&A (MFRS 116): each PP&E addition — working-interest
+ *  capex plus the capitalised decommissioning asset (IFRIC 1) — is spread
+ *  evenly from the first revenue year (asset available for use) to the end
+ *  of field life. Development-phase projects carry no E&E. */
+function manualIncomeDdaByYear(project: ProjectInputs, cashflows: readonly YearlyCashflow[]) {
+  const { startYear, endYear } = project.project;
+  const costs = workingInterestCosts(project);
+  const decomm = generateDecommissioningSchedule(costs, startYear, endYear, DECOMM_DISCOUNT_RATE);
+  const firstRevenueIdx = cashflows.findIndex((cf) => (cf.contractorEntitlement as number) > 0);
+  const n = endYear - startYear + 1;
   const map = new Map<number, number>();
 
-  for (let idx = 0; idx < years.length; idx++) {
-    const year = years[idx]!;
-    const capex = computeCosts(project.costProfile, year).totalCapex;
-    if (capex <= 0) continue;
-    const remainingLife = fieldLife - idx;
-    const annualDda = capex / remainingLife;
-    for (let j = idx; j < years.length; j++) {
-      const applyYear = years[j]!;
-      map.set(applyYear, (map.get(applyYear) ?? 0) + annualDda);
+  for (let idx = 0; idx < n; idx++) {
+    const additions = computeCosts(costs, startYear + idx).totalCapex + (decomm[idx]!.additions as number);
+    if (additions <= 0) continue;
+    const from = Math.max(idx, firstRevenueIdx);
+    for (let j = from; j < n; j++) {
+      map.set(startYear + j, (map.get(startYear + j) ?? 0) + additions / (n - from));
     }
   }
 
   return map;
+}
+
+/** Independent loss carry-forward: chargeable income after relieving
+ *  brought-forward losses (PITA — no time limit). */
+function manualChargeableIncome(taxableIncomes: readonly number[]) {
+  let losses = 0;
+  return taxableIncomes.map((ti) => {
+    if (ti <= 0) {
+      losses -= ti;
+      return 0;
+    }
+    const relief = Math.min(losses, ti);
+    losses -= relief;
+    return ti - relief;
+  });
 }
 
 function manualPayback(cumulativeValues: readonly number[]) {
@@ -207,15 +226,8 @@ function contractorCostThroughYear(project: ProjectInputs, endIndexInclusive: nu
   let total = 0;
   for (let i = 0; i <= endIndexInclusive; i++) {
     const year = project.project.startYear + i;
-    const cost = computeCosts(project.costProfile, year);
-    let effectiveCapex = cost.totalCapex;
-    if (project.fiscalRegimeConfig.type === 'PSC_DW') {
-      effectiveCapex *= 1 - project.fiscalRegimeConfig.deepwaterAllowance;
-    }
-    if (project.fiscalRegimeConfig.type === 'PSC_HPHT') {
-      effectiveCapex *= 1 - project.fiscalRegimeConfig.hphtAllowance;
-    }
-    total += effectiveCapex + cost.totalOpex + cost.abandonmentCost;
+    const cost = computeCosts(workingInterestCosts(project), year);
+    total += cost.totalCapex + cost.totalOpex + cost.abandonmentCost;
   }
   return total;
 }
@@ -416,9 +428,10 @@ describe('SECTION 4: EXPORT DUTY & RESEARCH CESS', () => {
     }
   });
 
-  it('4.2 Research cess equals 0.5% of gross revenue for SK-410', () => {
+  it('4.2 Research cess equals 0.5% of the contractor cost oil + profit oil for SK-410', () => {
     for (const cashflow of sk410Cashflows) {
-      expectClose(cashflow.researchCess as number, (cashflow.totalGrossRevenue as number) * 0.005, 0.01);
+      const entitlementBase = (cashflow.costRecoveryAmount as number) + (cashflow.contractorProfitShare as number);
+      expectClose(cashflow.researchCess as number, entitlementBase * 0.005, 0.01);
     }
   });
 
@@ -428,19 +441,19 @@ describe('SECTION 4: EXPORT DUTY & RESEARCH CESS', () => {
     }
   });
 
-  it('4.4 Government takes before cost recovery for SK-410 = 10% royalty + 10% export duty (liquids) + 0.5% cess', () => {
-    // After F5 fix (export duty on liquids only):
-    //   total = totalRev * 10.5%  + liquidRev * 10%
-    // For a gas-dominant project like SK-410, the effective rate is well
-    // below the previous 20.5% blanket rate.
+  it('4.4 Government takes before cost recovery for SK-410 = 10% royalty + 10% export duty (liquids) + 5% Sarawak SST', () => {
+    // Off-the-top deductions: cash payment (royalty) 10%, export duty 10% on
+    // liquids only (F5), Sarawak SST 5% (D1). Research cess is charged on the
+    // contractor's entitlement instead (see 4.2).
     for (const cashflow of sk410Cashflows) {
       const totalRev = cashflow.totalGrossRevenue as number;
       const liquidRev =
         (cashflow.grossRevenueOil as number) + (cashflow.grossRevenueCond as number);
-      const expected = totalRev * 0.105 + liquidRev * 0.10;
+      const expected = totalRev * 0.15 + liquidRev * 0.10;
       const actual =
-        (cashflow.royalty as number) + (cashflow.exportDuty as number) + (cashflow.researchCess as number);
+        (cashflow.royalty as number) + (cashflow.exportDuty as number) + (cashflow.sarawakSst as number);
       expectClose(actual, expected, 0.01);
+      expectClose(cashflow.revenueAfterRoyalty as number, totalRev - expected, 0.01);
     }
   });
 });
@@ -491,13 +504,17 @@ describe('SECTION 5: R/C PSC COST RECOVERY & PROFIT SPLIT', () => {
 
   it('5.8 Cost recovery ceiling is enforced when eligible costs exceed ceiling', () => {
     const cashflow = sk410Cashflows.find((entry) => entry.year === 2028)!;
-    const costs = computeCosts(SK410_INPUTS.costProfile, 2028);
+    const costs = computeCosts(workingInterestCosts(SK410_INPUTS), 2028);
     const priorCarry = sk410Cashflows.find((entry) => entry.year === 2027)!.unrecoveredCostCF as number;
     const eligibleCosts = costs.totalCapex + costs.totalOpex + costs.abandonmentCost + priorCarry;
-    const expectedCostRecovery = Math.min(
-      eligibleCosts,
-      (cashflow.revenueAfterRoyalty as number) * lookupTranche(RC_PSC.tranches, cashflow.rcIndex).costRecoveryCeilingPct,
+    // Ceiling is a share of GROSS production value, capped by revenue left
+    // after the off-the-top deductions.
+    const ceiling = Math.min(
+      (cashflow.totalGrossRevenue as number) * lookupTranche(RC_PSC.tranches, cashflow.rcIndex).costRecoveryCeilingPct,
+      cashflow.revenueAfterRoyalty as number,
     );
+    expect(eligibleCosts).toBeGreaterThan(ceiling);
+    const expectedCostRecovery = Math.min(eligibleCosts, ceiling);
     const expectedCarry = eligibleCosts - expectedCostRecovery;
     expectClose(cashflow.costRecoveryAmount as number, expectedCostRecovery, 0.01);
     expectClose(cashflow.unrecoveredCostCF as number, expectedCarry, 0.01);
@@ -507,7 +524,7 @@ describe('SECTION 5: R/C PSC COST RECOVERY & PROFIT SPLIT', () => {
     for (let idx = 0; idx < sk410Cashflows.length; idx++) {
       const cashflow = sk410Cashflows[idx]!;
       const priorCarry = idx === 0 ? 0 : (sk410Cashflows[idx - 1]!.unrecoveredCostCF as number);
-      const costs = computeCosts(SK410_INPUTS.costProfile, cashflow.year);
+      const costs = computeCosts(workingInterestCosts(SK410_INPUTS), cashflow.year);
       const eligibleCosts = priorCarry + costs.totalCapex + costs.totalOpex + costs.abandonmentCost;
       const expectedCarry = eligibleCosts - (cashflow.costRecoveryAmount as number);
       expectClose(cashflow.unrecoveredCostCF as number, expectedCarry, 0.01);
@@ -526,33 +543,79 @@ describe('SECTION 5: R/C PSC COST RECOVERY & PROFIT SPLIT', () => {
     }
   });
 
-  it('5.11 Supplementary payment triggers in the correct SK-612 threshold year', () => {
-    let cumulativeOilMmstb = 0;
-    let expectedTriggerYear: number | null = null;
+  // Synthetic R/C oil project that crosses the default 30 MMstb THV:
+  // 30,000 bpd → 10.95 MMstb/yr, so cumulative passes 30 MMstb in year 3.
+  const spProject = (() => {
+    const start = 2030;
+    const end = 2037;
+    const oil = constantSeries(start, end, 30_000);
+    const zero = constantSeries(start, end, 0);
+    const capex = constantSeries(start, end, 0) as TimeSeriesData<number>;
+    capex[start] = 400 * MILLION;
+    return calculatePscRc({
+      yearlyProduction: { oil, gas: zero, condensate: zero, water: zero },
+      yearlyCosts: {
+        capexDrilling: capex as never,
+        capexFacilities: zero as never,
+        capexSubsea: zero as never,
+        capexOther: zero as never,
+        opexFixed: constantSeries(start, end, 20 * MILLION) as never,
+        opexVariable: zero as never,
+        abandonmentCost: zero as never,
+      },
+      priceDeck: buildSimplePriceDeck(start, end, 70, 8),
+      fiscalConfig: RC_PSC,
+      equityShare: 1,
+      startYear: start,
+      endYear: end,
+    });
+  })();
 
-    for (let year = SK612_INPUTS.project.startYear; year <= SK612_INPUTS.project.endYear; year++) {
-      cumulativeOilMmstb += getSeriesValue(SK612_INPUTS.productionProfile.oil, year) * 365 / 1_000_000;
-      if (cumulativeOilMmstb > 30 && expectedTriggerYear === null) expectedTriggerYear = year;
+  it('5.11 Supplementary payment applies only to the above-THV share, pro-rated in the crossing year', () => {
+    const yearlyMmstb = (30_000 * 365) / 1_000_000;
+    let cumulative = 0;
+    for (const cashflow of spProject) {
+      const before = cumulative;
+      cumulative += yearlyMmstb;
+      const fractionAbove = cumulative <= 30 ? 0 : before >= 30 ? 1 : (cumulative - 30) / yearlyMmstb;
+      const expected = (cashflow.contractorProfitShare as number) * fractionAbove * 0.70;
+      expectClose(cashflow.supplementaryPayment as number, expected, 0.01);
     }
-
-    const actualTriggerYear = sk612Cashflows.find((cashflow) => (cashflow.supplementaryPayment as number) > 0)?.year ?? null;
-    expect(actualTriggerYear).toBe(expectedTriggerYear);
+    // Year 3 crosses the THV part-way: SP is positive but below the full 70%.
+    const crossing = spProject[2]!;
+    expect(crossing.supplementaryPayment as number).toBeGreaterThan(0);
+    expect(crossing.supplementaryPayment as number).toBeLessThan((crossing.contractorProfitShare as number) * 0.70);
   });
 
   it('5.12 Supplementary payment is deducted from cumulative contractor revenue feeding next-year R/C', () => {
-    const triggerIndex = sk612Cashflows.findIndex((cashflow) => (cashflow.supplementaryPayment as number) > 0);
-    const nextYearCashflow = sk612Cashflows[triggerIndex + 1]!;
-    const cumulativeRevenue = contractorRevenueThroughYear(sk612Cashflows, triggerIndex);
-    const cumulativeCost = contractorCostThroughYear(SK612_INPUTS, triggerIndex);
-    const expectedRc = cumulativeRevenue / cumulativeCost;
-    expectClose(nextYearCashflow.rcIndex, expectedRc, TOL_RATIO);
+    const triggerIndex = spProject.findIndex((cashflow) => (cashflow.supplementaryPayment as number) > 0);
+    expect(triggerIndex).toBeGreaterThan(0);
+    const cumulativeRevenue = contractorRevenueThroughYear(spProject, triggerIndex);
+    const cumulativeCost = 400 * MILLION + (triggerIndex + 1) * 20 * MILLION;
+    expectClose(spProject[triggerIndex + 1]!.rcIndex, cumulativeRevenue / cumulativeCost, TOL_RATIO);
+  });
+
+  it('5.13 Deepwater R/C PSC (MPM 2018): no SP by default and below-THV oil shares for SK-612', () => {
+    // SK-612 cumulative oil stays far below the 300 MMstb deepwater THV.
+    for (const cashflow of sk612Cashflows) {
+      expect(cashflow.supplementaryPayment).toBe(0);
+      if ((cashflow.profitOilGas as number) > 0 && (cashflow.grossRevenueGas as number) === 0) {
+        const tranche = lookupTranche(DW_PSC.tranches, cashflow.rcIndex);
+        expectClose(
+          (cashflow.contractorProfitShare as number) / (cashflow.profitOilGas as number),
+          tranche.contractorProfitSharePct,
+          TOL_RATIO,
+        );
+      }
+    }
   });
 });
 
 describe('SECTION 6: EPT REGIME', () => {
-  it('6.1 EPT cost recovery ceiling is fixed at 70% every year', () => {
+  it('6.1 EPT cost recovery ceiling is fixed at 70% of gross production every year', () => {
     for (const cashflow of balingianCashflows) {
-      expectClose(cashflow.costRecoveryCeiling as number, (cashflow.revenueAfterRoyalty as number) * 0.70, 0.01);
+      const expected = Math.min((cashflow.totalGrossRevenue as number) * 0.70, cashflow.revenueAfterRoyalty as number);
+      expectClose(cashflow.costRecoveryCeiling as number, expected, 0.01);
     }
   });
 
@@ -591,7 +654,10 @@ describe('SECTION 7: SFA & DEEPWATER REGIMES', () => {
 
   it('7.2 SFA uses fixed 80% cost recovery and 70/30 profit split', () => {
     for (const cashflow of tukauCashflows) {
-      expectClose(cashflow.costRecoveryCeiling as number, (cashflow.revenueAfterRoyalty as number) * 0.80, 0.01);
+      const expectedCeiling = Math.min((cashflow.totalGrossRevenue as number) * 0.80, cashflow.revenueAfterRoyalty as number);
+      expectClose(cashflow.costRecoveryCeiling as number, expectedCeiling, 0.01);
+      // MPM SFA: research cess not applicable.
+      expect(cashflow.researchCess).toBe(0);
       if ((cashflow.profitOilGas as number) > 0) {
         expectClose((cashflow.contractorProfitShare as number) / (cashflow.profitOilGas as number), 0.70, TOL_RATIO);
         expectClose((cashflow.hostProfitShare as number) / (cashflow.profitOilGas as number), 0.30, TOL_RATIO);
@@ -599,32 +665,46 @@ describe('SECTION 7: SFA & DEEPWATER REGIMES', () => {
     }
   });
 
-  it('7.3 Deepwater tranches carry a 5% uplift versus standard R/C tranches', () => {
-    for (let idx = 0; idx < RC_PSC.tranches.length; idx++) {
-      expectClose(DW_PSC.tranches[idx]!.costRecoveryCeilingPct - RC_PSC.tranches[idx]!.costRecoveryCeilingPct, 0.05, 0.000001);
-      expectClose(DW_PSC.tranches[idx]!.contractorProfitSharePct - RC_PSC.tranches[idx]!.contractorProfitSharePct, 0.05, 0.000001);
-    }
+  it('7.3 Deepwater tranches follow the MPM Deepwater R/C PSC term (June 2018)', () => {
+    expect(DW_PSC.tranches.map((t) => t.rcCeiling)).toEqual([1.0, 1.4, 2.0, 2.5, 3.0, Infinity]);
+    expect(DW_PSC.tranches.map((t) => t.costRecoveryCeilingPct)).toEqual([0.80, 0.80, 0.70, 0.70, 0.60, 0.60]);
+    expect(DW_PSC.tranches.map((t) => t.contractorProfitSharePct)).toEqual([0.80, 0.70, 0.60, 0.50, 0.50, 0.50]);
+    expect(DW_PSC.tranches.map((t) => t.contractorProfitSharePctAboveThv)).toEqual([0.60, 0.50, 0.40, 0.40, 0.40, 0.40]);
+    expect(DW_PSC.tranches.map((t) => t.gasContractorProfitSharePct)).toEqual([0.80, 0.80, 0.70, 0.60, 0.50, 0.50]);
+    expect(DW_PSC.tranches.map((t) => t.gasContractorProfitSharePctAboveThv)).toEqual([0.60, 0.60, 0.50, 0.40, 0.40, 0.40]);
+    expect(DW_PSC.thresholdVolume).toEqual({ liquidsMmstb: 300, gasTscf: 2 });
+    expect(DW_PSC.supplementaryPayment).toBeNull();
+    expect(DW_PSC.investmentAllowance).toEqual({ rate: 0.60, statutoryIncomeCap: 0.70, periodYears: 10 });
   });
 
   it('7.4 CCS uses 24% corporate tax with no royalty, export duty, or cost recovery', () => {
-    const positiveTaxYear = m3Cashflows.find((cashflow) => (cashflow.taxableIncome as number) > 0)!;
-    const costs = computeCosts(M3_CCS_INPUTS.costProfile, positiveTaxYear.year);
-    const expectedTax = (positiveTaxYear.taxableIncome as number) * 0.24;
-    const expectedNcf =
-      (positiveTaxYear.totalGrossRevenue as number) -
-      costs.totalCapex -
-      costs.totalOpex -
-      costs.abandonmentCost -
-      expectedTax;
-
     for (const cashflow of m3Cashflows) {
       expect(cashflow.royalty).toBe(0);
       expect(cashflow.exportDuty).toBe(0);
       expect(cashflow.costRecoveryAmount).toBe(0);
+      const costs = computeCosts(M3_CCS_INPUTS.costProfile, cashflow.year); // 100% equity
+      const chargeable =
+        Math.max(0, (cashflow.taxableIncome as number) - (cashflow.taxAllowanceUsed as number) - (cashflow.lossRelief as number));
+      expectClose(cashflow.pitaTax as number, chargeable * 0.24, 0.01);
+      const expectedNcf =
+        (cashflow.totalGrossRevenue as number) - costs.totalCapex - costs.totalOpex - costs.abandonmentCost -
+        (cashflow.pitaTax as number);
+      expectClose(cashflow.netCashFlow as number, expectedNcf, 0.01);
     }
     expectClose(DOWNSTREAM_TAX.taxRate, 0.24, 0.000001);
-    expectClose(positiveTaxYear.pitaTax as number, expectedTax, 0.01);
-    expectClose(positiveTaxYear.netCashFlow as number, expectedNcf, 0.01);
+  });
+
+  it('7.5 CCS incentive is the Budget 2023 ITA (100% of capex vs up to 100% of statutory income), not also an exemption', () => {
+    expect(DOWNSTREAM_TAX.ccsIncentive).toEqual({
+      type: 'investment-tax-allowance',
+      allowanceRate: 1.0,
+      statutoryIncomeCap: 1.0,
+      periodYears: 10,
+    });
+    // ITA used never exceeds the positive statutory income of the year.
+    for (const cashflow of m3Cashflows) {
+      expect(cashflow.taxAllowanceUsed as number).toBeLessThanOrEqual(Math.max(0, cashflow.taxableIncome as number) + 0.01);
+    }
   });
 });
 
@@ -633,16 +713,23 @@ describe('SECTION 8: PITA TAX CALCULATION', () => {
     // Per PITA 1967 Section 33, allowable deductions include OPEX and abandonment
     // wholly and exclusively incurred in producing gross income, in addition to
     // capital allowance. See ASSESSMENT.md F1, F2.
-    for (const cashflow of sk410Cashflows) {
-      const yearCosts = computeCosts(SK410_INPUTS.costProfile, cashflow.year);
-      const taxableIncome =
-        (cashflow.contractorEntitlement as number)
+    // Research cess is deductible; adjusted losses are carried forward
+    // against later income (PITA — no time limit).
+    const taxable = sk410Cashflows.map((cashflow) => {
+      const yearCosts = computeCosts(workingInterestCosts(SK410_INPUTS), cashflow.year);
+      return (cashflow.contractorEntitlement as number)
+        - (cashflow.researchCess as number)
         - (cashflow.capitalAllowance as number)
         - yearCosts.totalOpex
         - yearCosts.abandonmentCost;
-      const expectedTax = Math.max(0, taxableIncome * 0.38);
-      expectClose(cashflow.pitaTax as number, expectedTax, 0.01);
-    }
+    });
+    const chargeable = manualChargeableIncome(taxable);
+    sk410Cashflows.forEach((cashflow, idx) => {
+      expectClose(cashflow.taxableIncome as number, taxable[idx]!, 0.01);
+      expectClose(cashflow.pitaTax as number, chargeable[idx]! * 0.38, 0.01);
+    });
+    // SK-410 has pre-production losses, so relief is actually exercised.
+    expect(sk410Cashflows.some((cashflow) => (cashflow.lossRelief as number) > 0)).toBe(true);
   });
 
   it('8.2 Capital allowance follows CAPEX / 5 straight-line vintages', () => {
@@ -664,32 +751,43 @@ describe('SECTION 8: PITA TAX CALCULATION', () => {
     const firstExhausted = sk410Cashflows.find(
       (cashflow) => (cashflow.capitalAllowance as number) === 0 && (cashflow.contractorEntitlement as number) > 0,
     )!;
-    const yearCosts = computeCosts(SK410_INPUTS.costProfile, firstExhausted.year);
+    const yearCosts = computeCosts(workingInterestCosts(SK410_INPUTS), firstExhausted.year);
     const expectedTaxable =
-      (firstExhausted.contractorEntitlement as number) - yearCosts.totalOpex - yearCosts.abandonmentCost;
+      (firstExhausted.contractorEntitlement as number) - (firstExhausted.researchCess as number)
+      - yearCosts.totalOpex - yearCosts.abandonmentCost;
     expectClose(firstExhausted.taxableIncome as number, expectedTaxable, 0.01);
-    expectClose(firstExhausted.pitaTax as number, Math.max(0, expectedTaxable) * 0.38, 0.01);
+    expectClose(
+      firstExhausted.pitaTax as number,
+      Math.max(0, expectedTaxable - (firstExhausted.lossRelief as number)) * 0.38,
+      0.01,
+    );
   });
 
   it('8.5 SFA uses a 25% PITA rate', () => {
-    const positiveTaxYear = tukauCashflows.find((cashflow) => (cashflow.taxableIncome as number) > 0)!;
-    expectClose(positiveTaxYear.pitaTax as number, (positiveTaxYear.taxableIncome as number) * 0.25, 0.01);
+    for (const cashflow of tukauCashflows.filter((entry) => (entry.taxableIncome as number) > 0)) {
+      const chargeable = (cashflow.taxableIncome as number) - (cashflow.lossRelief as number);
+      expectClose(cashflow.pitaTax as number, chargeable * 0.25, 0.01);
+    }
   });
 
-  it('8.6 CCS uses 24% corporate tax on positive taxable income', () => {
-    const positiveTaxYear = m3Cashflows.find((cashflow) => (cashflow.taxableIncome as number) > 0)!;
-    expectClose(positiveTaxYear.pitaTax as number, (positiveTaxYear.taxableIncome as number) * 0.24, 0.01);
+  it('8.6 CCS uses 24% corporate tax on income after the ITA and loss relief', () => {
+    for (const cashflow of m3Cashflows.filter((entry) => (entry.taxableIncome as number) > 0)) {
+      const chargeable =
+        (cashflow.taxableIncome as number) - (cashflow.taxAllowanceUsed as number) - (cashflow.lossRelief as number);
+      expectClose(cashflow.pitaTax as number, Math.max(0, chargeable) * 0.24, 0.01);
+    }
   });
 });
 
 describe('SECTION 9: NCF & ECONOMIC INDICATORS', () => {
   it('9.1 NCF equals entitlement components minus tax and costs for SK-410', () => {
     for (const cashflow of sk410Cashflows) {
-      const costs = computeCosts(SK410_INPUTS.costProfile, cashflow.year);
+      const costs = computeCosts(workingInterestCosts(SK410_INPUTS), cashflow.year);
       const expected =
         (cashflow.costRecoveryAmount as number) +
         (cashflow.contractorProfitShare as number) -
         (cashflow.supplementaryPayment as number) -
+        (cashflow.researchCess as number) -
         (cashflow.pitaTax as number) -
         costs.totalCapex -
         costs.totalOpex -
@@ -745,7 +843,7 @@ describe('SECTION 9: NCF & ECONOMIC INDICATORS', () => {
   });
 
   it('9.8 Profitability Index equals NPV divided by PV of CAPEX', () => {
-    const capexSeries = sk410Cashflows.map((cashflow) => computeCosts(SK410_INPUTS.costProfile, cashflow.year).totalCapex);
+    const capexSeries = sk410Cashflows.map((cashflow) => computeCosts(workingInterestCosts(SK410_INPUTS), cashflow.year).totalCapex);
     const pvCapex = calculateNPV(capexSeries, 0.10);
     const expected = (sk410EconomicsBase.npv10 as number) / pvCapex;
     expectClose(sk410EconomicsBase.profitabilityIndex, expected, TOL_RATIO);
@@ -758,6 +856,7 @@ describe('SECTION 9: NCF & ECONOMIC INDICATORS', () => {
         (cashflow.royalty as number) +
         (cashflow.exportDuty as number) +
         (cashflow.researchCess as number) +
+        (cashflow.sarawakSst as number) +
         (cashflow.hostProfitShare as number) +
         (cashflow.supplementaryPayment as number) +
         (cashflow.pitaTax as number),
@@ -779,81 +878,89 @@ describe('SECTION 9: NCF & ECONOMIC INDICATORS', () => {
 });
 
 describe('SECTION 10: FINANCIAL STATEMENTS', () => {
-  it('10.1 Income Statement revenue matches economics gross revenue in every year', () => {
+  it('10.1 Income Statement revenue is the contractor entitlement (MFRS 15 entitlement method)', () => {
     for (let idx = 0; idx < sk410Cashflows.length; idx++) {
       expectClose(
         sk410Income.yearly[idx]!.revenue as number,
-        sk410Cashflows[idx]!.totalGrossRevenue as number,
+        sk410Cashflows[idx]!.contractorEntitlement as number,
         0.01,
       );
     }
   });
 
-  it('10.2 Income Statement DD&A follows the engine remaining-life straight-line schedule', () => {
-    const expectedDda = manualIncomeDdaByYear(SK410_INPUTS);
+  it('10.2 Income Statement DD&A: straight line from first revenue year, incl. the decommissioning asset', () => {
+    const expectedDda = manualIncomeDdaByYear(SK410_INPUTS, sk410Cashflows);
     for (const line of sk410Income.yearly) {
       expectClose(line.depreciationAmortisation as number, expectedDda.get(line.year) ?? 0, 0.01);
     }
+    // Nothing is depreciated before first production.
+    expect(sk410Income.yearly[0]!.depreciationAmortisation).toBe(0);
   });
 
-  it('10.3 Net Income equals Revenue - Royalty - OPEX/ABEX - DD&A - Tax', () => {
+  it('10.3 Profit before tax = entitlement − OPEX − research cess − DD&A − unwinding; lifetime profit = lifetime NCF', () => {
+    const decomm = generateDecommissioningSchedule(
+      workingInterestCosts(SK410_INPUTS), SK410_INPUTS.project.startYear, SK410_INPUTS.project.endYear, DECOMM_DISCOUNT_RATE,
+    );
     for (let idx = 0; idx < sk410Income.yearly.length; idx++) {
       const line = sk410Income.yearly[idx]!;
       const cashflow = sk410Cashflows[idx]!;
-      const costs = computeCosts(SK410_INPUTS.costProfile, line.year);
-      const expected =
-        (cashflow.totalGrossRevenue as number) -
-        (cashflow.royalty as number) -
+      const costs = computeCosts(workingInterestCosts(SK410_INPUTS), line.year);
+      const expectedPbt =
+        (cashflow.contractorEntitlement as number) -
         costs.totalOpex -
-        costs.abandonmentCost -
+        (cashflow.researchCess as number) -
         (line.depreciationAmortisation as number) -
-        (cashflow.pitaTax as number);
-      expectClose(line.profitAfterTax as number, expected, TOL_FS);
+        (decomm[idx]!.unwinding as number);
+      expectClose(line.profitBeforeTax as number, expectedPbt, TOL_FS);
     }
+    const lifetimeProfit = sk410Income.yearly.reduce((sum, line) => sum + (line.profitAfterTax as number), 0);
+    const lifetimeNcf = sk410Cashflows.reduce((sum, cashflow) => sum + (cashflow.netCashFlow as number), 0);
+    expectClose(lifetimeProfit, lifetimeNcf, TOL_FS);
   });
 
-  it('10.4 Balance sheet balances: Assets = Liabilities + Equity', () => {
+  it('10.4 Balance sheet balances with no reconciliation plug: Assets = Liabilities + Equity', () => {
     for (const line of sk410Balance.yearly) {
       expectClose(line.totalAssets as number, line.totalEquityAndLiabilities as number, TOL_FS);
+      expectClose(line.otherReserves as number, 0, 1);
     }
   });
 
-  it('10.5 Balance sheet PP&E composition: cumulative CAPEX − DD&A + ARO − E&E (MFRS 6 + IFRIC 1)', () => {
-    // Post Wave 2 BS rewire (D32/D33): PP&E = cumCapex − cumDda
-    //   + ARO capitalisation (IFRIC 1 §5 — capitalise initial PV of decom obligation)
-    //   − E&E balance (MFRS 6 — exploration assets sit in their own line until FID)
-    // For SK-410 (development phase, no E&E), the E&E term is zero.
-    let cumulativeCapex = 0;
+  it('10.5 Balance sheet PP&E = cumulative additions (capex + decommissioning asset) − cumulative DD&A', () => {
+    const decomm = generateDecommissioningSchedule(
+      workingInterestCosts(SK410_INPUTS), SK410_INPUTS.project.startYear, SK410_INPUTS.project.endYear, DECOMM_DISCOUNT_RATE,
+    );
+    let cumulativeAdditions = 0;
     let cumulativeDda = 0;
     for (let idx = 0; idx < sk410Balance.yearly.length; idx++) {
       const line = sk410Balance.yearly[idx]!;
-      cumulativeCapex += computeCosts(SK410_INPUTS.costProfile, line.year).totalCapex;
+      cumulativeAdditions +=
+        computeCosts(workingInterestCosts(SK410_INPUTS), line.year).totalCapex + (decomm[idx]!.additions as number);
       cumulativeDda += sk410Income.yearly[idx]!.depreciationAmortisation as number;
-      const explorationAssets = line.explorationAssets as number;
-      // PPE-base = cumCapex - cumDda - E&E. ARO capitalisation accumulates
-      // through `decommissioningProvision`; we test the lower bound (PPE
-      // is at least cumCapex − cumDda − E&E).
-      const ppeBaseLowerBound = Math.max(0, cumulativeCapex - cumulativeDda - explorationAssets);
-      expect(line.ppeNet as number).toBeGreaterThanOrEqual(ppeBaseLowerBound - TOL_FS);
+      expectClose(line.ppeNet as number, cumulativeAdditions - cumulativeDda, TOL_FS);
+      expectClose(line.decommissioningProvision as number, decomm[idx]!.closing as number, TOL_FS);
     }
+    // Fully depreciated and provision fully utilised at end of life.
+    const last = sk410Balance.yearly[sk410Balance.yearly.length - 1]!;
+    expectClose(last.ppeNet as number, 0, TOL_FS);
+    expectClose(last.decommissioningProvision as number, 0, TOL_FS);
   });
 
-  it('10.6 Cash flow statement operating cash flow equals PBT + DD&A - tax', () => {
+  it('10.6 Cash flow statement operating cash flow equals PBT + DD&A + non-cash items − tax paid', () => {
     for (const line of sk410Cfs.yearly) {
       const expected =
         (line.profitBeforeTax as number) +
-        (line.depreciation as number) -
+        (line.depreciation as number) +
+        (line.otherOperatingAdjustments as number) -
         (line.taxPaid as number);
       expectClose(line.netOperatingCashFlow as number, expected, TOL_FS);
     }
   });
 
-  it('10.7 Cash flow statement net cash change equals operating CF minus capex/abex', () => {
-    for (const line of sk410Cfs.yearly) {
-      const expected =
-        (line.netOperatingCashFlow as number) -
-        (line.capexPPE as number);
-      expectClose(line.netCashChange as number, expected, TOL_FS);
+  it('10.7 Cash flow statement net cash change equals economics NCF and closing cash ties to the balance sheet', () => {
+    for (let idx = 0; idx < sk410Cfs.yearly.length; idx++) {
+      const line = sk410Cfs.yearly[idx]!;
+      expectClose(line.netCashChange as number, sk410Cashflows[idx]!.netCashFlow as number, TOL_FS);
+      expectClose(line.closingCash as number, sk410Balance.yearly[idx]!.cash as number, TOL_FS);
     }
   });
 
@@ -883,8 +990,11 @@ describe('SECTION 11: SENSITIVITY & MONTE CARLO', () => {
     expect((tornado.baseNpv as number)).toBeGreaterThan(lower.npvValue as number);
   });
 
-  it('11.2 Sensitivity +30% CAPEX decreases NPV', () => {
-    const tornado = calculateTornado(SK410_INPUTS, BASE_PRICE_DECK, ['capex'], [0.30]);
+  it('11.2 Sensitivity +30% CAPEX decreases NPV under a fixed-split PSC (Tukau SFA)', () => {
+    // Under the step R/C tables extra cost can delay a tranche crossing and
+    // raise contractor NPV (the R/C "gold-plating" effect), so monotonicity
+    // is asserted on a fixed-split regime.
+    const tornado = calculateTornado(TUKAU_INPUTS, BASE_PRICE_DECK, ['capex'], [0.30]);
     expect(tornado.dataPoints[0]!.npvValue as number).toBeLessThan(tornado.baseNpv as number);
   });
 
@@ -919,8 +1029,14 @@ describe('SECTION 11: SENSITIVITY & MONTE CARLO', () => {
 });
 
 describe('SECTION 12: CROSS-PROJECT CONSISTENCY', () => {
-  it('12.1 Portfolio NPV equals the sum of individual project NPVs', () => {
-    const expected = [...portfolioResults.values()].reduce((sum, result) => sum + (result.npv10 as number), 0);
+  it('12.1 Portfolio NPV equals the sum of project NPVs re-valued at the common valuation year', () => {
+    const expected = [...portfolioResults.values()].reduce((sum, result) => {
+      return sum + result.yearlyCashflows
+        .filter((cashflow) => cashflow.year >= fullPortfolio.valuationYear)
+        .reduce((acc, cashflow) =>
+          acc + (cashflow.netCashFlow as number) / Math.pow(1.10, cashflow.year - fullPortfolio.valuationYear), 0);
+    }, 0);
+    expect(fullPortfolio.valuationYear).toBe(2026);
     expectClose(fullPortfolio.totalNpv as number, expected, MILLION);
   });
 
@@ -934,7 +1050,8 @@ describe('SECTION 12: CROSS-PROJECT CONSISTENCY', () => {
     withoutSk612.delete('sk-612');
     const reduced = aggregatePortfolio(ALL_PROJECTS, portfolioResults, withoutSk612, PROJECT_HIERARCHY);
     const delta = (fullPortfolio.totalNpv as number) - (reduced.totalNpv as number);
-    expectClose(delta, sk612EconomicsBase.npv10 as number, MILLION);
+    // SK-612 starts in 2027, one year after the 2026 valuation year.
+    expectClose(delta, (sk612EconomicsBase.npv10 as number) / 1.10, MILLION);
   });
 
   it('12.4 All four SK-410 scenarios produce distinct ordered NPVs', () => {

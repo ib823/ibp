@@ -9,6 +9,11 @@
 
 import type { UnitConversion } from '@/engine/types';
 
+/** Reference USD/MYR rate for planning and display: ~4.07 at mid-September
+ *  2026 (market mid-rate). PETROS to confirm the Bank Negara reference
+ *  window used for the plan (D4). */
+export const REFERENCE_USD_MYR = 4.07;
+
 /** Standard petroleum-industry conversions seeded into a fresh project. */
 export const DEFAULT_CONVERSIONS: readonly UnitConversion[] = [
   // Oil volume
@@ -18,7 +23,7 @@ export const DEFAULT_CONVERSIONS: readonly UnitConversion[] = [
 
   // Gas volume
   { id: 'mmscf-bcf',   fromUnit: 'MMscf', toUnit: 'Bcf',     factor: 0.001,    category: 'volume_gas', isDefault: true, description: 'Million SCF to Billion SCF' },
-  { id: 'mmscf-mmbtu', fromUnit: 'MMscf', toUnit: 'MMBtu',   factor: 1.055,    category: 'volume_gas', isDefault: true, description: 'Million SCF to Million BTU' },
+  { id: 'mmscf-mmbtu', fromUnit: 'MMscf', toUnit: 'MMBtu',   factor: 1055,     category: 'volume_gas', isDefault: true, description: 'Million SCF to Million BTU (1,000 Mscf × 1.055 MMBtu/Mscf)' },
   { id: 'mmscf-pj',    fromUnit: 'MMscf', toUnit: 'PJ',      factor: 0.001113, category: 'volume_gas', isDefault: true, description: 'Million SCF to Petajoules' },
   { id: 'mmscf-nm3',   fromUnit: 'MMscf', toUnit: 'kNm³',    factor: 28.317,   category: 'volume_gas', isDefault: true, description: 'Million SCF to Thousand Normal Cubic Meters' },
   { id: 'bcf-tscf',    fromUnit: 'Bcf',   toUnit: 'Tscf',    factor: 0.001,    category: 'volume_gas', isDefault: true, description: 'Billion SCF to Trillion SCF' },
@@ -33,7 +38,7 @@ export const DEFAULT_CONVERSIONS: readonly UnitConversion[] = [
   { id: 'bbl-tonne',   fromUnit: 'bbl',   toUnit: 'tonne (crude)',  factor: 0.1364,   category: 'mass', isDefault: true, description: 'Barrels to Tonnes (average crude, API 35)' },
 
   // Currency
-  { id: 'usd-myr', fromUnit: 'USD', toUnit: 'MYR', factor: 4.50, category: 'currency', isDefault: true, description: 'US Dollars to Malaysian Ringgit' },
+  { id: 'usd-myr', fromUnit: 'USD', toUnit: 'MYR', factor: REFERENCE_USD_MYR, category: 'currency', isDefault: true, description: 'US Dollars to Malaysian Ringgit' },
 
   // BOE equivalence
   { id: 'mscf-boe', fromUnit: 'Mscf', toUnit: 'boe', factor: 1 / 6, category: 'energy', isDefault: true, description: 'Thousand SCF Gas to Barrel Oil Equivalent (6:1 energy basis)' },

@@ -3,7 +3,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tabs } from '@/components/ui5/Ui5Tabs';
 import { Select } from '@/components/ui5/Ui5Select';
 import { Button } from '@/components/ui5/Ui5Button';
-import { useProjectStore } from '@/store/project-store';
+import { useProjectStore, useEffectiveProjects } from '@/store/project-store';
 import { TornadoChart } from '@/components/charts/TornadoChart';
 import { SpiderDiagramChart } from '@/components/charts/SpiderDiagramChart';
 import { ScenarioBarChart } from '@/components/charts/ScenarioComparisonChart';
@@ -15,7 +15,7 @@ import { EmptyState } from '@/components/shared/States';
 import { CHART_NEG, CHART_POS } from '@/lib/chart-colors';
 import { calculateSpider } from '@/engine/sensitivity/spider';
 import { compareScenarios } from '@/engine/sensitivity/scenario';
-import { fmtPct, fmtYears, fmtNum } from '@/lib/format';
+import { fmtPct, fmtPctOrNa, fmtYears, fmtNum } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
 import { getPageEntries } from '@/lib/educational-content';
@@ -26,7 +26,9 @@ const edu = getPageEntries('sensitivity');
 
 export default function SensitivityPage() {
   usePageTitle('Sensitivity Analysis');
-  const projects = useProjectStore((s) => s.projects);
+  // What-if overrides apply to every analysis on the page (the tornado
+  // already runs on the effective project in the store).
+  const projects = useEffectiveProjects();
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const sensitivityResults = useProjectStore((s) => s.sensitivityResults);
@@ -263,7 +265,7 @@ function ScenarioKpiTable({ results }: { results: Record<ScenarioVersion, Econom
       values: scenarios.map((s) => ({
         text: results[s].isNonInvestmentPattern
           ? fmtPct(results[s].mirr) + ' (MIRR)'
-          : fmtPct(results[s].irr ?? 0),
+          : fmtPctOrNa(results[s].irr),
       })),
     },
     {

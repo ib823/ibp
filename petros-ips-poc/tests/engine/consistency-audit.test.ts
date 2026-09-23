@@ -21,7 +21,9 @@ import { generateBalanceSheet } from '@/engine/financial/balance-sheet';
 import { generateCashFlowStatement } from '@/engine/financial/cashflow-statement';
 import { generateAccountMovements } from '@/engine/financial/account-movements';
 import { calculateFiscalCashflows } from '@/engine/fiscal';
-import { computeCosts } from '@/engine/fiscal/shared';
+import { computeCosts, workingInterestCosts } from '@/engine/fiscal/shared';
+import { calculateNPV, headlineReturn } from '@/engine/economics';
+import { npvAtValuationYear, portfolioIrr } from '@/engine/economics/valuation';
 import { aggregatePortfolio } from '@/engine/portfolio/aggregation';
 import { PROJECT_RESERVES, gasBcfToMmboe, getProjectReserves } from '@/engine/reserves/prms';
 import { generateReservesReconciliation } from '@/engine/reserves/reconciliation';
@@ -31,7 +33,7 @@ import { compareScenarios } from '@/engine/sensitivity/scenario';
 import { calculateSpider } from '@/engine/sensitivity/spider';
 import { calculateTornado } from '@/engine/sensitivity/tornado';
 import { DEFAULT_CONVERSIONS, convert } from '@/engine/utils/unit-conversion';
-import { formatMoney, fmtPct, fmtYears } from '@/lib/format';
+import { formatMoney, fmtPct, fmtPctOrNa, fmtYears } from '@/lib/format';
 import { resetStore } from '../ui/test-utils';
 import { useProjectStore } from '@/store/project-store';
 import type {
@@ -55,12 +57,8 @@ function money(value: number) {
   });
 }
 
-function rateValue(result: EconomicsResult) {
-  return result.isNonInvestmentPattern ? result.mirr : (result.irr ?? 0);
-}
-
 function rateDisplay(result: EconomicsResult) {
-  return fmtPct(rateValue(result));
+  return fmtPctOrNa(headlineReturn(result).value);
 }
 
 function scenarioDeck(scenario: ScenarioVersion): PriceDeck {
@@ -86,7 +84,7 @@ function lastCumNcf(result: EconomicsResult) {
 function totalCapexFromInputs(project: ProjectInputs) {
   let total = 0;
   for (let year = project.project.startYear; year <= project.project.endYear; year++) {
-    total += computeCosts(project.costProfile, year).totalCapex;
+    total += computeCosts(workingInterestCosts(project), year).totalCapex;
   }
   return total;
 }
@@ -98,6 +96,7 @@ function totalGovtReceipts(result: EconomicsResult) {
       (cashflow.royalty as number) +
       (cashflow.exportDuty as number) +
       (cashflow.researchCess as number) +
+      (cashflow.sarawakSst as number) +
       (cashflow.hostProfitShare as number) +
       (cashflow.supplementaryPayment as number) +
       (cashflow.pitaTax as number),
@@ -108,7 +107,7 @@ function totalGovtReceipts(result: EconomicsResult) {
 function totalPreTaxCashFlow(project: ProjectInputs, result: EconomicsResult) {
   let totalCosts = 0;
   for (const cashflow of result.yearlyCashflows) {
-    const cost = computeCosts(project.costProfile, cashflow.year);
+    const cost = computeCosts(workingInterestCosts(project), cashflow.year);
     totalCosts += cost.totalCapex + cost.totalOpex + cost.abandonmentCost;
   }
   return (result.totalRevenue as number) - totalCosts;
@@ -124,18 +123,6 @@ function portfolioGovtTake(activeProjectIds: ReadonlySet<string>, results: Reado
     preTax += totalPreTaxCashFlow(project, result);
   }
   return preTax > 0 ? govtReceipts / preTax * 100 : 0;
-}
-
-function weightedIrr(activeProjectIds: ReadonlySet<string>, results: ReadonlyMap<string, EconomicsResult>) {
-  let weighted = 0;
-  let totalCapex = 0;
-  for (const id of activeProjectIds) {
-    const result = results.get(id)!;
-    const capex = result.totalCapex as number;
-    weighted += rateValue(result) * capex;
-    totalCapex += capex;
-  }
-  return totalCapex > 0 ? weighted / totalCapex : 0;
 }
 
 function buildResultsMap(scenario: ScenarioVersion) {
@@ -205,9 +192,12 @@ describe('SECTION 1: CROSS-PAGE NUMBER CONSISTENCY', () => {
       const economicsPayback = fmtYears(engineResult.paybackYears);
       const economicsPi = engineResult.profitabilityIndex.toFixed(2);
 
+      // Portfolio KPIs re-value at the common valuation year (2026) and take
+      // the IRR of the combined forward cash flow.
+      const expectedPortfolioNpv = money(npvAtValuationYear(engineResult, 0.10, portfolioResult.valuationYear));
       const dashboardTopNpv = money(portfolioResult.totalNpv as number);
       const dashboardTopCapex = money(portfolioResult.totalCapex as number);
-      const dashboardWeightedRate = fmtPct(weightedIrr(new Set([project.project.id]), new Map([[project.project.id, engineResult]])));
+      const dashboardPortfolioRate = fmtPctOrNa(portfolioResult.portfolioIrr);
       const dashboardRowNpv = money(engineResult.npv10 as number);
       const dashboardRowRate = rateDisplay(engineResult);
       const dashboardRowCapex = money(engineResult.totalCapex as number);
@@ -215,18 +205,26 @@ describe('SECTION 1: CROSS-PAGE NUMBER CONSISTENCY', () => {
 
       const portfolioTopNpv = money(portfolioResult.totalNpv as number);
       const portfolioTopCapex = money(portfolioResult.totalCapex as number);
-      const portfolioTopRate = fmtPct(weightedIrr(new Set([project.project.id]), new Map([[project.project.id, engineResult]])));
+      const portfolioTopRate = fmtPctOrNa(portfolioIrr([engineResult], portfolioResult.valuationYear));
       const portfolioTopGovtTake = portfolioGovtTake(new Set([project.project.id]), new Map([[project.project.id, engineResult]])).toFixed(1) + '%';
       const portfolioRowNpv = money(engineResult.npv10 as number);
 
-      expect(economicsNpv).toBe(dashboardTopNpv);
+      expect(dashboardTopNpv).toBe(expectedPortfolioNpv);
       expect(dashboardTopNpv).toBe(portfolioTopNpv);
       expect(dashboardRowNpv).toBe(portfolioRowNpv);
       expect(dashboardRowNpv).toBe(economicsNpv);
+      // A project that starts in the valuation year is valued identically.
+      if (project.project.startYear === portfolioResult.valuationYear) {
+        expect(dashboardTopNpv).toBe(economicsNpv);
+      }
 
-      expect(dashboardWeightedRate).toBe(economicsRate);
-      expect(portfolioTopRate).toBe(economicsRate);
+      expect(dashboardPortfolioRate).toBe(portfolioTopRate);
       expect(dashboardRowRate).toBe(economicsRate);
+      // Leading zero years don't move an IRR: an investment-pattern project
+      // starting on/after the valuation year has portfolio IRR = project IRR.
+      if (!engineResult.isNonInvestmentPattern && project.project.startYear >= portfolioResult.valuationYear) {
+        expect(portfolioTopRate).toBe(economicsRate);
+      }
 
       expect(dashboardTopCapex).toBe(portfolioTopCapex);
       expect(dashboardRowCapex).toBe(dashboardTopCapex);
@@ -250,16 +248,19 @@ describe('SECTION 2: FINANCIAL STATEMENT TO ECONOMICS RECONCILIATION', () => {
   const cfs = generateCashFlowStatement(income, cashflows, SK410_INPUTS);
   const accountMovements = generateAccountMovements(income, balance, cashflows, SK410_INPUTS);
 
-  it('2.1 SK-410 income statement revenue matches economics revenue by year', () => {
+  it('2.1 SK-410 income statement revenue matches the economics contractor entitlement by year', () => {
     for (let idx = 0; idx < cashflows.length; idx++) {
-      expectClose(income.yearly[idx]!.revenue as number, cashflows[idx]!.totalGrossRevenue as number, 0.01);
+      expectClose(income.yearly[idx]!.revenue as number, cashflows[idx]!.contractorEntitlement as number, 0.01);
     }
   });
 
-  it('2.2 SK-410 income statement tax matches economics PITA by year', () => {
+  it('2.2 SK-410 tax: current tax = economics PITA; lifetime tax expense = lifetime PITA (deferred tax reverses)', () => {
     for (let idx = 0; idx < cashflows.length; idx++) {
-      expectClose(income.yearly[idx]!.taxExpense as number, cashflows[idx]!.pitaTax as number, 0.01);
+      expectClose(cfs.yearly[idx]!.taxPaid as number, cashflows[idx]!.pitaTax as number, 0.01);
     }
+    const lifetimeExpense = income.yearly.reduce((sum, line) => sum + (line.taxExpense as number), 0);
+    const lifetimePita = cashflows.reduce((sum, cashflow) => sum + (cashflow.pitaTax as number), 0);
+    expectClose(lifetimeExpense, lifetimePita, 0.01);
   });
 
   it('2.3 SK-410 cash flow statement closing cash reconciles to cumulative net cash change', () => {
@@ -363,9 +364,18 @@ describe('SECTION 5: PORTFOLIO AGGREGATION', () => {
   const results = buildResultsMap('base');
   const portfolio = aggregatePortfolio(ALL_PROJECTS, results, new Set(results.keys()), PROJECT_HIERARCHY);
 
-  it('5.1 Portfolio weighted IRR matches capex-weighted project IRR/MIRR', () => {
-    const expected = weightedIrr(new Set(results.keys()), results);
-    expectClose(expected, weightedIrr(new Set(results.keys()), results), 0.000001);
+  it('5.1 Portfolio IRR zeroes the NPV of the combined forward cash flow', () => {
+    expect(portfolio.portfolioIrr).not.toBeNull();
+    const byYear = new Map<number, number>();
+    for (const result of results.values()) {
+      for (const cashflow of result.yearlyCashflows) {
+        if (cashflow.year < portfolio.valuationYear) continue;
+        byYear.set(cashflow.year, (byYear.get(cashflow.year) ?? 0) + (cashflow.netCashFlow as number));
+      }
+    }
+    const years = [...byYear.keys()].sort((a, b) => a - b);
+    const ncf = years.map((year) => byYear.get(year)!);
+    expectClose(calculateNPV(ncf, portfolio.portfolioIrr!), 0, MILLION);
   });
 
   it('5.2 Portfolio government take uses aggregate receipts over aggregate pre-tax cash flow', () => {
@@ -377,9 +387,10 @@ describe('SECTION 5: PORTFOLIO AGGREGATION', () => {
     const withoutSk612 = new Set(results.keys());
     withoutSk612.delete('sk-612');
     const reduced = aggregatePortfolio(ALL_PROJECTS, results, withoutSk612, PROJECT_HIERARCHY);
+    // SK-612 starts in 2027 — one year after the 2026 valuation year.
     expectClose(
       (portfolio.totalNpv as number) - (reduced.totalNpv as number),
-      results.get('sk-612')!.npv10 as number,
+      (results.get('sk-612')!.npv10 as number) / 1.10,
       MILLION,
     );
   });
@@ -412,16 +423,16 @@ describe('SECTION 7: UNIT CONVERSION ACCURACY', () => {
     expectClose(convert(1, 'bbl', 'm³', DEFAULT_CONVERSIONS), 0.158987, 0.000001);
   });
 
-  it('7.2 MMscf to MMBtu: 1 MMscf = 1.055 MMBtu', () => {
-    expectClose(convert(1, 'MMscf', 'MMBtu', DEFAULT_CONVERSIONS), 1.055, 0.001);
+  it('7.2 MMscf to MMBtu: 1 MMscf = 1,055 MMBtu (1,000 Mscf × 1.055)', () => {
+    expectClose(convert(1, 'MMscf', 'MMBtu', DEFAULT_CONVERSIONS), 1055, 0.001);
   });
 
   it('7.3 Mscf to BOE: 6 Mscf = 1 BOE', () => {
     expectClose(convert(6, 'Mscf', 'boe', DEFAULT_CONVERSIONS), 1, 0.001);
   });
 
-  it('7.4 USD to MYR: 1 USD = 4.50 MYR', () => {
-    expectClose(convert(1, 'USD', 'MYR', DEFAULT_CONVERSIONS), 4.5, 0.01);
+  it('7.4 USD to MYR: 1 USD = 4.07 MYR (September 2026 reference)', () => {
+    expectClose(convert(1, 'USD', 'MYR', DEFAULT_CONVERSIONS), 4.07, 0.01);
   });
 
   it('7.5 Round-trip conversion bbl → m³ → bbl preserves value', () => {
@@ -479,7 +490,9 @@ describe('SECTION 8: EDGE CASES & BOUNDARY CONDITIONS', () => {
   });
 
   it('8.4 Negative pre-tax cash flow projects return 0% government take under the current indicator guard', () => {
-    const result = calculateProjectEconomics(SK612_INPUTS, STRESS_PRICE_DECK, 'stress');
+    const doubledCapex = applyProjectSensitivity(SK612_INPUTS, 'capex', 1.0);
+    const result = calculateProjectEconomics(doubledCapex, STRESS_PRICE_DECK, 'stress');
+    expect(totalPreTaxCashFlow(doubledCapex, result)).toBeLessThan(0);
     expect((result.npv10 as number)).toBeLessThan(0);
     expect(result.governmentTakePct).toBe(0);
   });

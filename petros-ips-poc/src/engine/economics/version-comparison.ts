@@ -17,6 +17,7 @@ import type {
   YearlyVariance,
 } from '@/engine/types';
 import { calculateProjectEconomics } from './cashflow';
+import { workingInterestCosts } from '@/engine/fiscal/shared';
 
 /** Sum oil + gas (boe) production from a yearly cashflow row */
 function ncfRevenue(cf: YearlyCashflow): number {
@@ -42,7 +43,7 @@ export function applyVersionData(
  * Sum total CAPEX from a CostProfile.
  */
 function totalCapex(project: ProjectInputs): number {
-  const cp = project.costProfile;
+  const cp = workingInterestCosts(project);
   let total = 0;
   for (const series of [
     cp.capexDrilling,
@@ -59,7 +60,7 @@ function totalCapex(project: ProjectInputs): number {
  * Sum total OPEX from a CostProfile.
  */
 function totalOpex(project: ProjectInputs): number {
-  const cp = project.costProfile;
+  const cp = workingInterestCosts(project);
   let total = 0;
   for (const v of Object.values(cp.opexFixed)) total += v as number;
   for (const v of Object.values(cp.opexVariable)) total += v as number;
@@ -91,7 +92,7 @@ function yearlyProductionBoeRate(
 
 /** Sum CAPEX for a single year */
 function yearlyCapex(project: ProjectInputs, year: number): number {
-  const cp = project.costProfile;
+  const cp = workingInterestCosts(project);
   return (
     ((cp.capexDrilling[year] as number) ?? 0) +
     ((cp.capexFacilities[year] as number) ?? 0) +
@@ -102,7 +103,7 @@ function yearlyCapex(project: ProjectInputs, year: number): number {
 
 /** Sum OPEX for a single year */
 function yearlyOpex(project: ProjectInputs, year: number): number {
-  const cp = project.costProfile;
+  const cp = workingInterestCosts(project);
   return ((cp.opexFixed[year] as number) ?? 0) + ((cp.opexVariable[year] as number) ?? 0);
 }
 

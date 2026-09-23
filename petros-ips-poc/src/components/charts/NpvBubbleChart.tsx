@@ -12,7 +12,8 @@ import {
   Cell,
 } from 'recharts';
 import type { EconomicsResult, FiscalRegimeType } from '@/engine/types';
-import { fmtPct } from '@/lib/format';
+import { fmtPctOrNa } from '@/lib/format';
+import { headlineReturn } from '@/engine/economics';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { ChartDataTable } from '@/components/shared/ChartDataTable';
 import { ChartShell } from '@/components/charts/ChartShell';
@@ -43,7 +44,7 @@ interface BubbleDataPoint {
   capex: number;
   npv: number;
   production: number;
-  irr: number;
+  irr: number | null;
   regime: FiscalRegimeType;
 }
 
@@ -57,7 +58,7 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
         capex: ((p.result.totalCapex as number) * u.currencyFactor) / 1e6,
         npv: ((p.result.npv10 as number) * u.currencyFactor) / 1e6,
         production: lastCf ? lastCf.cumulativeProduction / 1e6 : 0,
-        irr: p.result.irr ?? p.result.mirr,
+        irr: headlineReturn(p.result).value,
         regime: p.regime,
       };
     }),
@@ -105,7 +106,7 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
                 <div className="font-semibold mb-1">{d.name}</div>
                 <div>NPV: <span className="font-data">{u.currencySymbol}{d.npv.toFixed(1)}M</span></div>
                 <div>CAPEX: <span className="font-data">{u.currencySymbol}{d.capex.toFixed(0)}M</span></div>
-                <div>IRR: <span className="font-data">{fmtPct(d.irr)}</span></div>
+                <div>IRR: <span className="font-data">{fmtPctOrNa(d.irr)}</span></div>
                 <div>Regime: <span className="font-medium">{d.regime.replace('_', ' ')}</span></div>
               </div>
             );
@@ -134,7 +135,7 @@ export function NpvBubbleChart({ projects }: NpvBubbleChartProps) {
         Number(d.npv.toFixed(1)),
         Number(d.capex.toFixed(1)),
         Number(d.production.toFixed(1)),
-        fmtPct(d.irr),
+        fmtPctOrNa(d.irr),
         d.regime.replace('_', ' '),
       ])}
     />

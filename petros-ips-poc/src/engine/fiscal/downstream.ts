@@ -19,7 +19,9 @@ import {
   computeRevenue,
   computeCosts,
   computeYearlyBoe,
+  AllowancePool,
   DepreciationSchedule,
+  TaxLossPool,
 } from './shared';
 
 export interface DownstreamInputs {
@@ -42,7 +44,13 @@ export function calculateDownstream(inputs: DownstreamInputs): YearlyCashflow[] 
   let cumulativeCashFlow = 0;
   let cumulativeDiscountedCF = 0;
   let cumulativeProductionBoe = 0;
+  let firstRevenueYear: number | null = null;
   const depreciation = new DepreciationSchedule();
+  const taxLosses = new TaxLossPool();
+  const incentive = fiscalConfig.ccsIncentive;
+  const ita = incentive?.type === 'investment-tax-allowance'
+    ? new AllowancePool(incentive.allowanceRate, incentive.statutoryIncomeCap, incentive.periodYears)
+    : null;
 
   for (let year = startYear; year <= endYear; year++) {
     const yearIndex = year - startYear;
@@ -56,26 +64,36 @@ export function calculateDownstream(inputs: DownstreamInputs): YearlyCashflow[] 
 
     // Total revenue includes both hydrocarbon revenue and CCS storage fees
     const totalRevenue = rev.totalGrossRevenue + ccsRevenue;
+    if (firstRevenueYear === null && totalRevenue > 0) firstRevenueYear = year;
 
     const cost = computeCosts(yearlyCosts, year);
     const totalCosts = cost.totalCapex + cost.totalOpex + cost.abandonmentCost;
 
     // Depreciation for capital allowance
     depreciation.addCapex(cost.totalCapex);
+    ita?.accrue(year, cost.totalCapex);
     const capitalAllowance = depreciation.computeAllowance();
 
-    // Taxable income = revenue - opex - depreciation
-    // Apply Investment Tax Allowance (D62 / Malaysian Budget 2024-2025):
-    // ITA reduces taxable income by `investmentTaxAllowance × yearCapex`,
-    // recoverable up to 70% of statutory income (typical Malaysian limit).
-    // Pioneer Status: exempts a fraction of taxable income from tax.
-    const ita = (fiscalConfig.investmentTaxAllowance || 0) * cost.totalCapex;
-    const itaCap = Math.max(0, totalRevenue - cost.totalOpex - cost.abandonmentCost - capitalAllowance) * 0.70;
-    const itaApplied = Math.min(ita, itaCap);
-    const taxableIncomePreExempt = totalRevenue - cost.totalOpex - cost.abandonmentCost - capitalAllowance - itaApplied;
-    const pioneerExemption = (fiscalConfig.pioneerStatusExemption || 0);
-    const taxableIncome = Math.max(0, taxableIncomePreExempt) * (1 - pioneerExemption);
-    const tax = Math.max(0, taxableIncome * fiscalConfig.taxRate);
+    // Statutory income = revenue − opex − abex − capital allowance.
+    // CCS incentive (Budget 2023, D62) — ONE of:
+    //   • Investment Tax Allowance: allowance on qualifying capex set off
+    //     against up to 100% of statutory income, balance carried forward;
+    //   • Income exemption: 70% of statutory income exempt for 10 years
+    //     from the first year of operations.
+    // Then brought-forward losses (incl. unabsorbed capital allowance).
+    const taxableIncome = totalRevenue - cost.totalOpex - cost.abandonmentCost - capitalAllowance;
+    let taxAllowanceUsed = 0;
+    if (ita) {
+      taxAllowanceUsed = ita.utilise(taxableIncome);
+    } else if (
+      incentive?.type === 'income-exemption' &&
+      firstRevenueYear !== null &&
+      year - firstRevenueYear < incentive.periodYears
+    ) {
+      taxAllowanceUsed = Math.max(0, taxableIncome) * incentive.exemptPct;
+    }
+    const { lossRelief, chargeableIncome } = taxLosses.apply(year, taxableIncome - taxAllowanceUsed);
+    const tax = chargeableIncome * fiscalConfig.taxRate;
 
     // NCF = revenue - all costs - tax
     const netCashFlow = totalRevenue - totalCosts - tax;
@@ -110,6 +128,9 @@ export function calculateDownstream(inputs: DownstreamInputs): YearlyCashflow[] 
       supplementaryPayment: usd(0),
       taxableIncome: usd(taxableIncome),
       capitalAllowance: usd(capitalAllowance),
+      lossRelief: usd(lossRelief),
+      taxAllowanceUsed: usd(taxAllowanceUsed),
+      taxLossCF: usd(taxLosses.balance),
       pitaTax: usd(tax),
       netCashFlow: usd(netCashFlow),
       cumulativeCashFlow: usd(cumulativeCashFlow),

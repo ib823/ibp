@@ -27,11 +27,11 @@ describe('convertSafe', () => {
 
   it('applies a direct conversion', () => {
     const result = convertSafe(1, 'USD', 'MYR', DEFAULT_CONVERSIONS);
-    expect(result).toBeCloseTo(4.5, 10);
+    expect(result).toBeCloseTo(4.07, 10);
   });
 
   it('applies a reverse conversion', () => {
-    const result = convertSafe(4.5, 'MYR', 'USD', DEFAULT_CONVERSIONS);
+    const result = convertSafe(4.07, 'MYR', 'USD', DEFAULT_CONVERSIONS);
     expect(result).toBeCloseTo(1, 10);
   });
 
@@ -81,8 +81,8 @@ describe('convertSafe', () => {
 
   it('applies a 1-hop chained conversion (MMscf → MMBtu → GJ)', () => {
     const result = convertSafe(1, 'MMscf', 'GJ', DEFAULT_CONVERSIONS);
-    // 1 MMscf × 1.055 (→MMBtu) × 1.05506 (→GJ) ≈ 1.11308
-    expect(result).toBeCloseTo(1.055 * 1.05506, 6);
+    // 1 MMscf × 1,055 (→MMBtu) × 1.05506 (→GJ) ≈ 1,113.08
+    expect(result).toBeCloseTo(1055 * 1.05506, 6);
   });
 });
 
@@ -92,7 +92,7 @@ describe('getConversionFactor', () => {
   });
 
   it('returns the direct factor for USD → MYR', () => {
-    expect(getConversionFactor('USD', 'MYR', DEFAULT_CONVERSIONS)).toBeCloseTo(4.5, 10);
+    expect(getConversionFactor('USD', 'MYR', DEFAULT_CONVERSIONS)).toBeCloseTo(4.07, 10);
   });
 
   it('returns 1 (fallback) for an unknown path', () => {

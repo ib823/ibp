@@ -1,6 +1,19 @@
 // ════════════════════════════════════════════════════════════════════════
 // R/C PSC Fiscal Calculation Engine
 // ════════════════════════════════════════════════════════════════════════
+//
+// Shared by the R/C PSC, the Deepwater R/C PSC (MPM, awards from June 2018)
+// and the HPHT PSC. Per year:
+//   1. Gross revenue at the equity share
+//   2. Cash payment (royalty), export duty (liquids), Sarawak SST
+//   3. Lagged R/C index → tranche
+//   4. Cost recovery, ceiling = tranche % of GROSS production value
+//   5. Profit oil/gas split — per stream (liquids / gas) and, where the
+//      tranche defines them, below / above the Threshold Volume
+//   6. Supplementary Payment on above-THV profit share (if configured)
+//   7. Research cess on the contractor's cost oil + profit oil
+//   8. PITA: capital allowance, loss carry-forward, investment allowance
+// ════════════════════════════════════════════════════════════════════════
 
 import type {
   ProductionProfile,
@@ -8,33 +21,35 @@ import type {
   PriceDeck,
   FiscalRegime_PSC_RC,
   RCTranche,
+  SupplementaryPaymentTerms,
   YearlyCashflow,
-  USD,
 } from '@/engine/types';
+import {
+  DISCOUNT_RATE,
+  usd,
+  computeRevenue,
+  computeCosts,
+  computeGovtDeductions,
+  computeYearlyBoe,
+  costRecoveryCeilingFromGross,
+  researchCessOnEntitlement,
+  AllowancePool,
+  DepreciationSchedule,
+  TaxLossPool,
+} from './shared';
 
 // ── Constants ─────────────────────────────────────────────────────────
 
-const DISCOUNT_RATE = 0.10;
-const CAPEX_DEPRECIATION_YEARS = 5;
-const MSCF_TO_MMBTU = 1.055; // 1 Mscf ≈ 1.055 MMBtu
-
-// Supplementary Payment thresholds (Threshold Volume)
-const THV_OIL_MMSTB = 30;    // million stock-tank barrels
-const THV_GAS_TSCF = 0.75;   // trillion standard cubic feet
-const SP_RATE = 0.70;         // supplementary payment rate
+/** Default Supplementary Payment terms — Threshold Volume of 30 MMstb
+ *  liquids / 0.75 Tscf gas, 70% SP rate. Contract-specific (D18): override
+ *  via `fiscalConfig.supplementaryPayment`, or set it to null for none. */
+export const DEFAULT_SP_TERMS: SupplementaryPaymentTerms = {
+  rate: 0.70,
+  thvLiquidsMmstb: 30,
+  thvGasTscf: 0.75,
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────
-
-function usd(n: number): USD {
-  return n as USD;
-}
-
-function getVal<T extends number>(
-  series: Readonly<Record<number, T>> | undefined,
-  year: number,
-): number {
-  return (series?.[year] as number | undefined) ?? 0;
-}
 
 /**
  * Look up the applicable tranche for a given R/C index.
@@ -54,6 +69,40 @@ function lookupTranche(
   return tranches[0]!;
 }
 
+/**
+ * Fraction of this year's volume that lies above the threshold, given the
+ * cumulative volume before the year. 0 below THV, 1 once fully above it,
+ * pro-rated in the crossing year.
+ */
+export function fractionAboveThreshold(
+  cumulativeBefore: number,
+  yearVolume: number,
+  threshold: number,
+): number {
+  if (yearVolume <= 0) return 0;
+  const cumulativeAfter = cumulativeBefore + yearVolume;
+  if (cumulativeAfter <= threshold) return 0;
+  if (cumulativeBefore >= threshold) return 1;
+  return (cumulativeAfter - threshold) / yearVolume;
+}
+
+/** Contractor profit share of each stream for a tranche, blending the
+ *  below- and above-THV shares by the fraction of volume above THV. */
+export function trancheContractorShares(
+  tranche: RCTranche,
+  liquidsAboveThv: number,
+  gasAboveThv: number,
+): { liquids: number; gas: number } {
+  const liquidsBelow = tranche.contractorProfitSharePct;
+  const liquidsAbove = tranche.contractorProfitSharePctAboveThv ?? liquidsBelow;
+  const gasBelow = tranche.gasContractorProfitSharePct ?? liquidsBelow;
+  const gasAbove = tranche.gasContractorProfitSharePctAboveThv ?? gasBelow;
+  return {
+    liquids: liquidsBelow + (liquidsAbove - liquidsBelow) * liquidsAboveThv,
+    gas: gasBelow + (gasAbove - gasBelow) * gasAboveThv,
+  };
+}
+
 // ── Public Interface ──────────────────────────────────────────────────
 
 export interface PscRcInputs {
@@ -71,6 +120,8 @@ export interface PscRcInputs {
  *
  * Follows the standard lagged R/C approach: this year's tranche is
  * determined by the R/C index computed from PRIOR year cumulative values.
+ * One cost pool is used for oil and gas (the DW R/C PSC keeps separate
+ * cost banks — allocating costs by stream needs cost data by commodity).
  */
 export function calculatePscRc(inputs: PscRcInputs): YearlyCashflow[] {
   const {
@@ -84,133 +135,124 @@ export function calculatePscRc(inputs: PscRcInputs): YearlyCashflow[] {
   } = inputs;
 
   const results: YearlyCashflow[] = [];
+  const spTerms = fiscalConfig.supplementaryPayment === undefined
+    ? DEFAULT_SP_TERMS
+    : fiscalConfig.supplementaryPayment;
+  const thv = fiscalConfig.thresholdVolume;
 
   // Running accumulators
   let unrecoveredCostCF = 0;
-  let cumulativeContractorRevenue = 0; // cost recovery + contractor profit share
-  let cumulativeContractorCost = 0;    // capex + opex
+  let cumulativeContractorRevenue = 0; // cost recovery + contractor profit share − SP
+  let cumulativeContractorCost = 0;    // capex + opex + abex
   let cumulativeCashFlow = 0;
   let cumulativeDiscountedCF = 0;
-  let cumulativeOilMmstb = 0;  // cumulative oil in MMstb
-  let cumulativeGasTscf = 0;   // cumulative gas in Tscf
+  let cumulativeLiquidsMmstb = 0;      // oil + condensate, 100% field basis
+  let cumulativeGasTscf = 0;           // 100% field basis
   let cumulativeProductionBoe = 0;
 
-  // CAPEX depreciation schedule: track undepreciated amounts by vintage year
-  // Each entry: [originalAmount, yearsRemaining]
-  const depreciationSchedule: Array<{ amount: number; yearsRemaining: number }> = [];
+  const depreciation = new DepreciationSchedule();
+  const taxLosses = new TaxLossPool();
+  const ia = fiscalConfig.investmentAllowance;
+  const investmentAllowance = ia
+    ? new AllowancePool(ia.rate, ia.statutoryIncomeCap, ia.periodYears)
+    : null;
 
   for (let year = startYear; year <= endYear; year++) {
     const yearIndex = year - startYear;
 
-    // ── STEP 1: Gross Revenue ─────────────────────────────────────────
-    const oilBpd = getVal(yearlyProduction.oil, year);
-    const gasMMscfd = getVal(yearlyProduction.gas, year);
-    const condBpd = getVal(yearlyProduction.condensate, year);
+    // ── STEP 1: Gross Revenue (raw USD, equity share applied) ────────
+    const rev = computeRevenue(yearlyProduction, priceDeck, year, equityShare);
+    const { grossRevenueOil, grossRevenueGas, grossRevenueCond, totalGrossRevenue } = rev;
+    const grossRevenueLiquids = grossRevenueOil + grossRevenueCond;
 
-    const oilPrice = getVal(priceDeck.oil, year);
-    const gasPrice = getVal(priceDeck.gas, year); // USD/MMBtu
-    const condPrice = getVal(priceDeck.condensate, year);
+    // ── STEP 2: Government deductions → revenue after govt takes ─────
+    // Cash payment (royalty), export duty (liquids only — ASSESSMENT.md
+    // F5) and Sarawak SST (D1). See shared.ts computeGovtDeductions.
+    const { royalty, exportDuty, sarawakSst, revenueAfterRoyalty } =
+      computeGovtDeductions(rev, fiscalConfig);
 
-    // Revenue in raw USD (not $M) — consistent with cost profile units
-    // Equity share applied to each component individually for consistent display
-    const grossRevenueOil = oilBpd * 365 * oilPrice * equityShare;
-    // Gas: MMscfd → Mscf/d (*1000) → MMBtu/d (*1.055) → USD/d (*gasPrice) → USD/yr (*365)
-    const grossRevenueGasCorrected = gasMMscfd * 1000 * MSCF_TO_MMBTU * gasPrice * 365 * equityShare;
-    const grossRevenueCond = condBpd * 365 * condPrice * equityShare;
-
-    const totalGrossRevenue = grossRevenueOil + grossRevenueGasCorrected + grossRevenueCond;
-
-    // ── STEP 2: Government deductions from gross revenue ────────────
-    // Export duty: liquid petroleum (oil + condensate) only — see shared.ts /
-    // ASSESSMENT.md F5. Gas/LNG zero-rated under Customs Duties Order.
-    const royalty = totalGrossRevenue * fiscalConfig.royaltyRate;
-    const exportDuty = (grossRevenueOil + grossRevenueCond) * (fiscalConfig.exportDutyRate || 0);
-    const researchCess = totalGrossRevenue * (fiscalConfig.researchCessRate || 0);
-    // Sarawak State Sales Tax 5% on petroleum products from 2019 (D1).
-    const sarawakSst = totalGrossRevenue * (fiscalConfig.sarawakSstRate || 0);
-
-    // ── STEP 3: Revenue After Government Takes ───────────────────────
-    const revenueAfterRoyalty = totalGrossRevenue - royalty - exportDuty - researchCess - sarawakSst;
-
-    // ── STEP 4: R/C Index (lagged — uses prior year cumulatives) ──────
+    // ── STEP 3: R/C Index (lagged — uses prior year cumulatives) ──────
     const rcIndex = cumulativeContractorCost > 0
       ? cumulativeContractorRevenue / cumulativeContractorCost
       : 0;
-
-    // ── STEP 5: Lookup tranche ────────────────────────────────────────
     const tranche = lookupTranche(fiscalConfig.tranches, rcIndex);
 
-    // ── STEP 6: Cost Recovery ─────────────────────────────────────────
-    const totalCapex =
-      getVal(yearlyCosts.capexDrilling, year) +
-      getVal(yearlyCosts.capexFacilities, year) +
-      getVal(yearlyCosts.capexSubsea, year) +
-      getVal(yearlyCosts.capexOther, year);
-
-    const totalOpex =
-      getVal(yearlyCosts.opexFixed, year) +
-      getVal(yearlyCosts.opexVariable, year);
-
-    const abandonmentCost = getVal(yearlyCosts.abandonmentCost, year);
+    // ── STEP 4: Cost Recovery (ceiling on gross production) ───────────
+    const { totalCapex, totalOpex, abandonmentCost } = computeCosts(yearlyCosts, year);
 
     const currentYearCosts = totalCapex + totalOpex + abandonmentCost;
     const eligibleCosts = currentYearCosts + unrecoveredCostCF;
 
-    const costRecoveryCeiling = revenueAfterRoyalty * tranche.costRecoveryCeilingPct;
-    const costRecoveryAmount = Math.min(eligibleCosts, Math.max(0, costRecoveryCeiling));
+    const costRecoveryCeiling = costRecoveryCeilingFromGross(
+      totalGrossRevenue, tranche.costRecoveryCeilingPct, revenueAfterRoyalty,
+    );
+    const costRecoveryAmount = Math.min(eligibleCosts, costRecoveryCeiling);
     const newUnrecoveredCostCF = eligibleCosts - costRecoveryAmount;
 
-    // ── STEP 7: Profit Oil/Gas Split ──────────────────────────────────
-    const profitOilGas = Math.max(0, revenueAfterRoyalty - costRecoveryAmount);
-    const contractorProfitShare = profitOilGas * tranche.contractorProfitSharePct;
-    const hostProfitShare = profitOilGas * (1 - tranche.contractorProfitSharePct);
+    // ── STEP 5: Profit Oil/Gas Split ──────────────────────────────────
+    // Volumes are tracked on a 100% field basis against the THV; the
+    // year's profit oil/gas is attributed to each stream pro-rata to its
+    // gross revenue.
+    const yearLiquidsMmstb = ((rev.oilBpd + rev.condBpd) * 365) / 1_000_000; // bpd → MMstb/yr
+    const yearGasTscf = (rev.gasMMscfd * 365) / 1_000_000;                    // MMscf/d → Tscf/yr
 
-    // ── STEP 8: Supplementary Payment ─────────────────────────────────
-    // Track cumulative production for THV check
-    const yearOilMmstb = (oilBpd * 365) / 1_000_000;      // bpd → MMstb/yr
-    const yearGasTscf = (gasMMscfd * 365) / 1_000_000;     // MMscf/d → Tscf/yr
-    cumulativeOilMmstb += yearOilMmstb;
+    const liquidsWeight = totalGrossRevenue > 0 ? grossRevenueLiquids / totalGrossRevenue : 0;
+    const gasWeight = totalGrossRevenue > 0 ? grossRevenueGas / totalGrossRevenue : 0;
+
+    const shares = trancheContractorShares(
+      tranche,
+      thv ? fractionAboveThreshold(cumulativeLiquidsMmstb, yearLiquidsMmstb, thv.liquidsMmstb) : 0,
+      thv ? fractionAboveThreshold(cumulativeGasTscf, yearGasTscf, thv.gasTscf) : 0,
+    );
+    const contractorSharePct = liquidsWeight * shares.liquids + gasWeight * shares.gas;
+
+    const profitOilGas = Math.max(0, revenueAfterRoyalty - costRecoveryAmount);
+    const contractorProfitShare = profitOilGas * contractorSharePct;
+    const hostProfitShare = profitOilGas - contractorProfitShare;
+
+    // ── STEP 6: Supplementary Payment ─────────────────────────────────
+    // SP applies only to the contractor profit share attributable to
+    // production above the SP Threshold Volume; liquids (crude oil incl.
+    // condensate) and gas are tracked independently, pro-rated in the
+    // crossing year.
+    let supplementaryPayment = 0;
+    if (spTerms) {
+      const aboveThvRevenueShare =
+        liquidsWeight * fractionAboveThreshold(cumulativeLiquidsMmstb, yearLiquidsMmstb, spTerms.thvLiquidsMmstb) +
+        gasWeight * fractionAboveThreshold(cumulativeGasTscf, yearGasTscf, spTerms.thvGasTscf);
+      supplementaryPayment = contractorProfitShare * aboveThvRevenueShare * spTerms.rate;
+    }
+    cumulativeLiquidsMmstb += yearLiquidsMmstb;
     cumulativeGasTscf += yearGasTscf;
 
-    let supplementaryPayment = 0;
-    if (cumulativeOilMmstb > THV_OIL_MMSTB || cumulativeGasTscf > THV_GAS_TSCF) {
-      supplementaryPayment = contractorProfitShare * SP_RATE;
-    }
-
-    // ── STEP 9: Contractor Entitlement ────────────────────────────────
+    // ── STEP 7: Contractor Entitlement & research cess ────────────────
     const contractorEntitlement = costRecoveryAmount + contractorProfitShare - supplementaryPayment;
+    const researchCess = researchCessOnEntitlement(
+      costRecoveryAmount, contractorProfitShare, fiscalConfig.researchCessRate,
+    );
 
-    // ── STEP 10: Tax ──────────────────────────────────────────────────
-    // Add this year's CAPEX to depreciation schedule
-    if (totalCapex > 0) {
-      depreciationSchedule.push({
-        amount: totalCapex / CAPEX_DEPRECIATION_YEARS,
-        yearsRemaining: CAPEX_DEPRECIATION_YEARS,
-      });
-    }
+    // ── STEP 8: Tax ───────────────────────────────────────────────────
+    // Under PITA 1967 Section 33, OPEX, abandonment and the research cess
+    // are deductible expenses wholly and exclusively incurred in producing
+    // gross income. Cost recovery is a PSC revenue mechanic, distinct from
+    // tax-base treatment. Both apply. See ASSESSMENT.md F1, F2. The PITA
+    // investment allowance is set off against capped statutory income;
+    // adjusted losses (incl. excess capital allowance) are carried forward.
+    depreciation.addCapex(totalCapex);
+    investmentAllowance?.accrue(year, totalCapex);
+    const capitalAllowance = depreciation.computeAllowance();
+    const taxableIncome =
+      contractorEntitlement - researchCess - capitalAllowance - totalOpex - abandonmentCost;
+    const taxAllowanceUsed = investmentAllowance ? investmentAllowance.utilise(taxableIncome) : 0;
+    const { lossRelief, chargeableIncome } = taxLosses.apply(year, taxableIncome - taxAllowanceUsed);
+    const pitaTax = chargeableIncome * fiscalConfig.pitaRate;
 
-    // Calculate capital allowance (sum of active depreciation tranches)
-    let capitalAllowance = 0;
-    for (const entry of depreciationSchedule) {
-      if (entry.yearsRemaining > 0) {
-        capitalAllowance += entry.amount;
-        entry.yearsRemaining--;
-      }
-    }
-
-    // Under PITA 1967 Section 33, OPEX and abandonment are deductible expenses
-    // wholly and exclusively incurred in producing gross income. Cost recovery
-    // is a PSC revenue mechanic, distinct from tax-base treatment. Both apply.
-    // See ASSESSMENT.md F1, F2.
-    const taxableIncome = contractorEntitlement - capitalAllowance - totalOpex - abandonmentCost;
-    const pitaTax = Math.max(0, taxableIncome * fiscalConfig.pitaRate);
-
-    // ── STEP 11: Net Cash Flow ────────────────────────────────────────
-    // NCF = CostRecoveryAmount + ContractorProfitShare - SP - PITA - CAPEX - OPEX - ABEX
+    // ── STEP 9: Net Cash Flow ─────────────────────────────────────────
+    // NCF = Cost recovery + Contractor profit share − SP − Research cess
+    //       − PITA − CAPEX − OPEX − ABEX
     const netCashFlow =
-      costRecoveryAmount +
-      contractorProfitShare -
-      supplementaryPayment -
+      contractorEntitlement -
+      researchCess -
       pitaTax -
       totalCapex -
       totalOpex -
@@ -218,28 +260,24 @@ export function calculatePscRc(inputs: PscRcInputs): YearlyCashflow[] {
 
     cumulativeCashFlow += netCashFlow;
 
-    // ── STEP 12: Discounted Cash Flow ─────────────────────────────────
+    // ── STEP 10: Discounted Cash Flow ─────────────────────────────────
     const discountFactor = Math.pow(1 + DISCOUNT_RATE, yearIndex);
     const discountedCashFlow = netCashFlow / discountFactor;
     cumulativeDiscountedCF += discountedCashFlow;
 
-    // ── Cumulative production (BOE) ───────────────────────────────────
-    // Oil + condensate in bbl; gas in MMscf → BOE (6 Mscf/boe = 1 MMscf → ~166.67 boe)
-    const yearBoeProd =
-      (oilBpd + condBpd) * 365 +
-      gasMMscfd * 365 * 1_000_000 / 6_000; // MMscf/d → boe/d conversion
-    cumulativeProductionBoe += yearBoeProd;
+    // ── Cumulative production (BOE, 6 Mscf/boe) ───────────────────────
+    cumulativeProductionBoe += computeYearlyBoe(rev.oilBpd, rev.condBpd, rev.gasMMscfd);
 
     // ── Update accumulators for next year's R/C calculation ───────────
-    cumulativeContractorRevenue += costRecoveryAmount + contractorProfitShare - supplementaryPayment;
-    cumulativeContractorCost += totalCapex + totalOpex + abandonmentCost;
+    cumulativeContractorRevenue += contractorEntitlement;
+    cumulativeContractorCost += currentYearCosts;
     unrecoveredCostCF = newUnrecoveredCostCF;
 
     // ── Build result ──────────────────────────────────────────────────
     results.push({
       year,
       grossRevenueOil: usd(grossRevenueOil),
-      grossRevenueGas: usd(grossRevenueGasCorrected),
+      grossRevenueGas: usd(grossRevenueGas),
       grossRevenueCond: usd(grossRevenueCond),
       totalGrossRevenue: usd(totalGrossRevenue),
       royalty: usd(royalty),
@@ -257,6 +295,9 @@ export function calculatePscRc(inputs: PscRcInputs): YearlyCashflow[] {
       supplementaryPayment: usd(supplementaryPayment),
       taxableIncome: usd(taxableIncome),
       capitalAllowance: usd(capitalAllowance),
+      lossRelief: usd(lossRelief),
+      taxAllowanceUsed: usd(taxAllowanceUsed),
+      taxLossCF: usd(taxLosses.balance),
       pitaTax: usd(pitaTax),
       netCashFlow: usd(netCashFlow),
       cumulativeCashFlow: usd(cumulativeCashFlow),

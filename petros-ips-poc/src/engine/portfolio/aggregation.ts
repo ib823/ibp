@@ -10,16 +10,27 @@ import type {
   HierarchyAggregation,
 } from '@/engine/types';
 import { usd } from '@/engine/fiscal/shared';
+import {
+  DEFAULT_VALUATION_YEAR,
+  npvAtValuationYear,
+  portfolioIrr,
+} from '@/engine/economics/valuation';
+
+const PORTFOLIO_DISCOUNT_RATE = 0.10;
 
 /**
  * Aggregate portfolio results across active projects.
  * Builds hierarchy tree for drill-down reporting.
+ *
+ * NPVs are re-valued at a common valuation year (forward cash flows only)
+ * before summing — see engine/economics/valuation.ts.
  */
 export function aggregatePortfolio(
   projects: readonly ProjectInputs[],
   results: ReadonlyMap<string, EconomicsResult>,
   activeProjectIds: ReadonlySet<string>,
   hierarchy: readonly OrgHierarchy[],
+  valuationYear: number = DEFAULT_VALUATION_YEAR,
 ): PortfolioResult {
   // Filter to active projects only
   const activeResults = new Map<string, EconomicsResult>();
@@ -30,7 +41,7 @@ export function aggregatePortfolio(
   for (const [id, result] of results) {
     if (activeProjectIds.has(id)) {
       activeResults.set(id, result);
-      totalNpv += result.npv10 as number;
+      totalNpv += npvAtValuationYear(result, PORTFOLIO_DISCOUNT_RATE, valuationYear);
       totalCapex += result.totalCapex as number;
       totalProduction += result.yearlyCashflows.reduce(
         (sum, cf) => sum + cf.cumulativeProduction, 0,
@@ -47,7 +58,7 @@ export function aggregatePortfolio(
   });
 
   const hierarchyAggregation = buildHierarchyTree(
-    activeHierarchy, projects, activeResults,
+    activeHierarchy, projects, activeResults, valuationYear,
   );
 
   return {
@@ -56,6 +67,8 @@ export function aggregatePortfolio(
     totalProduction,
     projectResults: activeResults,
     hierarchyAggregation,
+    valuationYear,
+    portfolioIrr: portfolioIrr(activeResults.values(), valuationYear),
   };
 }
 
@@ -63,6 +76,7 @@ function buildHierarchyTree(
   hierarchy: readonly OrgHierarchy[],
   projects: readonly ProjectInputs[],
   results: ReadonlyMap<string, EconomicsResult>,
+  valuationYear: number,
 ): HierarchyAggregation {
   // Group by sector
   const sectorGroups = new Map<string, OrgHierarchy[]>();
@@ -95,7 +109,7 @@ function buildHierarchyTree(
         projectChildren.push({
           level: 'projectName',
           key: h.projectName,
-          npv: usd(result ? (result.npv10 as number) : 0),
+          npv: usd(result ? npvAtValuationYear(result, PORTFOLIO_DISCOUNT_RATE, valuationYear) : 0),
           totalCapex: usd(result ? (result.totalCapex as number) : 0),
           totalProduction: result?.yearlyCashflows[result.yearlyCashflows.length - 1]?.cumulativeProduction ?? 0,
           children: [],

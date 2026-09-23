@@ -14,9 +14,9 @@ import type {
   DecommissioningProvisionRollForward,
   RetainedEarningsRollForward,
 } from '@/engine/types';
-import { usd, computeCosts } from '@/engine/fiscal/shared';
+import { usd, workingInterestCosts } from '@/engine/fiscal/shared';
 import { generateDecommissioningSchedule, DECOMM_DISCOUNT_RATE } from './decommissioning';
-import { generateEESchedule } from './exploration-evaluation';
+import { accountingDrivers } from './accounting-drivers';
 
 export function generateAccountMovements(
   incomeStatement: IncomeStatement,
@@ -24,41 +24,25 @@ export function generateAccountMovements(
   cashflows: readonly YearlyCashflow[],
   project: ProjectInputs,
 ): AccountMovements {
-  const { costProfile, project: proj } = project;
-
-  // Driver-based schedules (mirrors balance-sheet.ts wiring per Wave 2 D32+D33)
-  const decommSchedule = generateDecommissioningSchedule(
-    costProfile, proj.startYear, proj.endYear, DECOMM_DISCOUNT_RATE,
-  );
-  const eeRoll = generateEESchedule(project);
+  const drivers = accountingDrivers(cashflows, project);
 
   // ── PP&E Roll-Forward ────────────────────────────────────────────────
-  // Per IFRIC 1 §5: ARO initial recognition is capitalised to PPE in
-  // addition to physical CAPEX. Per MFRS 6: E&E balance sits in its own
-  // line until FID — exclude from PPE base, add reclassified-to-PPE on FID.
+  // Per IFRIC 1 §5: the decommissioning asset is capitalised to PPE in
+  // addition to physical CAPEX. Per MFRS 6: E&E sits in its own line until
+  // FID, then is reclassified to PPE. Same drivers as the balance sheet.
   const ppe: PPERollForward[] = [];
-  for (let i = 0; i < cashflows.length; i++) {
-    const cf = cashflows[i]!;
+  for (let i = 0; i < drivers.years.length; i++) {
+    const d = drivers.years[i]!;
     const is = incomeStatement.yearly[i]!;
     const opening = i > 0 ? (ppe[i - 1]!.closing as number) : 0;
-    const cost = computeCosts(costProfile, cf.year);
-    // Physical CAPEX, excluding any portion already routed through E&E
-    const physicalCapexLessEE = Math.max(
-      0,
-      cost.totalCapex - (eeRoll[i]!.additions as number),
-    );
-    // Add ARO initial PV when first capitalised (IFRIC 1 §5)
-    const aroAddition = decommSchedule[i]!.additions as number;
-    // Add E&E reclassification at FID (MFRS 6 → reclassified to PPE)
-    const eeReclass = eeRoll[i]!.reclassifiedToPPE as number;
-    const additions = physicalCapexLessEE + aroAddition + eeReclass;
+    const additions = d.ppeCapexAdditions + d.aroAddition;
     const depreciation = is.depreciationAmortisation as number;
     const impairment = 0;
     const disposals = 0;
-    const closing = Math.max(0, opening + additions - depreciation - impairment - disposals);
+    const closing = opening + additions - depreciation - impairment - disposals;
 
     ppe.push({
-      year: cf.year,
+      year: d.year,
       opening: usd(opening),
       additions: usd(additions),
       depreciation: usd(depreciation),
@@ -69,13 +53,13 @@ export function generateAccountMovements(
   }
 
   // ── Exploration Assets — wired to MFRS 6 schedule (D33) ─────────────
-  const explorationAssets: ExplorationAssetRollForward[] = eeRoll.map((e) => ({
-    year: e.year,
-    opening: e.opening,
-    additions: e.additions,
-    writtenOff: e.writtenOff,
-    reclassifiedToPPE: e.reclassifiedToPPE,
-    closing: e.closing,
+  const explorationAssets: ExplorationAssetRollForward[] = drivers.years.map((d, i) => ({
+    year: d.year,
+    opening: usd(i > 0 ? drivers.years[i - 1]!.eeClosing : 0),
+    additions: usd(d.eeAdditions),
+    writtenOff: usd(d.eeWrittenOff),
+    reclassifiedToPPE: usd(d.eeReclassified),
+    closing: usd(d.eeClosing),
   }));
 
   void balanceSheet; // legacy param retained for API compat (D32+ schedules are authoritative)
@@ -91,17 +75,26 @@ export function generateAccountMovements(
   }));
 
   // ── Decommissioning Provision — driver-based per MFRS 137 + IFRIC 1 ──
-  // Now sourced directly from `decommSchedule` rather than back-calculated
-  // from BS. Eliminates the plug-field pattern. (D32 / Wave 2)
-  const decommProv: DecommissioningProvisionRollForward[] = decommSchedule.map((d) => ({
-    year: d.year,
-    opening: d.opening,
-    additions: d.additions,
-    unwinding: d.unwinding,
-    utilisations: d.utilisations,
-    revisions: d.revisions,
-    closing: d.closing,
-  }));
+  // Sourced from the IFRIC 1 schedule; empty under an LLA PSC, where
+  // PETRONAS assumes decommissioning (see accounting-drivers.ts).
+  const { project: proj } = project;
+  const decommSchedule = project.fiscalRegimeConfig.type === 'PSC_LLA'
+    ? null
+    : generateDecommissioningSchedule(
+        workingInterestCosts(project), proj.startYear, proj.endYear, DECOMM_DISCOUNT_RATE,
+      );
+  const decommProv: DecommissioningProvisionRollForward[] = drivers.years.map((d, i) => {
+    const entry = decommSchedule?.[i];
+    return {
+      year: d.year,
+      opening: entry?.opening ?? usd(0),
+      additions: entry?.additions ?? usd(0),
+      unwinding: entry?.unwinding ?? usd(0),
+      utilisations: entry?.utilisations ?? usd(0),
+      revisions: entry?.revisions ?? usd(0),
+      closing: entry?.closing ?? usd(0),
+    };
+  });
 
   // ── Retained Earnings ────────────────────────────────────────────────
   const retainedEarnings: RetainedEarningsRollForward[] = [];

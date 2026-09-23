@@ -34,10 +34,12 @@ interface FiscalRegimeBase {
   readonly royaltyRate: number;
   readonly pitaRate: number;
   readonly exportDutyRate: number;
+  /** Research cess on the contractor's entitlement (cost oil + profit oil).
+   *  0.5% under the R/C, DW and EPT PSCs; not applicable to SFA / LLA. */
   readonly researchCessRate: number;
-  /** Sarawak State Sales Tax rate. 5% under Sarawak State Sales Tax Act 1998
-   *  (enforcement order 2019 onwards) on petroleum products produced in
-   *  Sarawak waters. Default 0 — set 0.05 for Sarawak blocks. (D1) */
+  /** Sarawak State Sales Tax rate. 5% under the State Sales Tax Ordinance
+   *  1998 (Sarawak), in force for petroleum products from 1 January 2019.
+   *  Default 0 — set 0.05 for Sarawak blocks. (D1) */
   readonly sarawakSstRate?: number;
   /** Optional discriminator: 'PETROS' for Sarawak blocks (post-CSA 2020),
    *  'PETRONAS' for Peninsular Malaysia / Sabah blocks. Drives reporting
@@ -48,14 +50,56 @@ interface FiscalRegimeBase {
 export interface RCTranche {
   readonly rcFloor: number;
   readonly rcCeiling: number;
+  /** Cost recovery ceiling as a share of gross production value. */
   readonly costRecoveryCeilingPct: number;
+  /** Contractor profit share — liquids (crude oil incl. condensate) below
+   *  THV; also the default for every other stream. */
   readonly contractorProfitSharePct: number;
   readonly hostProfitSharePct: number;
+  /** Liquids contractor share for production above THV (DW R/C PSC). */
+  readonly contractorProfitSharePctAboveThv?: number;
+  /** Gas contractor share below / above THV where it differs from liquids. */
+  readonly gasContractorProfitSharePct?: number;
+  readonly gasContractorProfitSharePctAboveThv?: number;
+}
+
+/** Threshold Volume per PSC (100% field basis). */
+export interface ThresholdVolume {
+  readonly liquidsMmstb: number;
+  readonly gasTscf: number;
+}
+
+/** PITA investment allowance for qualifying upstream projects (deepwater
+ *  > 200 m, HPHT, CO₂ > 20%, EOR, pipeline infrastructure): a share of
+ *  qualifying capital expenditure, utilised against up to a cap of
+ *  statutory income; qualifying spend within `periodYears`. */
+export interface InvestmentAllowance {
+  readonly rate: number;
+  readonly statutoryIncomeCap: number;
+  readonly periodYears: number;
+}
+
+/** Supplementary Payment (SP) terms of an R/C-family PSC. SP is charged on
+ *  the contractor's profit share attributable to production above the
+ *  Threshold Volume (THV); each stream is tracked independently. SP terms
+ *  vary by signed contract (D18) — defaults in `psc-rc.ts`. */
+export interface SupplementaryPaymentTerms {
+  /** Share of the above-THV contractor profit share paid to the host. */
+  readonly rate: number;
+  /** Liquids THV (crude oil incl. condensate), million stock-tank barrels. */
+  readonly thvLiquidsMmstb: number;
+  /** Natural-gas THV, trillion standard cubic feet. */
+  readonly thvGasTscf: number;
 }
 
 export interface FiscalRegime_PSC_RC extends FiscalRegimeBase {
   readonly type: 'PSC_RC';
   readonly tranches: readonly RCTranche[];
+  /** THV that switches tranches to their above-THV profit shares. */
+  readonly thresholdVolume?: ThresholdVolume;
+  /** SP terms; omitted → defaults in psc-rc.ts; null → no SP. */
+  readonly supplementaryPayment?: SupplementaryPaymentTerms | null;
+  readonly investmentAllowance?: InvestmentAllowance;
 }
 
 export interface FiscalRegime_PSC_EPT extends FiscalRegimeBase {
@@ -74,11 +118,18 @@ export interface FiscalRegime_PSC_SFA extends FiscalRegimeBase {
   readonly hostProfitSharePct: number;
 }
 
+/** Late Life Asset PSC (MPM): no cost recovery or profit split. PETRONAS
+ *  takes the cash payment (`royaltyRate`, max 10%) and an abandonment cess
+ *  of Y% of gross production until the abandonment cost commitment is
+ *  funded; the contractor keeps the rest and PETRONAS assumes
+ *  decommissioning. Tax: PITA 25%, capital allowances within two years,
+ *  export duty exempt, no research cess (PSCs signed 2020–2029). */
 export interface FiscalRegime_PSC_LLA extends FiscalRegimeBase {
   readonly type: 'PSC_LLA';
-  readonly costRecoveryCeilingPct: number;
-  readonly contractorProfitSharePct: number;
-  readonly hostProfitSharePct: number;
+  /** Y% — biddable share of gross production paid as abandonment cess. */
+  readonly abandonmentCessRate: number;
+  /** Abandonment cost commitment (USD, 100% field basis). */
+  readonly abandonmentCostCommitment: number;
 }
 
 export interface ProductionTier {
@@ -101,13 +152,17 @@ export interface FiscalRegime_PSC_1985 extends FiscalRegimeBase {
 export interface FiscalRegime_PSC_DW extends FiscalRegimeBase {
   readonly type: 'PSC_DW';
   readonly tranches: readonly RCTranche[];
-  readonly deepwaterAllowance: number;
+  readonly thresholdVolume?: ThresholdVolume;
+  readonly supplementaryPayment?: SupplementaryPaymentTerms | null;
+  readonly investmentAllowance?: InvestmentAllowance;
 }
 
 export interface FiscalRegime_PSC_HPHT extends FiscalRegimeBase {
   readonly type: 'PSC_HPHT';
   readonly tranches: readonly RCTranche[];
-  readonly hphtAllowance: number;
+  readonly thresholdVolume?: ThresholdVolume;
+  readonly supplementaryPayment?: SupplementaryPaymentTerms | null;
+  readonly investmentAllowance?: InvestmentAllowance;
 }
 
 export interface FiscalRegime_RSC extends FiscalRegimeBase {
@@ -117,18 +172,29 @@ export interface FiscalRegime_RSC extends FiscalRegimeBase {
   readonly costReimbursementPct: number;
 }
 
+/** CCS tax incentive (Budget 2023; applications 2023–2027). A CCS service
+ *  provider elects ONE of the two; in-house CCS takes the allowance. (D62) */
+export type CcsIncentive =
+  | {
+      /** Investment Tax Allowance on qualifying capex incurred within the
+       *  period, set off against up to `statutoryIncomeCap` of statutory
+       *  income; unutilised allowance is carried forward. */
+      readonly type: 'investment-tax-allowance';
+      readonly allowanceRate: number;
+      readonly statutoryIncomeCap: number;
+      readonly periodYears: number;
+    }
+  | {
+      /** Exemption of a share of statutory income for the period. */
+      readonly type: 'income-exemption';
+      readonly exemptPct: number;
+      readonly periodYears: number;
+    };
+
 export interface FiscalRegime_DOWNSTREAM extends FiscalRegimeBase {
   readonly type: 'DOWNSTREAM';
   readonly taxRate: number; // default 0.24
-  /** Investment Tax Allowance (ITA) — Malaysian Budget 2024-2025 introduced
-   *  ITA for qualifying CCS / green-tech projects. Reduces effective tax via
-   *  capital-allowance-style deduction at the eligible-investment rate.
-   *  Default 0; set 0.60 (60% of qualifying capex) for approved CCS projects. */
-  readonly investmentTaxAllowance?: number;
-  /** Pioneer Status — alternative to ITA. Exempts a fraction of statutory
-   *  income from tax for a fixed period. Default 0; set 0.70 (70% exempt)
-   *  for Pioneer Status grantees. (D62) */
-  readonly pioneerStatusExemption?: number;
+  readonly ccsIncentive?: CcsIncentive;
 }
 
 export type FiscalRegime =
@@ -244,7 +310,7 @@ export interface YearlyCashflow {
   /** Sarawak State Sales Tax (5% on petroleum products from 2019). 0 for
    *  non-Sarawak blocks. See `data/glossary.ts` 'sst' entry. (D1) */
   readonly sarawakSst: USD;
-  readonly revenueAfterRoyalty: USD; // net of royalty + export duty + research cess + SST
+  readonly revenueAfterRoyalty: USD; // net of royalty (cash payment) + export duty + Sarawak SST
 
   // Cost recovery
   readonly costRecoveryCeiling: USD;
@@ -259,8 +325,18 @@ export interface YearlyCashflow {
 
   // Tax
   readonly supplementaryPayment: USD;
+  /** Adjusted income/(loss) for the year before relief of brought-forward
+   *  losses. Negative in loss years. */
   readonly taxableIncome: USD;
   readonly capitalAllowance: USD;
+  /** Brought-forward unabsorbed losses set off against this year's income. */
+  readonly lossRelief: USD;
+  /** Investment allowance (PITA) / investment tax allowance (CCS) or
+   *  exempt income utilised this year. */
+  readonly taxAllowanceUsed: USD;
+  /** Unabsorbed losses carried forward at year end. */
+  readonly taxLossCF: USD;
+  /** Tax = rate × max(0, taxableIncome − lossRelief − taxAllowanceUsed). */
   readonly pitaTax: USD;
 
   // Net cash flow
@@ -636,11 +712,16 @@ export interface HierarchyAggregation {
 }
 
 export interface PortfolioResult {
+  /** Sum of project NPVs re-valued at `valuationYear` (forward flows only). */
   readonly totalNpv: USD;
   readonly totalCapex: USD;
   readonly totalProduction: number;
   readonly projectResults: ReadonlyMap<string, EconomicsResult>;
   readonly hierarchyAggregation: HierarchyAggregation;
+  /** Common valuation year of `totalNpv` and the hierarchy NPVs. */
+  readonly valuationYear: number;
+  /** IRR of the combined forward portfolio cash flow (null if undefined). */
+  readonly portfolioIrr: number | null;
 }
 
 export interface IncrementalAnalysis {

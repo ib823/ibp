@@ -54,7 +54,8 @@ const PREFERENCE_LABELS: Record<keyof UnitPreferences, string> = {
  * Conversion factor IDs whose value is ALSO hardcoded inside the
  * calculation engine. Editing the factor in this table only affects
  * display labels / exports — not revenue or reserves math. See:
- *   - MMscf → MMBtu (1.055) is baked into gas revenue via MSCF_TO_MMBTU
+ *   - MMscf → MMBtu (1,055 = 1,000 Mscf × 1.055) mirrors the per-Mscf
+ *     MSCF_TO_MMBTU constant baked into gas revenue
  *     in `src/engine/fiscal/shared.ts:14` (used by `grossRevenueGas`).
  *   - Mscf → boe (1/6) is baked into `gasBcfToMmboe` at
  *     `src/engine/reserves/prms.ts:52`.

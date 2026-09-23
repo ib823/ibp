@@ -2,9 +2,13 @@
 // IFRS S2 — Climate-related Disclosures (D35)
 // ════════════════════════════════════════════════════════════════════════
 //
-// Mandatory for Bursa Malaysia listed entities from FY2025+.
-// PETROS as Sarawak's state vehicle in a Gas Roadmap + NETR context is
-// high-disclosure-risk and requires comprehensive climate reporting.
+// Malaysia's National Sustainability Reporting Framework (NSRF) phases in
+// IFRS S1/S2: Main Market large companies from FY2025, other Main Market
+// from FY2026, ACE Market and large non-listed companies (revenue ≥ RM2bn)
+// from FY2027 — climate first; non-listed scope awaits a Companies Act
+// amendment. PETROS, as Sarawak's state vehicle in a Gas Roadmap + NETR
+// context, is expected to fall in the non-listed tranche and is
+// high-disclosure-risk.
 //
 // IFRS S2 four-pillar disclosure framework:
 //   1. Governance       — Board-level oversight, management's role
@@ -19,8 +23,13 @@
 // & targets), driven by project-level emissions data. Pillars 1-3 are
 // narrative disclosures handled in the IFRS S2 SAC story.
 //
-// Reference: IFRS S2 (June 2023); Bursa Malaysia Sustainability Reporting
-// Framework; Malaysian National Energy Transition Roadmap (NETR 2023).
+// Internal carbon price: Malaysia's carbon tax (announced for 2026 on iron,
+// steel and energy) was postponed in April 2026 with no rate in law, so the
+// carbon price here is an internal / scenario price, not a statutory levy.
+//
+// Reference: IFRS S2 (June 2023, as amended December 2025 — amendments
+// effective 1 January 2027); Malaysia NSRF (SC, 2024); National Energy
+// Transition Roadmap (NETR 2023).
 // ════════════════════════════════════════════════════════════════════════
 
 import type { ProjectInputs, USD } from '@/engine/types';

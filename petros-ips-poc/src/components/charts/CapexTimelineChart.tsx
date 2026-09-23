@@ -11,7 +11,7 @@ import {
   Legend,
 } from 'recharts';
 import type { ProjectInputs } from '@/engine/types';
-import { computeCosts } from '@/engine/fiscal/shared';
+import { computeCosts, workingInterestCosts } from '@/engine/fiscal/shared';
 import { fmtNum } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { ChartShell } from '@/components/charts/ChartShell';
@@ -38,7 +38,7 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
       const row: Record<string, number> = { year: y };
       let yearTotal = 0;
       for (const proj of active) {
-        const cost = computeCosts(proj.costProfile, y);
+        const cost = computeCosts(workingInterestCosts(proj), y);
         const capexM = (cost.totalCapex * u.currencyFactor) / 1e6;
         row[proj.project.id] = Math.round(capexM * 10) / 10;
         yearTotal += capexM;

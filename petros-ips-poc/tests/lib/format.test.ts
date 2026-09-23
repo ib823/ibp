@@ -24,9 +24,9 @@ describe('formatMoney — currency selection', () => {
     expect(formatMoney(701_000_000, { currency: 'USD', conversions: conv })).toBe('$701.0M');
   });
 
-  it('MYR applies 4.5 factor before scaling', () => {
-    // 701e6 USD × 4.5 = 3.1545e9 MYR, ÷ 1e6 = 3154.5
-    expect(formatMoney(701_000_000, { currency: 'MYR', conversions: conv })).toBe('RM 3,154.5M');
+  it('MYR applies the 4.07 reference factor before scaling', () => {
+    // 701e6 USD × 4.07 = 2.85307e9 MYR, ÷ 1e6 = 2853.07
+    expect(formatMoney(701_000_000, { currency: 'MYR', conversions: conv })).toBe('RM 2,853.1M');
   });
 
   it('B suffix divides by 1e9', () => {

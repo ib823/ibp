@@ -5,10 +5,11 @@
 // given a fixed CAPEX budget, which subset of projects maximises Group NPV
 // subject to the budget constraint, while clearing a hurdle-rate filter?
 //
-// Solver: 0/1 knapsack via dynamic programming for small portfolios (≤30
-// projects), greedy NPV-per-CAPEX fallback for larger sets. Preserves the
-// hurdle-rate filter (projects below hurdle are excluded before the
-// knapsack).
+// Solver: exact 0/1 knapsack by exhaustive subset search for up to
+// EXACT_SEARCH_LIMIT optional projects (2^20 ≈ 1M subsets), greedy
+// NPV-per-CAPEX fallback for larger sets. Preserves the hurdle-rate filter
+// (projects below hurdle are excluded before the knapsack). Project NPVs
+// are taken at the common portfolio valuation year (valuation.ts).
 //
 // Reference: standard FP&A capital-rationing technique (Brealey-Myers
 // Corporate Finance). Phase 1b SAC delivery extends with mandatory
@@ -17,6 +18,9 @@
 
 import type { ProjectInputs, EconomicsResult, USD } from '@/engine/types';
 import { usd } from '@/engine/fiscal/shared';
+import { DEFAULT_VALUATION_YEAR, npvAtValuationYear } from '@/engine/economics/valuation';
+
+const EXACT_SEARCH_LIMIT = 20;
 
 export interface OptimisationInput {
   readonly projects: readonly ProjectInputs[];
@@ -60,7 +64,7 @@ export function optimisePortfolio(input: OptimisationInput): OptimisationResult 
       excluded.push(proj.project.id);
       continue;
     }
-    const npv = result.npv10 as number;
+    const npv = npvAtValuationYear(result, 0.10, DEFAULT_VALUATION_YEAR);
     const capex = result.totalCapex as number;
     const irr = result.irr;
     const passesHurdle = mandatorySet.has(proj.project.id) || (npv > 0 && (irr === null || irr >= hurdleRate));
@@ -83,14 +87,6 @@ export function optimisePortfolio(input: OptimisationInput): OptimisationResult 
 
   const optional = eligible.filter((e) => !mandatorySet.has(e.id));
 
-  // Greedy NPV-per-CAPEX (fast, near-optimal for typical portfolios).
-  // For tighter optimality with ≤30 projects, swap to 0/1 knapsack DP.
-  const ranked = [...optional].sort((a, b) => {
-    const aRatio = a.capex > 0 ? a.npv / a.capex : Infinity;
-    const bRatio = b.capex > 0 ? b.npv / b.capex : Infinity;
-    return bRatio - aRatio;
-  });
-
   const optionalSelected: string[] = [];
   let totalCapex = input.capexBudgetUsd - remainingBudget; // mandatory capex
   let totalNpv = mandatorySelected.reduce((acc, id) => {
@@ -98,16 +94,19 @@ export function optimisePortfolio(input: OptimisationInput): OptimisationResult 
     return acc + (e?.npv ?? 0);
   }, 0);
 
-  for (const e of ranked) {
-    if (e.capex <= remainingBudget) {
+  const chosen = optional.length <= EXACT_SEARCH_LIMIT
+    ? bestSubset(optional, remainingBudget)
+    : greedySubset(optional, remainingBudget);
+
+  optional.forEach((e, i) => {
+    if (chosen[i]) {
       optionalSelected.push(e.id);
-      remainingBudget -= e.capex;
       totalCapex += e.capex;
       totalNpv += e.npv;
     } else {
       excluded.push(e.id);
     }
-  }
+  });
 
   return {
     selectedProjectIds: [...mandatorySelected, ...optionalSelected],
@@ -116,4 +115,47 @@ export function optimisePortfolio(input: OptimisationInput): OptimisationResult 
     totalNpv: usd(totalNpv),
     utilisation: input.capexBudgetUsd > 0 ? totalCapex / input.capexBudgetUsd : 0,
   };
+}
+
+type Candidate = { id: string; capex: number; npv: number };
+
+/** Exact 0/1 knapsack: the subset with the highest NPV within budget
+ *  (ties → lower capex). */
+function bestSubset(items: readonly Candidate[], budget: number): boolean[] {
+  let bestMask = 0;
+  let bestNpv = 0;
+  let bestCapex = 0;
+  for (let mask = 1; mask < 1 << items.length; mask++) {
+    let capex = 0;
+    let npv = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (mask & (1 << i)) {
+        capex += items[i]!.capex;
+        npv += items[i]!.npv;
+      }
+    }
+    if (capex > budget) continue;
+    if (npv > bestNpv || (npv === bestNpv && capex < bestCapex)) {
+      bestMask = mask;
+      bestNpv = npv;
+      bestCapex = capex;
+    }
+  }
+  return items.map((_, i) => (bestMask & (1 << i)) !== 0);
+}
+
+/** Greedy NPV-per-CAPEX fallback for large candidate sets. */
+function greedySubset(items: readonly Candidate[], budget: number): boolean[] {
+  const order = items
+    .map((e, i) => ({ i, ratio: e.capex > 0 ? e.npv / e.capex : Infinity }))
+    .sort((a, b) => b.ratio - a.ratio);
+  const chosen = items.map(() => false);
+  let remaining = budget;
+  for (const { i } of order) {
+    if (items[i]!.capex <= remaining) {
+      chosen[i] = true;
+      remaining -= items[i]!.capex;
+    }
+  }
+  return chosen;
 }

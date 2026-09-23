@@ -23,7 +23,8 @@ const SHORT_LABELS: Record<string, string> = {
   'Gross Revenue': 'Revenue',
   'Export Duty': 'Exp. Duty',
   'Research Cess': 'Res. Cess',
-  'PETRONAS Share': 'PTNS Share',
+  'Sarawak SST': 'SST',
+  'Host Share': 'Host',
   'Supp. Payment': 'Supp. Pmt',
   'PITA Tax': 'PITA',
   'Corp. Tax': 'Corp. Tax',
@@ -38,7 +39,8 @@ export function WaterfallChart({ cashflows, fiscalRegimeType }: WaterfallChartPr
     const totalRoyalty = cashflows.reduce((s, cf) => s + (cf.royalty as number), 0);
     const totalExportDuty = cashflows.reduce((s, cf) => s + (cf.exportDuty as number), 0);
     const totalResearchCess = cashflows.reduce((s, cf) => s + (cf.researchCess as number), 0);
-    const totalPetronasShare = cashflows.reduce((s, cf) => s + (cf.hostProfitShare as number), 0);
+    const totalSst = cashflows.reduce((s, cf) => s + (cf.sarawakSst as number), 0);
+    const totalHostShare = cashflows.reduce((s, cf) => s + (cf.hostProfitShare as number), 0);
     const totalSP = cashflows.reduce((s, cf) => s + (cf.supplementaryPayment as number), 0);
     const totalTax = cashflows.reduce((s, cf) => s + (cf.pitaTax as number), 0);
     const totalNcf = cashflows.reduce((s, cf) => s + (cf.netCashFlow as number), 0);
@@ -93,12 +95,24 @@ export function WaterfallChart({ cashflows, fiscalRegimeType }: WaterfallChartPr
       });
     }
 
-    if (totalPetronasShare > 0) {
-      running -= totalPetronasShare;
+    if (totalSst > 0) {
+      running -= totalSst;
       result.push({
-        label: 'PETRONAS Share',
-        value: -totalPetronasShare,
-        start: running + totalPetronasShare,
+        label: 'Sarawak SST',
+        value: -totalSst,
+        start: running + totalSst,
+        end: running,
+        color: '#B7950B',
+        eduEntryId: 'E-23c',
+      });
+    }
+
+    if (totalHostShare > 0) {
+      running -= totalHostShare;
+      result.push({
+        label: 'Host Share',
+        value: -totalHostShare,
+        start: running + totalHostShare,
         end: running,
         color: '#E74C3C',
         eduEntryId: 'E-24',
@@ -130,7 +144,7 @@ export function WaterfallChart({ cashflows, fiscalRegimeType }: WaterfallChartPr
     }
 
     // Costs bar: CAPEX + OPEX + ABEX minus cost recovery received
-    const impliedCosts = totalRevenue - totalRoyalty - totalExportDuty - totalResearchCess - totalPetronasShare - totalSP - totalTax - totalNcf;
+    const impliedCosts = totalRevenue - totalRoyalty - totalExportDuty - totalResearchCess - totalSst - totalHostShare - totalSP - totalTax - totalNcf;
     if (impliedCosts > 0) {
       running -= impliedCosts;
       result.push({

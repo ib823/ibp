@@ -7,9 +7,6 @@ import type {
   PriceDeck,
   YearlyCashflow,
   FiscalRegime,
-  CostProfile,
-  USD,
-  TimeSeriesData,
 } from '@/engine/types';
 import { calculatePscRc } from './psc-rc';
 import { calculatePscEpt } from './psc-ept';
@@ -17,6 +14,8 @@ import { calculatePscSfa } from './psc-sfa';
 import { calculatePscLegacy } from './psc-legacy';
 import { calculateDownstream } from './downstream';
 import { calculateRsc } from './psc-rsc';
+import { calculatePscLla } from './psc-lla';
+import { workingInterestCosts } from './shared';
 
 export { calculatePscRc } from './psc-rc';
 export { calculatePscEpt } from './psc-ept';
@@ -24,22 +23,19 @@ export { calculatePscSfa } from './psc-sfa';
 export { calculatePscLegacy } from './psc-legacy';
 export { calculateDownstream } from './downstream';
 export { calculateRsc } from './psc-rsc';
+export { calculatePscLla } from './psc-lla';
 
-/** Scale all CAPEX line items by a factor (e.g., 0.90 for 10% DW allowance) */
-function reduceCapex(costs: CostProfile, factor: number): CostProfile {
-  function scale(series: TimeSeriesData<USD>): TimeSeriesData<USD> {
-    const out: Record<number, USD> = {};
-    for (const [y, v] of Object.entries(series)) {
-      out[Number(y)] = ((v as number) * factor) as USD;
-    }
-    return out;
-  }
+/** Fields shared by every regime. Variants that delegate to another engine
+ *  must forward all of them — dropping `sarawakSstRate` silently zeroes the
+ *  Sarawak State Sales Tax of a Sarawak deepwater / late-life block. */
+function baseTerms(regime: FiscalRegime) {
   return {
-    ...costs,
-    capexDrilling: scale(costs.capexDrilling),
-    capexFacilities: scale(costs.capexFacilities),
-    capexSubsea: scale(costs.capexSubsea),
-    capexOther: scale(costs.capexOther),
+    royaltyRate: regime.royaltyRate,
+    pitaRate: regime.pitaRate,
+    exportDutyRate: regime.exportDutyRate,
+    researchCessRate: regime.researchCessRate,
+    sarawakSstRate: regime.sarawakSstRate,
+    host: regime.host,
   };
 }
 
@@ -54,7 +50,10 @@ export function calculateFiscalCashflows(
   project: ProjectInputs,
   priceDeck: PriceDeck,
 ): YearlyCashflow[] {
-  const { productionProfile, costProfile, fiscalRegimeConfig, project: proj } = project;
+  const { productionProfile, fiscalRegimeConfig, project: proj } = project;
+  // Revenue is taken at the equity share inside the engines; costs must be
+  // on the same working-interest basis.
+  const costProfile = workingInterestCosts(project);
   const base = {
     yearlyProduction: productionProfile,
     yearlyCosts: costProfile,
@@ -71,35 +70,23 @@ export function calculateFiscalCashflows(
       return calculatePscRc({ ...base, fiscalConfig: regime });
 
     case 'PSC_DW':
-      // Deepwater: apply DW allowance as CAPEX reduction, then use R/C engine
-      return calculatePscRc({
-        ...base,
-        yearlyCosts: reduceCapex(costProfile, 1 - regime.deepwaterAllowance),
-        fiscalConfig: {
-          type: 'PSC_RC',
-          royaltyRate: regime.royaltyRate,
-          pitaRate: regime.pitaRate,
-          exportDutyRate: regime.exportDutyRate,
-          researchCessRate: regime.researchCessRate,
-          tranches: regime.tranches,
-        },
-      });
-
     case 'PSC_HPHT':
-      // HPHT: apply HPHT allowance as CAPEX reduction, then use R/C engine.
-      // No PSC_HPHT regime data exported in `data/fiscal-regimes.ts` — this
-      // branch is reachable only when callers pass HPHT config directly.
-      // Phase 1a Discovery: confirm HPHT applicability with PETROS. (D22)
+      // Deepwater R/C PSC (MPM, awards from June 2018) and HPHT PSC run on
+      // the R/C engine with their own tranches, Threshold Volume and SP
+      // terms. The deepwater / HPHT incentive is the PITA investment
+      // allowance on qualifying capex — a tax deduction, not a reduction of
+      // the contractor's actual spend. No PSC_HPHT regime data is exported
+      // in `data/fiscal-regimes.ts`; Phase 1a Discovery: confirm HPHT
+      // applicability with PETROS. (D22)
       return calculatePscRc({
         ...base,
-        yearlyCosts: reduceCapex(costProfile, 1 - regime.hphtAllowance),
         fiscalConfig: {
           type: 'PSC_RC',
-          royaltyRate: regime.royaltyRate,
-          pitaRate: regime.pitaRate,
-          exportDutyRate: regime.exportDutyRate,
-          researchCessRate: regime.researchCessRate,
+          ...baseTerms(regime),
           tranches: regime.tranches,
+          thresholdVolume: regime.thresholdVolume,
+          supplementaryPayment: regime.supplementaryPayment,
+          investmentAllowance: regime.investmentAllowance,
         },
       });
 
@@ -110,23 +97,9 @@ export function calculateFiscalCashflows(
       return calculatePscSfa({ ...base, fiscalConfig: regime });
 
     case 'PSC_LLA':
-      // LLA (Late Life Asset) uses SFA engine with same fixed-percentage
-      // mechanics. No PSC_LLA regime data is currently exported in
-      // `data/fiscal-regimes.ts`. Phase 1a Discovery: confirm with PETROS
-      // whether mature-field LLA terms differ from generic SFA. (D22)
-      return calculatePscSfa({
-        ...base,
-        fiscalConfig: {
-          type: 'PSC_SFA',
-          royaltyRate: regime.royaltyRate,
-          pitaRate: regime.pitaRate,
-          exportDutyRate: regime.exportDutyRate,
-          researchCessRate: regime.researchCessRate,
-          costRecoveryCeilingPct: regime.costRecoveryCeilingPct,
-          contractorProfitSharePct: regime.contractorProfitSharePct,
-          hostProfitSharePct: regime.hostProfitSharePct,
-        },
-      });
+      // Late Life Asset PSC — no cost recovery / profit split; cash payment
+      // + abandonment cess, contractor keeps the rest. See psc-lla.ts.
+      return calculatePscLla({ ...base, fiscalConfig: regime });
 
     case 'PSC_1976':
     case 'PSC_1985':
@@ -137,7 +110,8 @@ export function calculateFiscalCashflows(
       // Models: feePerBarrel × oil-equivalent production, cost
       // reimbursement (capped at 70% of fee revenue), one-shot
       // performance bonus at 30 MMboe cumulative production threshold,
-      // and reduced 25% PITA on net contractor income. See psc-rsc.ts.
+      // and income tax at the regime's rate on net contractor income
+      // (service fees are taxed under ITA 1967, not PITA). See psc-rsc.ts.
       return calculateRsc({ ...base, fiscalConfig: regime });
 
     case 'DOWNSTREAM':

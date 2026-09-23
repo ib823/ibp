@@ -29,12 +29,30 @@ export interface EconomicIndicators {
   readonly totalTax: USD;
 }
 
+/** Federal + state receipts for one year: royalty, export duty, research
+ *  cess, Sarawak SST, host profit share, supplementary payment and income
+ *  tax. With contractor NCF these sum to the pre-tax project cash flow. */
+export function governmentReceipts(cf: YearlyCashflow): number {
+  return (
+    cf.royalty +
+    cf.exportDuty +
+    cf.researchCess +
+    cf.sarawakSst +
+    cf.hostProfitShare +
+    cf.supplementaryPayment +
+    cf.pitaTax
+  );
+}
+
 /**
  * Payback year with linear interpolation for fractional year.
  * Returns the year at which cumulative values first cross zero.
- * If never crosses, returns field life length.
+ * Returns 0 when the cumulative position is never negative (nothing to
+ * pay back — e.g. a producing asset); returns the field life length when
+ * it never recovers.
  */
 function computePayback(values: readonly number[]): number {
+  if (values.every((v) => v >= 0)) return 0;
   for (let i = 1; i < values.length; i++) {
     const prev = values[i - 1]!;
     const curr = values[i]!;
@@ -74,13 +92,15 @@ export function calculateIndicators(inputs: IndicatorInputs): EconomicIndicators
     cumulativeNcf.push(cumNcf);
   }
 
-  // Cumulative discounted CF series (for discounted payback)
+  // Cumulative discounted CF series (for discounted payback) — discounted
+  // at the caller's rate with the same convention as calculateNPV, so the
+  // discounted payback moves with discount-rate sensitivities.
   const cumulativeDcf: number[] = [];
   let cumDcf = 0;
-  for (const cf of cashflows) {
-    cumDcf += cf.discountedCashFlow;
+  cashflows.forEach((cf, t) => {
+    cumDcf += cf.netCashFlow / Math.pow(1 + discountRate, t);
     cumulativeDcf.push(cumDcf);
-  }
+  });
 
   const paybackYears = computePayback(cumulativeNcf);
   const discountedPaybackYears = computePayback(cumulativeDcf);
@@ -104,11 +124,10 @@ export function calculateIndicators(inputs: IndicatorInputs): EconomicIndicators
   const totalTax = cashflows.reduce((s, cf) => s + cf.pitaTax, 0);
 
   // Government take: standard petroleum economics definition
-  // Govt receipts = Royalty + Export Duty + Research Cess + PETRONAS Profit Share + SP + PITA Tax
+  // Govt receipts = Royalty + Export Duty + Research Cess + Sarawak SST
+  //               + Host Profit Share + SP + PITA Tax
   // Divided by pre-tax project cash flow (Revenue - CAPEX - OPEX - ABEX)
-  const totalGovtReceipts = cashflows.reduce(
-    (s, cf) => s + cf.royalty + cf.exportDuty + cf.researchCess + cf.hostProfitShare + cf.supplementaryPayment + cf.pitaTax, 0,
-  );
+  const totalGovtReceipts = cashflows.reduce((s, cf) => s + governmentReceipts(cf), 0);
   let totalAbex = 0;
   for (const cf of cashflows) {
     totalAbex += getVal(costProfile.abandonmentCost, cf.year);

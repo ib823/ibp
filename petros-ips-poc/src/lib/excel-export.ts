@@ -60,8 +60,21 @@ function getFiscalParameterRows(projectId: string): string[][] {
   if ('contractorProfitSharePct' in regime) {
     rows.push(['Contractor Share', `${(regime.contractorProfitSharePct * 100).toFixed(1)}%`]);
   }
-  if ('deepwaterAllowance' in regime) {
-    rows.push(['Deepwater Allowance', `${(regime.deepwaterAllowance * 100).toFixed(1)}%`]);
+  if ('sarawakSstRate' in regime && regime.sarawakSstRate) {
+    rows.push(['Sarawak SST Rate', `${(regime.sarawakSstRate * 100).toFixed(1)}%`]);
+  }
+  if ('thresholdVolume' in regime && regime.thresholdVolume) {
+    rows.push(['Threshold Volume', `${regime.thresholdVolume.liquidsMmstb} MMstb liquids / ${regime.thresholdVolume.gasTscf} Tscf gas`]);
+  }
+  if ('investmentAllowance' in regime && regime.investmentAllowance) {
+    const ia = regime.investmentAllowance;
+    rows.push(['PITA Investment Allowance', `${(ia.rate * 100).toFixed(0)}% of qualifying capex vs ≤${(ia.statutoryIncomeCap * 100).toFixed(0)}% of statutory income, ${ia.periodYears} yrs`]);
+  }
+  if ('ccsIncentive' in regime && regime.ccsIncentive) {
+    const inc = regime.ccsIncentive;
+    rows.push(['CCS Incentive', inc.type === 'investment-tax-allowance'
+      ? `ITA ${(inc.allowanceRate * 100).toFixed(0)}% of qualifying capex vs ≤${(inc.statutoryIncomeCap * 100).toFixed(0)}% of statutory income, ${inc.periodYears} yrs`
+      : `${(inc.exemptPct * 100).toFixed(0)}% income exemption, ${inc.periodYears} yrs`]);
   }
 
   return rows;
@@ -118,17 +131,23 @@ export function buildEconomicsWorkbook(
     `Cond Rev (${currency})`,
     `Total Revenue (${currency})`,
     `Royalty (${currency})`,
-    `Rev After Royalty (${currency})`,
+    `Export Duty (${currency})`,
+    `Research Cess (${currency})`,
+    `Sarawak SST (${currency})`,
+    `Rev After Govt Deductions (${currency})`,
     `Cost Recovery Ceiling (${currency})`,
     `Cost Recovery (${currency})`,
     `Unrecovered CF (${currency})`,
     `Profit Oil/Gas (${currency})`,
     `Contractor Profit Share (${currency})`,
-    `PETRONAS Share (${currency})`,
+    `Host Share (${currency})`,
     `Suppl Payment (${currency})`,
     `Contractor Entitlement (${currency})`,
     `Capital Allowance (${currency})`,
     `Taxable Income (${currency})`,
+    `Loss Relief (${currency})`,
+    `Allowance Used (${currency})`,
+    `Tax Loss C/F (${currency})`,
     `PITA Tax (${currency})`,
     `NCF (${currency})`,
     `Cum NCF (${currency})`,
@@ -145,6 +164,9 @@ export function buildEconomicsWorkbook(
     convert(cf.grossRevenueCond as number),
     convert(cf.totalGrossRevenue as number),
     convert(cf.royalty as number),
+    convert(cf.exportDuty as number),
+    convert(cf.researchCess as number),
+    convert(cf.sarawakSst as number),
     convert(cf.revenueAfterRoyalty as number),
     convert(cf.costRecoveryCeiling as number),
     convert(cf.costRecoveryAmount as number),
@@ -156,6 +178,9 @@ export function buildEconomicsWorkbook(
     convert(cf.contractorEntitlement as number),
     convert(cf.capitalAllowance as number),
     convert(cf.taxableIncome as number),
+    convert(cf.lossRelief as number),
+    convert(cf.taxAllowanceUsed as number),
+    convert(cf.taxLossCF as number),
     convert(cf.pitaTax as number),
     convert(cf.netCashFlow as number),
     convert(cf.cumulativeCashFlow as number),

@@ -2,7 +2,7 @@ import { useProjectStore } from '@/store/project-store';
 import { useAuthStore } from '@/store/auth-store';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Pill } from '@/components/shared/Pill';
-import { FISCAL_REGIMES } from '@/data/fiscal-regimes';
+import { FISCAL_REGIMES, RSC_CONTRACT } from '@/data/fiscal-regimes';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
@@ -196,7 +196,7 @@ export default function SettingsPage() {
         </h4>
         <SectionHelp entry={edu['ST-13']!} />
         <div className="space-y-4">
-          {Object.entries(FISCAL_REGIMES).map(([key, regime]) => (
+          {Object.entries(FISCAL_REGIMES).filter(([key]) => key !== 'RSC').map(([key, regime]) => (
             <div key={key} className="border border-border/50 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Pill tone="petrol" size="sm">
@@ -208,6 +208,29 @@ export default function SettingsPage() {
                 <Row label="PITA" value={fmtPct(regime.pitaRate, 0)} />
                 <Row label="Export Duty" value={fmtPct(regime.exportDutyRate, 0)} />
                 <Row label="Research Cess" value={fmtPct(regime.researchCessRate, 1)} />
+                {!!regime.sarawakSstRate && (
+                  <Row label="Sarawak SST" value={fmtPct(regime.sarawakSstRate, 0)} />
+                )}
+                {'thresholdVolume' in regime && regime.thresholdVolume && (
+                  <Row label="THV" value={`${regime.thresholdVolume.liquidsMmstb} MMstb / ${regime.thresholdVolume.gasTscf} Tcf`} />
+                )}
+                {'investmentAllowance' in regime && regime.investmentAllowance && (
+                  <Row
+                    label="Investment Allowance"
+                    value={`${fmtPct(regime.investmentAllowance.rate, 0)} capex, ≤${fmtPct(regime.investmentAllowance.statutoryIncomeCap, 0)} SI`}
+                  />
+                )}
+                {'abandonmentCessRate' in regime && (
+                  <Row label="Abandonment Cess" value={fmtPct(regime.abandonmentCessRate, 0)} />
+                )}
+                {'ccsIncentive' in regime && regime.ccsIncentive && (
+                  <Row
+                    label="CCS Incentive"
+                    value={regime.ccsIncentive.type === 'investment-tax-allowance'
+                      ? `ITA ${fmtPct(regime.ccsIncentive.allowanceRate, 0)} / ${regime.ccsIncentive.periodYears} yrs`
+                      : `${fmtPct(regime.ccsIncentive.exemptPct, 0)} exempt / ${regime.ccsIncentive.periodYears} yrs`}
+                  />
+                )}
               </div>
               {'tranches' in regime && (
                 <div className="mt-2">
@@ -219,15 +242,19 @@ export default function SettingsPage() {
                     <span className="font-medium text-text-secondary">R/C Range</span>
                     <span className="font-medium text-text-secondary text-right">Ceiling</span>
                     <span className="font-medium text-text-secondary text-right">Contractor</span>
-                    <span className="font-medium text-text-secondary text-right">PETRONAS</span>
-                    <span />
+                    <span className="font-medium text-text-secondary text-right">Host</span>
+                    <span className="font-medium text-text-secondary text-right">&gt;THV / Gas</span>
                     {regime.tranches.map((t, i) => (
                       <div key={i} className="contents">
                         <span className="font-data">{t.rcFloor.toFixed(1)} — {t.rcCeiling === Infinity ? '∞' : t.rcCeiling.toFixed(1)}</span>
                         <span className="font-data text-right">{fmtPct(t.costRecoveryCeilingPct, 0)}</span>
                         <span className="font-data text-right">{fmtPct(t.contractorProfitSharePct, 0)}</span>
                         <span className="font-data text-right">{fmtPct(t.hostProfitSharePct, 0)}</span>
-                        <span />
+                        <span className="font-data text-right">
+                          {t.contractorProfitSharePctAboveThv !== undefined || t.gasContractorProfitSharePct !== undefined
+                            ? `${fmtPct(t.contractorProfitSharePctAboveThv ?? t.contractorProfitSharePct, 0)} / ${fmtPct(t.gasContractorProfitSharePct ?? t.contractorProfitSharePct, 0)}`
+                            : '—'}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -244,7 +271,7 @@ export default function SettingsPage() {
                 <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                   <Row label="Cost Recovery" value={fmtPct(regime.costRecoveryCeilingPct, 0)} />
                   <Row label="Contractor Share" value={fmtPct(regime.contractorProfitSharePct, 0)} />
-                  <Row label="PETRONAS Share" value={fmtPct(regime.hostProfitSharePct, 0)} />
+                  <Row label="Host Share" value={fmtPct(regime.hostProfitSharePct, 0)} />
                 </div>
               )}
               {'taxRate' in regime && (
@@ -261,16 +288,17 @@ export default function SettingsPage() {
               <InfoIcon entry={edu['ST-18']!} />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-              <Row label="Fee per Barrel" value="USD 12.50/boe" />
-              <Row label="Performance Bonus" value="USD 25 M" />
-              <Row label="Cost Reimbursement" value="60%" />
-              <Row label="PITA (RSC)" value="25%" />
+              <Row label="Fee per Barrel" value={`USD ${RSC_CONTRACT.feePerBarrel.toFixed(2)}/boe`} />
+              <Row label="Performance Bonus" value={`USD ${(RSC_CONTRACT.performanceBonus / 1e6).toFixed(0)} M`} />
+              <Row label="Cost Reimbursement" value={fmtPct(RSC_CONTRACT.costReimbursementPct, 0)} />
+              <Row label="Income Tax (RSC)" value={fmtPct(RSC_CONTRACT.pitaRate, 0)} />
             </div>
             <p className="text-caption text-text-secondary mt-2">
               Dedicated RSC engine: <span className="font-data">src/engine/fiscal/psc-rsc.ts</span>.
               Models fee revenue on oil-equivalent production, cost reimbursement capped at
-              70% of fee revenue, one-shot performance bonus at 30 MMboe cumulative production
-              threshold, and reduced PITA at 25% on net contractor income.
+              70% of fee revenue, one-shot performance bonus at 30 MMboe cumulative field production,
+              and income tax on net contractor income — RSC fees are taxed under the Income Tax
+              Act 1967 at the corporate rate, not PITA.
             </p>
           </div>
         </div>

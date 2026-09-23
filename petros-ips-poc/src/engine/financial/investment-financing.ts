@@ -7,7 +7,7 @@ import type {
   EconomicsResult,
   USD,
 } from '@/engine/types';
-import { usd, computeCosts } from '@/engine/fiscal/shared';
+import { usd, computeCosts, workingInterestCosts } from '@/engine/fiscal/shared';
 
 export interface YearlyInvestmentLine {
   readonly year: number;
@@ -43,13 +43,14 @@ export function generateInvestmentFinancingProgram(
     const capexByDomain: Record<string, number> = {};
     let yearCapex = 0;
     let yearCashFromOps = 0;
+    let yearAbex = 0;
 
     for (let pi = 0; pi < projects.length; pi++) {
       const project = projects[pi]!;
       const result = results[pi];
       const domain = project.project.businessSector;
 
-      const cost = computeCosts(project.costProfile, year);
+      const cost = computeCosts(workingInterestCosts(project), year);
       const capex = cost.totalCapex;
       yearCapex += capex;
       capexByDomain[domain] = (capexByDomain[domain] ?? 0) + capex;
@@ -58,11 +59,13 @@ export function generateInvestmentFinancingProgram(
       const cfLine = result?.yearlyCashflows.find((cf) => cf.year === year);
       if (cfLine) {
         yearCashFromOps += (cfLine.netCashFlow as number) + capex + cost.abandonmentCost;
+        yearAbex += cost.abandonmentCost;
       }
     }
 
     totalInvestment += yearCapex;
-    const surplusDeficit = yearCashFromOps - yearCapex;
+    // Surplus = operating cash − capex − abandonment spend (= Σ project NCF).
+    const surplusDeficit = yearCashFromOps - yearCapex - yearAbex;
     cumulativeCash += surplusDeficit;
 
     const typedCapexByDomain: Record<string, USD> = {};

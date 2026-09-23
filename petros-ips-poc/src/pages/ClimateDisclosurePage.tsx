@@ -1,10 +1,11 @@
 // ════════════════════════════════════════════════════════════════════════
 // IFRS S2 — Climate Disclosure page (D35)
 //
-// Mandatory for Bursa-listed Malaysian entities from FY2025+. PETROS as
-// Sarawak's state vehicle in Gas Roadmap + NETR context is high-disclosure-
-// risk. This page demonstrates Pillar 4 (Metrics & Targets) — Scope 1/2/3
-// emissions schedule + internal carbon-price liability.
+// Phased in by Malaysia's NSRF from FY2025 (Main Market) to FY2027 (ACE
+// Market and large non-listed companies). PETROS as Sarawak's state vehicle
+// in Gas Roadmap + NETR context is high-disclosure-risk. This page
+// demonstrates Pillar 4 (Metrics & Targets) — Scope 1/2/3 emissions schedule
+// + internal carbon-price liability.
 // ════════════════════════════════════════════════════════════════════════
 
 import { useMemo, useState } from 'react';
@@ -58,8 +59,10 @@ export default function ClimateDisclosurePage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold text-text-primary">IFRS S2 — Climate Disclosures (Pillar 4)</h1>
         <p className="text-caption text-text-muted">
-          Scope 1/2/3 GHG emissions schedule + internal carbon-price liability. Mandatory for
-          Bursa-listed entities from FY2025+. Engine: <code className="text-xs">engine/financial/ifrs-s2.ts</code>.
+          Scope 1/2/3 GHG emissions schedule + internal carbon-price liability. Required under Malaysia's
+          NSRF from FY2025 (large Main Market) to FY2027 (ACE Market and non-listed companies with revenue
+          ≥ RM2bn). The carbon price is an internal/scenario price — the national carbon tax was postponed in
+          April 2026. Engine: <code className="text-xs">engine/financial/ifrs-s2.ts</code>.
         </p>
       </div>
 
@@ -229,8 +232,9 @@ export default function ClimateDisclosurePage() {
 
       <div className="text-caption text-text-muted">
         <strong>IFRS S2 four-pillar framework:</strong> Governance (1) · Strategy (2) · Risk Management (3) · Metrics &amp; Targets (4 — this page).
-        Pillars 1-3 are narrative disclosures handled in the IFRS S2 SAC story. Reference: IFRS S2 (June 2023);
-        Bursa Malaysia Sustainability Reporting Framework; Malaysian National Energy Transition Roadmap (NETR 2023).
+        Pillars 1-3 are narrative disclosures handled in the IFRS S2 SAC story. Reference: IFRS S2 (June 2023, amended
+        December 2025, effective 1 January 2027); Malaysia National Sustainability Reporting Framework (NSRF); National
+        Energy Transition Roadmap (NETR 2023).
       </div>
     </div>
   );

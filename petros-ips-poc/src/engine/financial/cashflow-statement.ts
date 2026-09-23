@@ -1,5 +1,11 @@
 // ════════════════════════════════════════════════════════════════════════
-// Cash Flow Statement Generator
+// Cash Flow Statement Generator (MFRS 107, indirect method)
+// ════════════════════════════════════════════════════════════════════════
+//
+// Operating: profit before tax + non-cash items (DD&A, E&E write-off,
+// provision unwinding) − tax paid. Investing: capex (PP&E and E&E) and
+// decommissioning spend. The net change equals the fiscal net cash flow,
+// so closing cash ties to the balance sheet.
 // ════════════════════════════════════════════════════════════════════════
 
 import type {
@@ -9,35 +15,35 @@ import type {
   CashFlowStatement,
   CashFlowStatementLine,
 } from '@/engine/types';
-import { usd, computeCosts } from '@/engine/fiscal/shared';
+import { usd } from '@/engine/fiscal/shared';
+import { accountingDrivers } from './accounting-drivers';
 
 export function generateCashFlowStatement(
   incomeStatement: IncomeStatement,
   cashflows: readonly YearlyCashflow[],
   project: ProjectInputs,
 ): CashFlowStatement {
-  const { costProfile } = project;
+  const drivers = accountingDrivers(cashflows, project);
   let runningCash = 0;
 
-  const yearly: CashFlowStatementLine[] = cashflows.map((cf, idx) => {
+  const yearly: CashFlowStatementLine[] = drivers.years.map((d, idx) => {
     const is = incomeStatement.yearly[idx]!;
-    const cost = computeCosts(costProfile, cf.year);
-
     const openingCash = runningCash;
 
-    // Operating: PBT + add back DD&A (non-cash) - tax paid
+    // Operating: PBT + non-cash charges − tax paid (current tax only)
     const profitBeforeTax = is.profitBeforeTax as number;
     const depreciation = is.depreciationAmortisation as number;
     const workingCapitalChanges = 0;
-    const taxPaid = is.taxExpense as number;
-    const otherOperatingAdjustments = 0;
-    const netOperatingCashFlow = profitBeforeTax + depreciation + workingCapitalChanges - taxPaid + otherOperatingAdjustments;
+    const taxPaid = d.currentTax;
+    const otherOperatingAdjustments = d.eeWrittenOff + d.unwinding;
+    const netOperatingCashFlow =
+      profitBeforeTax + depreciation + workingCapitalChanges - taxPaid + otherOperatingAdjustments;
 
-    // Investing
-    const capexPPE = cost.totalCapex + cost.abandonmentCost;
-    const capexExploration = 0;
+    // Investing: capex split between PP&E and E&E; decommissioning spend
+    const capexExploration = d.eeAdditions;
+    const capexPPE = d.capex - d.eeAdditions;
     const disposalProceeds = 0;
-    const otherInvesting = 0;
+    const otherInvesting = -d.abandonmentSpend;
     const netInvestingCashFlow = -capexPPE - capexExploration + disposalProceeds + otherInvesting;
 
     // Financing (none for POC)
@@ -52,7 +58,7 @@ export function generateCashFlowStatement(
     runningCash = closingCash;
 
     return {
-      year: cf.year,
+      year: d.year,
       profitBeforeTax: usd(profitBeforeTax),
       depreciation: usd(depreciation),
       workingCapitalChanges: usd(workingCapitalChanges),

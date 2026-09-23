@@ -71,7 +71,7 @@ export function generateReservesReconciliation(
         // Extensions: small positive on 2P/3P from infill drilling (Phase 1b
         // wires this to project CAPEX tagged 'infill' / 'appraisal').
         const extensions = category === '1P' ? 0 : (opening > 0 ? opening * 0.01 : 0);
-        const technicalRevisions = opening > 0 ? opening * 0.005 : 0;
+        let technicalRevisions = opening > 0 ? opening * 0.005 : 0;
         // Economic revisions flex with the active price-deck scenario.
         // Low-price scenario (factor < 0) shrinks 1P (some proved volumes
         // fail economic-limit re-test → reclassed to contingent).
@@ -84,8 +84,16 @@ export function generateReservesReconciliation(
         const acquisitions = 0;
         const dispositions = 0;
 
-        const closing = opening + extensions + technicalRevisions + economicRevisions
+        let closing = opening + extensions + technicalRevisions + economicRevisions
           + acquisitions - dispositions - production;
+        // Producing more than the booked remaining volume means those
+        // barrels were not booked: record the shortfall as a positive
+        // technical revision so opening + movements − production = closing
+        // still holds (reserves cannot go negative).
+        if (closing < 0) {
+          technicalRevisions -= closing;
+          closing = 0;
+        }
 
         movements.push({
           year,
@@ -98,11 +106,11 @@ export function generateReservesReconciliation(
           acquisitions,
           dispositions,
           production,
-          closing: Math.max(0, closing),
+          closing,
         });
 
         // Next year's opening = this year's closing
-        opening = Math.max(0, closing);
+        opening = closing;
       }
     }
   }

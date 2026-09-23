@@ -2,7 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { Select } from '@/components/ui5/Ui5Select';
 import { Button } from '@/components/ui5/Ui5Button';
 import { useProjectStore } from '@/store/project-store';
-import { fmtPct, fmtYears } from '@/lib/format';
+import { fmtPctOrNa, fmtYears } from '@/lib/format';
+import { headlineReturn } from '@/engine/economics';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
 import { COLORS, PHASE_COLORS } from '@/lib/chart-colors';
@@ -303,8 +304,9 @@ function EconomicsKpiTable({ result }: { result: PhaseComparisonResult }) {
   const u = useDisplayUnits();
   const e1 = result.economics1;
   const e2 = result.economics2;
-  const irr1 = e1.isNonInvestmentPattern ? e1.mirr : (e1.irr ?? 0);
-  const irr2 = e2.isNonInvestmentPattern ? e2.mirr : (e2.irr ?? 0);
+  const irr1 = headlineReturn(e1).value;
+  const irr2 = headlineReturn(e2).value;
+  const irrDelta = irr1 !== null && irr2 !== null ? irr2 - irr1 : null;
 
   return (
     <div className="border border-border bg-white p-4">
@@ -332,10 +334,10 @@ function EconomicsKpiTable({ result }: { result: PhaseComparisonResult }) {
             </tr>
             <tr className="border-b border-border/30">
               <td className="px-3 py-2 text-text-secondary">{e1.isNonInvestmentPattern || e2.isNonInvestmentPattern ? 'IRR/MIRR' : 'IRR'}</td>
-              <td className="text-right px-3 py-2 font-data">{fmtPct(irr1)}</td>
-              <td className="text-right px-3 py-2 font-data">{fmtPct(irr2)}</td>
-              <td className={cn('text-right px-3 py-2 font-data font-medium', irr2 - irr1 >= 0 ? 'text-success' : 'text-danger')}>
-                {((irr2 - irr1) * 100).toFixed(2)}pp
+              <td className="text-right px-3 py-2 font-data">{fmtPctOrNa(irr1)}</td>
+              <td className="text-right px-3 py-2 font-data">{fmtPctOrNa(irr2)}</td>
+              <td className={cn('text-right px-3 py-2 font-data font-medium', (irrDelta ?? 0) >= 0 ? 'text-success' : 'text-danger')}>
+                {irrDelta === null ? 'n/a' : `${(irrDelta * 100).toFixed(2)}pp`}
               </td>
             </tr>
             <tr className="border-b border-border/30">

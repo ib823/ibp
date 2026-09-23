@@ -15,6 +15,7 @@ function makeCashflow(year: number): YearlyCashflow {
     royalty: usd(16_000_000),
     exportDuty: usd(0),
     researchCess: usd(0),
+    sarawakSst: usd(0),
     revenueAfterRoyalty: usd(144_000_000),
     costRecoveryCeiling: usd(115_200_000),
     costRecoveryAmount: usd(80_000_000),
@@ -26,6 +27,9 @@ function makeCashflow(year: number): YearlyCashflow {
     supplementaryPayment: usd(0),
     capitalAllowance: usd(5_000_000),
     taxableIncome: usd(14_200_000),
+    lossRelief: usd(0),
+    taxAllowanceUsed: usd(0),
+    taxLossCF: usd(0),
     pitaTax: usd(5_680_000),
     netCashFlow: usd(13_520_000),
     cumulativeCashFlow: usd(13_520_000),
@@ -117,23 +121,23 @@ describe('buildEconomicsWorkbook — MYR', () => {
     expect(cell(sheet, 'A19')).toBe('Peak Funding (MYR)');
   });
 
-  it('NPV cell is multiplied by the USD→MYR factor (4.50)', () => {
+  it('NPV cell is multiplied by the USD→MYR factor (4.07)', () => {
     const sheet = wb.Sheets.Summary!;
-    expect(cell(sheet, 'B8')).toBeCloseTo(701_000_000 * 4.5, 0);
+    expect(cell(sheet, 'B8')).toBeCloseTo(701_000_000 * 4.07, 0);
   });
 
   it('Total CAPEX cell is converted', () => {
     const sheet = wb.Sheets.Summary!;
-    expect(cell(sheet, 'B16')).toBeCloseTo(480_000_000 * 4.5, 0);
+    expect(cell(sheet, 'B16')).toBeCloseTo(480_000_000 * 4.07, 0);
   });
 
   it('Cash Flows row values are converted', () => {
     const sheet = wb.Sheets['Cash Flows']!;
     const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 }).slice(1) as unknown[][];
-    // Oil Rev for 2025: $100M → MYR 450M
-    expect(rows[0]![1]).toBeCloseTo(100_000_000 * 4.5, 0);
+    // Oil Rev for 2025: $100M → MYR 407M
+    expect(rows[0]![1]).toBeCloseTo(100_000_000 * 4.07, 0);
     // Cum Production stays unchanged (physics, not currency)
-    expect(rows[0]![24]).toBe(365_000);
+    expect(rows[0]![30]).toBe(365_000);
   });
 
   it('Assumptions sheet carries the display currency', () => {
@@ -144,13 +148,13 @@ describe('buildEconomicsWorkbook — MYR', () => {
 });
 
 describe('buildEconomicsWorkbook — column count invariant', () => {
-  it('Cash Flows header has exactly 25 columns', () => {
+  it('Cash Flows header has exactly 31 columns (incl. export duty, cess, SST, loss relief, allowance, loss c/f)', () => {
     const wb = buildEconomicsWorkbook('Test', 'base', makeResult(), {
       currency: 'USD',
       conversions: DEFAULT_CONVERSIONS,
     });
     const sheet = wb.Sheets['Cash Flows']!;
     const header = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 })[0] as string[];
-    expect(header.length).toBe(25);
+    expect(header.length).toBe(31);
   });
 });

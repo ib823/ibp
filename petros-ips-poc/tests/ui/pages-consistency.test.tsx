@@ -8,13 +8,13 @@ import PortfolioPage from '@/pages/PortfolioPage';
 import ReservesPage from '@/pages/ReservesPage';
 import { useProjectStore } from '@/store/project-store';
 import { getActiveResult } from '@/store/project-store';
-import { formatMoney, fmtPct } from '@/lib/format';
+import { formatMoney, fmtPct, fmtPctOrNa } from '@/lib/format';
 import { aggregatePortfolio } from '@/engine/portfolio/aggregation';
 import { generateIncomeStatement } from '@/engine/financial/income-statement';
 import { PROJECT_RESERVES, gasBcfToMmboe } from '@/engine/reserves/prms';
 import { convertSafe } from '@/lib/display-units';
 import { DEFAULT_CONVERSIONS } from '@/engine/utils/unit-conversion';
-import { computeCosts } from '@/engine/fiscal/shared';
+import { computeCosts, workingInterestCosts } from '@/engine/fiscal/shared';
 import { getActiveProject, renderWithRouter, resetStore } from './test-utils';
 
 function fmtMoney(value: number, accounting = false) {
@@ -94,17 +94,12 @@ describe('page regressions against engine truth', () => {
     // pretax-cashflow, not revenue-weighted governmentTakePct averaging.
     // Falls back to 0 when the denominator is non-positive (project is
     // unprofitable overall).
-    let weightedIrr = 0;
-    let totalCapexWeight = 0;
     let totalGovtReceipts = 0;
     let totalPreTaxCashFlow = 0;
     for (const id of state.portfolioSelection) {
       const result = resultsForScenario.get(id);
       if (!result) continue;
       const project = state.projects.find((p) => p.project.id === id);
-      const capex = result.totalCapex as number;
-      weightedIrr += (result.irr ?? result.mirr) * capex;
-      totalCapexWeight += capex;
 
       totalGovtReceipts += result.yearlyCashflows.reduce(
         (sum, cf) =>
@@ -112,6 +107,7 @@ describe('page regressions against engine truth', () => {
           (cf.royalty as number) +
           (cf.exportDuty as number) +
           (cf.researchCess as number) +
+          (cf.sarawakSst as number) +
           (cf.hostProfitShare as number) +
           (cf.supplementaryPayment as number) +
           (cf.pitaTax as number),
@@ -122,13 +118,12 @@ describe('page regressions against engine truth', () => {
         const preTaxForProject =
           (result.totalRevenue as number) -
           result.yearlyCashflows.reduce((sum, cf) => {
-            const cost = computeCosts(project.costProfile, cf.year);
+            const cost = computeCosts(workingInterestCosts(project), cf.year);
             return sum + cost.totalCapex + cost.totalOpex + cost.abandonmentCost;
           }, 0);
         totalPreTaxCashFlow += preTaxForProject;
       }
     }
-    const expectedWeightedIrr = totalCapexWeight > 0 ? weightedIrr / totalCapexWeight : 0;
     const expectedGovtTake =
       totalPreTaxCashFlow > 0
         ? (totalGovtReceipts / totalPreTaxCashFlow) * 100
@@ -137,12 +132,13 @@ describe('page regressions against engine truth', () => {
     renderWithRouter(<DashboardPage />);
     expect(screen.getAllByText(fmtMoney(portfolio.totalNpv as number, true)).length).toBeGreaterThan(0);
     expect(screen.getAllByText(fmtMoney(portfolio.totalCapex as number, true)).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(fmtPct(expectedWeightedIrr)).length).toBeGreaterThan(0);
+    // Portfolio IRR: IRR of the combined forward cash flow (valuation.ts).
+    expect(screen.getAllByText(fmtPctOrNa(portfolio.portfolioIrr)).length).toBeGreaterThan(0);
 
     renderWithRouter(<PortfolioPage />);
     expect(screen.getAllByText(fmtMoney(portfolio.totalNpv as number, true)).length).toBeGreaterThan(0);
     expect(screen.getAllByText(fmtMoney(portfolio.totalCapex as number, true)).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(fmtPct(expectedWeightedIrr)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(fmtPctOrNa(portfolio.portfolioIrr)).length).toBeGreaterThan(0);
     expect(screen.getAllByText(expectedGovtTake.toFixed(1) + '%').length).toBeGreaterThan(0);
   });
 
@@ -160,7 +156,7 @@ describe('page regressions against engine truth', () => {
     expect(screen.getByText('Financial Statements')).toBeInTheDocument();
     const table = screen.getByRole('table');
 
-    const revenueRow = within(table).getByText('Revenue').closest('tr');
+    const revenueRow = within(table).getByText('Revenue (Entitlement)').closest('tr');
     expect(revenueRow).not.toBeNull();
     expect(within(revenueRow as HTMLTableRowElement).getByText(fmtFinancialCell(firstRevenueYear.revenue as number))).toBeInTheDocument();
 
