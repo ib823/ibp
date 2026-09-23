@@ -3,7 +3,7 @@
 **Date**: 2026-09-23
 **Scope**: the calculation engine (`src/engine/**`), the fiscal and market parameters (`src/data/**`), the pages that present them, the test suite, and the dependency stack.
 **Baseline**: commit `34220ba`. Before this work, 503 of 503 tests passed and lint failed with 1 error.
-**Outcome**: 538 of 538 tests pass (31 of them new, in `tests/engine/reassessment-2026.test.ts`). The type-check is clean.
+**Outcome**: 538 of 538 tests pass (31 of them new, in `tests/engine/reassessment-2026.test.ts`). The type-check, lint, build and `npm run test:excel` (12 of 12 checks) are clean, and `npm audit` reports 0 vulnerabilities.
 
 This file records:
 - what was re-verified against public sources,
@@ -121,4 +121,18 @@ What drives SK-612 is the published deepwater terms: a 300 MMstb THV, no 70% SP 
 
 ## 6. Dependencies
 
-See the dependency-upgrade commit on this branch for the before and after version table and the `npm audit` result.
+`npm audit` found 16 vulnerabilities before this work (1 low, 5 moderate, 9 high, 1 critical); it now finds none. The critical and high findings came from `xlsx` 0.18.5, which the npm registry no longer updates. It is now installed from the SheetJS CDN at 0.20.3.
+
+| Package | Before | Now | Code changes |
+|---|---|---|---|
+| vite / vitest / @vitejs/plugin-react | 6.4 / 2.1 / 4.7 | 8.3 / 5.0 / 6.1 | `rolldownOptions` chunking. The UI5 vendor chunk dropped from 16.4 MB to 1.0 MB, because its JSON assets now load lazily |
+| typescript | 5.9 | 6.0 | `baseUrl` removed. Held at 6.0 because typescript-eslint supports < 6.1 |
+| eslint / @eslint/js | 9 | 10 | Fixes for `no-useless-assignment` |
+| recharts | 2.15 | 3.10 | `charts/rechartsCompat.tsx` keeps legend and tooltip order; tooltip formatters take `unknown` values |
+| @tanstack/react-table | 8 | 9 | `useTable` API |
+| react-router | 7 | 8 | none |
+| react / react-dom | 19.2 | 19.3 | `react-is` 19 added explicitly for recharts |
+| @ui5/webcomponents* | 2.21 | 2.26 | Pinned `~2.26` to match `@ui5/webcomponents-react` |
+| jsdom / @types/node | 29 / 24 | 30 / 26 | none |
+
+`tests/validate-excel-export.ts` (`npm run test:excel`) now finds columns by header, and checks a production year rather than year 0, where most columns are zero.

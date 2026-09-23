@@ -360,7 +360,7 @@ function MCResults({ result }: { result: MonteCarloResult }) {
             <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
             <XAxis dataKey="npv" tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
             <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
-            <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [v, 'Count']} labelFormatter={(v: number) => `NPV: ${u.currencySymbol}${v.toFixed(0)}M`} />
+            <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v) => [v, 'Count']} labelFormatter={(v) => `NPV: ${u.currencySymbol}${Number(v).toFixed(0)}M`} />
             <ReferenceLine x={p10Display} stroke={COLORS.danger} strokeDasharray="4,3" label={{ value: speConvention ? 'P90 (low)' : 'P10 (low)', fontSize: 11, fill: COLORS.danger }} />
             <ReferenceLine x={p50Display} stroke={COLORS.petrol} strokeDasharray="4,3" label={{ value: 'P50', fontSize: 11, fill: COLORS.petrol }} />
             <ReferenceLine x={p90Display} stroke={COLORS.success} strokeDasharray="4,3" label={{ value: speConvention ? 'P10 (high)' : 'P90 (high)', fontSize: 11, fill: COLORS.success }} />
@@ -387,7 +387,7 @@ function MCResults({ result }: { result: MonteCarloResult }) {
               <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
               <XAxis dataKey="npv" tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${u.currencySymbol}${v.toFixed(0)}M`} />
               <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
-              <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v: number) => [`${v.toFixed(1)}%`, 'Probability']} labelFormatter={(v: number) => `NPV: ${u.currencySymbol}${v.toFixed(0)}M`} />
+              <Tooltip contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }} formatter={(v) => [`${Number(v).toFixed(1)}%`, 'Probability']} labelFormatter={(v) => `NPV: ${u.currencySymbol}${Number(v).toFixed(0)}M`} />
               <ReferenceLine y={10} stroke={COLORS.danger} strokeDasharray="3,3" />
               <ReferenceLine y={50} stroke={COLORS.petrol} strokeDasharray="3,3" />
               <ReferenceLine y={90} stroke={COLORS.success} strokeDasharray="3,3" />

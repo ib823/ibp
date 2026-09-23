@@ -72,7 +72,7 @@ export function ScenarioBarChart({ results }: ScenarioBarChartProps) {
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, 'NPV₁₀']}
+          formatter={(v) => [`${u.currencySymbol}${Number(v).toFixed(1)}M`, 'NPV₁₀']}
         />
         <ReferenceLine y={0} stroke="#9CA3AF" strokeWidth={1} />
         <Bar dataKey="npv" maxBarSize={48} radius={[2, 2, 0, 0]} isAnimationActive={false}>

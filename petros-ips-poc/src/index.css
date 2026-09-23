@@ -352,3 +352,14 @@ body[data-sac-preview="true"] [data-poc-badge] {
   background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.06));
   pointer-events: none;
 }
+
+/* ── Recharts 3 accessibility layer ────────────────────────────────── */
+/*
+ * Recharts 3 enables `accessibilityLayer` by default: each chart's SVG is
+ * focusable (Tab, then arrow keys move the tooltip). Clicking a chart with
+ * the mouse would otherwise leave the browser focus ring around it, which
+ * Recharts 2 never showed. Keep the ring for keyboard focus only.
+ */
+.recharts-surface:focus:not(:focus-visible) {
+  outline: none;
+}
