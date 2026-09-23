@@ -3,6 +3,10 @@ import { useAuthStore } from '@/store/auth-store';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Pill } from '@/components/shared/Pill';
 import { FISCAL_REGIMES, RSC_CONTRACT } from '@/data/fiscal-regimes';
+import { DEFAULT_SP_TERMS } from '@/engine/fiscal/psc-rc';
+import { CAPEX_DEPRECIATION_YEARS } from '@/engine/fiscal/shared';
+import { DEFAULT_VALUATION_YEAR } from '@/engine/economics/valuation';
+import { REFERENCE_USD_MYR } from '@/engine/utils/unit-conversion';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { InfoIcon } from '@/components/shared/InfoIcon';
 import { SectionHelp } from '@/components/shared/SectionHelp';
@@ -162,12 +166,14 @@ export default function SettingsPage() {
         <SectionHelp entry={edu['ST-02']!} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-xs">
           <EduRow label="Discount Rate (NPV)" value="10.0%" tooltipId="ST-03" />
-          <EduRow label="CAPEX Depreciation" value="5-year straight-line" tooltipId="ST-04" />
+          <EduRow label="Capital Allowance (tax)" value={`${CAPEX_DEPRECIATION_YEARS}-year straight-line`} tooltipId="ST-04" />
           <EduRow label="MIRR Finance Rate" value="8.0%" tooltipId="ST-05" />
           <EduRow label="MIRR Reinvest Rate" value="10.0%" tooltipId="ST-06" />
-          <EduRow label="THV Oil Threshold" value="30 MMstb" tooltipId="ST-07" />
-          <EduRow label="THV Gas Threshold" value="0.75 Tscf" tooltipId="ST-08" />
-          <EduRow label="Supplementary Payment Rate" value="70%" tooltipId="ST-09" />
+          <EduRow label="THV Liquids (R/C default)" value={`${DEFAULT_SP_TERMS.thvLiquidsMmstb} MMstb`} tooltipId="ST-07" />
+          <EduRow label="THV Gas (R/C default)" value={`${DEFAULT_SP_TERMS.thvGasTscf} Tscf`} tooltipId="ST-08" />
+          <EduRow label="Supplementary Payment (R/C default)" value={fmtPct(DEFAULT_SP_TERMS.rate, 0)} tooltipId="ST-09" />
+          <Row label="Portfolio Valuation Year" value={String(DEFAULT_VALUATION_YEAR)} />
+          <Row label="USD/MYR Reference" value={REFERENCE_USD_MYR.toFixed(2)} />
           <EduRow label="Decomm. Discount Rate" value="8.0%" tooltipId="ST-10" />
           <EduRow label="Gas Conversion" value="1 MMscf = 1,055 MMBtu" tooltipId="ST-11" />
           <EduRow label="BOE Conversion" value="6 Mscf = 1 BOE" tooltipId="ST-12" />
@@ -243,7 +249,7 @@ export default function SettingsPage() {
                     <span className="font-medium text-text-secondary text-right">Ceiling</span>
                     <span className="font-medium text-text-secondary text-right">Contractor</span>
                     <span className="font-medium text-text-secondary text-right">Host</span>
-                    <span className="font-medium text-text-secondary text-right">&gt;THV / Gas</span>
+                    <span className="font-medium text-text-secondary text-right">Oil &gt;THV / Gas</span>
                     {regime.tranches.map((t, i) => (
                       <div key={i} className="contents">
                         <span className="font-data">{t.rcFloor.toFixed(1)} — {t.rcCeiling === Infinity ? '∞' : t.rcCeiling.toFixed(1)}</span>
