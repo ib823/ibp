@@ -79,7 +79,7 @@ export function downloadPriceDecksTemplate() {
     ['scenario', 'year', 'oil_usd_bbl', 'gas_usd_mmbtu', 'condensate_usd_bbl', 'exchange_rate_usd_myr', 'carbon_credit_usd_tonne'],
     ['string', 'integer', 'number', 'number', 'number', 'number', 'number'],
     ['base/high/low/stress', '', 'Brent equiv', 'Asian LNG marker', 'Typically ~85% of oil *', 'USD/MYR', 'Voluntary/compliance'],
-    ['base', 2026, 73.19, 9.57, 62.21, 4.50, 28.15],
+    ['base', 2026, 91.00, 9.57, 77.35, 4.07, 28.15],
   );
   XLSX.utils.book_append_sheet(wb, ws, 'Price_Deck');
   download(wb, 'Template_Price_Decks.xlsx');
@@ -91,17 +91,17 @@ export function downloadFiscalRegimesTemplate() {
   const wb = XLSX.utils.book_new();
 
   const wsBase = makeSheet(
-    ['regime_type', 'royalty_rate', 'pita_rate', 'export_duty_rate', 'research_cess_rate', 'cost_recovery_ceiling_pct', 'contractor_profit_share_pct', 'petronas_profit_share_pct', 'pi_lower', 'pi_upper', 'deepwater_allowance', 'tax_rate'],
-    ['string', 'decimal', 'decimal', 'decimal', 'decimal', 'decimal?', 'decimal?', 'decimal?', 'decimal?', 'decimal?', 'decimal?', 'decimal?'],
-    ['PSC_RC/PSC_EPT/etc', '0-1', '0-1', '0-1', '0-1', 'SFA/LLA only', 'SFA/LLA only', 'SFA/LLA only', 'EPT only', 'EPT only', 'DW only', 'Downstream only'],
-    ['PSC_RC', 0.10, 0.38, 0.10, 0.005, '', '', '', '', '', '', ''],
+    ['regime_type', 'royalty_rate', 'pita_rate', 'export_duty_rate', 'research_cess_rate', 'sarawak_sst_rate', 'cost_recovery_ceiling_pct', 'contractor_profit_share_pct', 'host_profit_share_pct', 'pi_lower', 'pi_upper', 'investment_allowance_rate', 'tax_rate'],
+    ['string', 'decimal', 'decimal', 'decimal', 'decimal', 'decimal?', 'decimal?', 'decimal?', 'decimal?', 'decimal?', 'decimal?', 'decimal?', 'decimal?'],
+    ['PSC_RC/PSC_EPT/etc', '0-1', '0-1', '0-1', '0-1 (on contractor entitlement)', 'Sarawak blocks: 0.05', 'SFA only', 'SFA only', 'SFA only', 'EPT only', 'EPT only', 'DW/HPHT only', 'Downstream only'],
+    ['PSC_RC', 0.10, 0.38, 0.10, 0.005, 0.05, '', '', '', '', '', '', ''],
   );
   XLSX.utils.book_append_sheet(wb, wsBase, 'Regime_Base');
 
   const wsTranches = makeSheet(
-    ['regime_type', 'tranche_order', 'rc_floor', 'rc_ceiling', 'cost_recovery_ceiling_pct', 'contractor_profit_share_pct', 'petronas_profit_share_pct'],
+    ['regime_type', 'tranche_order', 'rc_floor', 'rc_ceiling', 'cost_recovery_ceiling_pct', 'contractor_profit_share_pct', 'host_profit_share_pct'],
     ['string', 'integer', 'decimal', 'decimal', 'decimal', 'decimal', 'decimal'],
-    ['FK to Regime_Base', '1-based', 'R/C ratio', 'R/C ratio (Inf for last)', '0-1', '0-1', '0-1'],
+    ['FK to Regime_Base', '1-based', 'R/C ratio', 'R/C ratio (Inf for last)', '0-1 of gross production', '0-1', '0-1'],
     ['PSC_RC', 1, 0.0, 1.0, 0.70, 0.70, 0.30],
   );
   XLSX.utils.book_append_sheet(wb, wsTranches, 'RC_Tranches');

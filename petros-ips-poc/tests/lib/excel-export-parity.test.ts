@@ -38,8 +38,9 @@ describe('buildEconomicsWorkbook parity with live engine output', () => {
 
     expect(rows[0]![0]).toBe(first.year);
     expect(rows[0]![4]).toBeCloseTo(first.totalGrossRevenue as number, 6);
-    expect(rows[0]![18]).toBeCloseTo(first.netCashFlow as number, 6);
-    expect(rows[rows.length - 1]![24]).toBeCloseTo(last.cumulativeProduction, 6);
+    expect(rows[0]![8]).toBeCloseTo(first.sarawakSst as number, 6);
+    expect(rows[0]![24]).toBeCloseTo(first.netCashFlow as number, 6);
+    expect(rows[rows.length - 1]![30]).toBeCloseTo(last.cumulativeProduction, 6);
   });
 
   it('applies the configured currency conversion consistently for real data', () => {
@@ -48,7 +49,7 @@ describe('buildEconomicsWorkbook parity with live engine output', () => {
       conversions: DEFAULT_CONVERSIONS,
     });
     const summary = workbook.Sheets.Summary!;
-    const myrFactor = 4.5;
+    const myrFactor = 4.07;
 
     expect(cell(summary, 'B8')).toBeCloseTo((result.npv10 as number) * myrFactor, 6);
     expect(cell(summary, 'B16')).toBeCloseTo((result.totalCapex as number) * myrFactor, 6);

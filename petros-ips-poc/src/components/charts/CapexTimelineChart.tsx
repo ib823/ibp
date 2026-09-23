@@ -6,12 +6,11 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import type { ProjectInputs } from '@/engine/types';
-import { computeCosts } from '@/engine/fiscal/shared';
+import { computeCosts, workingInterestCosts } from '@/engine/fiscal/shared';
 import { fmtNum } from '@/lib/format';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { ChartShell } from '@/components/charts/ChartShell';
@@ -38,7 +37,7 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
       const row: Record<string, number> = { year: y };
       let yearTotal = 0;
       for (const proj of active) {
-        const cost = computeCosts(proj.costProfile, y);
+        const cost = computeCosts(workingInterestCosts(proj), y);
         const capexM = (cost.totalCapex * u.currencyFactor) / 1e6;
         row[proj.project.id] = Math.round(capexM * 10) / 10;
         yearTotal += capexM;
@@ -54,7 +53,8 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
     <ChartShell height={260}>
     <ResponsiveContainer width="100%" height={260}>
       <ComposedChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
+        {/* Recharts 3: the grid must name the Y axis it follows (there is no default axis 0 here). */}
+        <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" yAxisId="left" />
         <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#6B7280' }} tickLine={false} />
         <YAxis
           yAxisId="left"
@@ -71,7 +71,7 @@ export function CapexTimelineChart({ projects, activeIds }: CapexTimelineChartPr
         />
         <Tooltip
           contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-          formatter={(v: number) => [`${u.currencySymbol}${v.toFixed(1)}M`, undefined]}
+          formatter={(v) => [`${u.currencySymbol}${Number(v).toFixed(1)}M`, undefined]}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         {activeProjects.map((proj, i) => (

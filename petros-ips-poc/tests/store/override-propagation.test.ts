@@ -117,11 +117,11 @@ describe('override propagation regressions', () => {
     state.runSensitivity('sk-410');
 
     const actual = useProjectStore.getState().sensitivityResults.get('sk-410');
-    // Store extended the variable set to include FX / fiscal / reserves (D36/D38/D40).
+    // Store extends the classic five with discount rate and fiscal rates (D38).
     const expected = calculateTornado(
       override.expectedProject,
       state.priceDecks[state.activeScenario],
-      ['oilPrice', 'gasPrice', 'production', 'capex', 'opex', 'fx', 'pitaRate', 'sarawakSstRate', 'reserves'],
+      ['oilPrice', 'gasPrice', 'production', 'capex', 'opex', 'discountRate', 'pitaRate', 'sarawakSstRate'],
     );
     expect(actual).toBeDefined();
     expect(actual!.baseNpv).toBeCloseTo(expected.baseNpv as number, 6);

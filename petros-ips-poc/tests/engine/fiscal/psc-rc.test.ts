@@ -137,9 +137,9 @@ describe('TEST 1: Simple 3-year gas project with R/C < 1.0 throughout', () => {
     }
   });
 
-  it('uses tranche 1 cost recovery ceiling (70%) for all years', () => {
+  it('uses tranche 1 cost recovery ceiling (70% of gross production) for all years', () => {
     for (const r of results) {
-      const expectedCeiling = r.revenueAfterRoyalty * 0.70;
+      const expectedCeiling = Math.min(r.totalGrossRevenue * 0.70, r.revenueAfterRoyalty);
       expect(r.costRecoveryCeiling).toBeCloseTo(expectedCeiling, 2);
     }
   });
@@ -147,8 +147,8 @@ describe('TEST 1: Simple 3-year gas project with R/C < 1.0 throughout', () => {
   it('unrecovered cost carries forward when costs exceed ceiling', () => {
     const yr1 = results[0]!;
     // Year 1: $500M CAPEX + $80M OPEX = $580M eligible
-    // Revenue after royalty ≈ $138.6M, ceiling = $138.6M * 0.70 ≈ $97M
-    // So cost recovery = $97M, carry-forward = $580M - $97M ≈ $483M
+    // Gross revenue ≈ $154M, ceiling = 70% of gross ≈ $108M
+    // So cost recovery ≈ $108M, carry-forward ≈ $580M - $108M ≈ $472M
     expect(yr1.unrecoveredCostCF).toBeGreaterThan(400e6);
   });
 });

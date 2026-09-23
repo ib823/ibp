@@ -13,15 +13,24 @@ import type {
 } from '@/engine/types';
 import { usd } from '@/engine/fiscal/shared';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
-import { applyPriceSensitivity, applyProjectSensitivity } from '@/engine/sensitivity/apply';
+import {
+  applyPriceSensitivity,
+  applyProjectSensitivity,
+  applyFiscalSensitivity,
+} from '@/engine/sensitivity/apply';
 import { createPRNG, hashSeed } from './prng';
 import { sampleTriangular, sampleNormal, sampleLognormal } from './distributions';
 
 const HISTOGRAM_BINS = 50;
 
+/** Base discount rate of the economics engine (NPV10). */
+const BASE_DISCOUNT_RATE = 0.10;
+
 /**
  * Sample a multiplier factor from a distribution config.
  * The factor is meant to multiply the base value (i.e., 1.0 = no change).
+ * Prices, volumes, costs and rates cannot go negative, so an unbounded
+ * normal sample is truncated at zero.
  */
 function sampleFactor(prng: () => number, config: DistributionConfig): number {
   switch (config.type) {
@@ -31,7 +40,7 @@ function sampleFactor(prng: () => number, config: DistributionConfig): number {
     }
     case 'normal': {
       const p = config.params as { mean: number; stdDev: number };
-      return sampleNormal(prng, p.mean, p.stdDev);
+      return Math.max(0, sampleNormal(prng, p.mean, p.stdDev));
     }
     case 'lognormal': {
       const p = config.params as { mu: number; sigma: number };
@@ -76,6 +85,17 @@ function applyFactors(
   if (Math.abs(opexPct) > 1e-10) {
     modProject = applyProjectSensitivity(modProject, 'opex', opexPct);
   }
+  // Reserves uncertainty is proxied as a production multiplier (D40).
+  const reservesPct = factors.reserves - 1;
+  if (Math.abs(reservesPct) > 1e-10) {
+    modProject = applyProjectSensitivity(modProject, 'production', reservesPct);
+  }
+  for (const v of ['pitaRate', 'royaltyRate', 'sarawakSstRate'] as const) {
+    const pct = factors[v] - 1;
+    if (Math.abs(pct) > 1e-10) modProject = applyFiscalSensitivity(modProject, v, pct);
+  }
+  // 'fx' does not change the USD economics (no MYR-denominated costs are
+  // modelled), so it is intentionally not applied here — see D36.
 
   return { project: modProject, priceDeck: modPriceDeck };
 }
@@ -148,7 +168,9 @@ export function runMonteCarlo(
     void config.correlationMatrix; void config.variableOrder;
 
     const modified = applyFactors(project, priceDeck, factors);
-    const result = calculateProjectEconomics(modified.project, modified.priceDeck);
+    const result = calculateProjectEconomics(
+      modified.project, modified.priceDeck, 'base', BASE_DISCOUNT_RATE * factors.discountRate,
+    );
     const npv = result.npv10 as number;
     // Defense in depth: drop any non-finite NPVs so a single pathological
     // sample can't corrupt percentiles, mean, stdDev, or the histogram.

@@ -242,7 +242,8 @@ export default function DataSourcesPage() {
             { name: 'royalty_rate', type: 'decimal', description: 'Royalty rate 0–1' },
             { name: 'pita_rate', type: 'decimal', description: 'Petroleum income tax rate' },
             { name: 'export_duty_rate', type: 'decimal', description: 'Export duty rate' },
-            { name: 'research_cess_rate', type: 'decimal', description: 'Research cess rate' },
+            { name: 'research_cess_rate', type: 'decimal', description: 'Research cess rate (on contractor cost oil + profit oil)' },
+            { name: 'sarawak_sst_rate', type: 'decimal', description: 'Sarawak State Sales Tax rate (0.05 for Sarawak blocks)' },
           ],
         },
         {
@@ -254,7 +255,7 @@ export default function DataSourcesPage() {
             { name: 'rc_ceiling', type: 'decimal', description: 'R/C ratio upper bound' },
             { name: 'cost_recovery_ceiling_pct', type: 'decimal', description: 'Max cost recovery %' },
             { name: 'contractor_profit_share_pct', type: 'decimal', description: 'Contractor share %' },
-            { name: 'petronas_profit_share_pct', type: 'decimal', description: 'PETRONAS share %' },
+            { name: 'host_profit_share_pct', type: 'decimal', description: 'Host (PETROS / PETRONAS) share %' },
           ],
         },
       ],

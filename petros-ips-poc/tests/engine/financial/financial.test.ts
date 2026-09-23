@@ -9,7 +9,7 @@ import { calculateFiscalCashflows } from '@/engine/fiscal';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
 import { SK410_INPUTS, ALL_PROJECTS } from '@/data/projects';
 import { BASE_PRICE_DECK } from '@/data/price-decks';
-import { computeCosts } from '@/engine/fiscal/shared';
+import { computeCosts, workingInterestCosts } from '@/engine/fiscal/shared';
 
 // ── Shared setup ──────────────────────────────────────────────────────
 
@@ -24,22 +24,19 @@ const accountMovements = generateAccountMovements(incomeStatement, balanceSheet,
 // ════════════════════════════════════════════════════════════════════════
 
 describe('TEST 1: Income statement revenue matches economics model', () => {
-  it('revenue line equals totalGrossRevenue from cashflows for every year', () => {
+  it('revenue line equals the contractor entitlement from cashflows for every year', () => {
     for (let i = 0; i < cashflows.length; i++) {
       expect(incomeStatement.yearly[i]!.revenue as number).toBeCloseTo(
-        cashflows[i]!.totalGrossRevenue as number,
+        cashflows[i]!.contractorEntitlement as number,
         2,
       );
     }
   });
 
-  it('tax expense matches pitaTax from cashflows', () => {
-    for (let i = 0; i < cashflows.length; i++) {
-      expect(incomeStatement.yearly[i]!.taxExpense as number).toBeCloseTo(
-        cashflows[i]!.pitaTax as number,
-        2,
-      );
-    }
+  it('tax expense = current PITA + deferred tax; deferred tax nets to zero over the field life', () => {
+    const lifetimeExpense = incomeStatement.yearly.reduce((s, l) => s + (l.taxExpense as number), 0);
+    const lifetimePita = cashflows.reduce((s, cf) => s + (cf.pitaTax as number), 0);
+    expect(lifetimeExpense).toBeCloseTo(lifetimePita, 0);
   });
 
   it('produces correct number of yearly lines', () => {
@@ -226,7 +223,7 @@ describe('TEST 6: Investment program totals match sum of project CAPEX', () => {
     let expectedTotal = 0;
     for (const proj of ALL_PROJECTS) {
       for (let y = proj.project.startYear; y <= proj.project.endYear; y++) {
-        const cost = computeCosts(proj.costProfile, y);
+        const cost = computeCosts(workingInterestCosts(proj), y);
         expectedTotal += cost.totalCapex;
       }
     }

@@ -21,7 +21,7 @@
 // ════════════════════════════════════════════════════════════════════════
 
 import type { ProjectInputs, USD } from '@/engine/types';
-import { getVal, usd } from '@/engine/fiscal/shared';
+import { getVal, usd, workingInterestCosts } from '@/engine/fiscal/shared';
 
 export interface EERollForward {
   readonly year: number;
@@ -85,13 +85,14 @@ export function generateEESchedule(
     }
   }
 
+  const costs = workingInterestCosts(project);
   let opening = 0;
   for (let y = project.project.startYear; y <= project.project.endYear; y++) {
     const yearCapex =
-      getVal(project.costProfile.capexDrilling, y) +
-      getVal(project.costProfile.capexFacilities, y) +
-      getVal(project.costProfile.capexSubsea, y) +
-      getVal(project.costProfile.capexOther, y);
+      getVal(costs.capexDrilling, y) +
+      getVal(costs.capexFacilities, y) +
+      getVal(costs.capexSubsea, y) +
+      getVal(costs.capexOther, y);
 
     let additions = 0;
     let reclassifiedToPPE = 0;

@@ -8,11 +8,13 @@
 import { useMemo, useState } from 'react';
 import {
   ComposedChart, AreaChart, Bar, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
+  CartesianGrid, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { buildDebtServiceSchedule } from '@/engine/financial/project-finance';
 import { useProjectStore, getActiveResult } from '@/store/project-store';
+import { computeCosts, workingInterestCosts } from '@/engine/fiscal/shared';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { fmtNum } from '@/lib/format';
 import { KpiCard } from '@/components/shared/KpiCard';
@@ -36,24 +38,31 @@ export default function ProjectFinancePage() {
 
   const pf = useMemo(() => {
     if (!result) return null;
-    // Build CFADS series — operating CF before debt service, derived from
-    // project NCF + (CAPEX added back, since NCF already netted it out).
-    const cfads = result.yearlyCashflows.map((cf) => {
-      // CFADS = NCF + tax (we want pre-finance, post-tax) ≈ NCF (POC simplification).
-      // For real PF, CFADS = revenue − OPEX − cash tax.
-      return cf.netCashFlow as number;
-    });
+    const cfs = result.yearlyCashflows;
+    // Construction = the years before first revenue. Debt is sized on the
+    // capex spent in those years.
+    const firstRevenueIdx = cfs.findIndex((cf) => (cf.contractorEntitlement as number) > 0);
+    const constructionYears = Math.max(1, firstRevenueIdx < 0 ? cfs.length : firstRevenueIdx);
+    const project = projects.find((p) => p.project.id === result.projectId);
+    const constructionCapex = project
+      ? cfs.slice(0, constructionYears).reduce(
+          (s, cf) => s + computeCosts(workingInterestCosts(project), cf.year).totalCapex, 0,
+        )
+      : (result.totalCapex as number);
+    // CFADS in operating years = net cash flow: revenue − OPEX − sustaining
+    // capex − cash tax, before debt service.
+    const cfads = cfs.map((cf) => cf.netCashFlow as number);
     return buildDebtServiceSchedule({
       cfads,
-      totalCapex: result.totalCapex as number,
+      totalCapex: constructionCapex,
       debtFraction,
       interestRate,
       tenorYears,
       taxRate,
-      constructionYears: 1,
+      constructionYears,
       cashSweepThreshold,
     });
-  }, [result, debtFraction, interestRate, tenorYears, taxRate, cashSweepThreshold]);
+  }, [result, projects, debtFraction, interestRate, tenorYears, taxRate, cashSweepThreshold]);
 
   return (
     <div className="space-y-4">
@@ -157,7 +166,7 @@ export default function ProjectFinancePage() {
                     <td className="px-2 py-1 text-right">{u.money(y.cashSweep as number, { accounting: true })}</td>
                     <td className="px-2 py-1 text-right">{u.money(y.closing as number, { accounting: true })}</td>
                     <td className="px-2 py-1 text-right">{u.money(y.cfads as number, { accounting: true })}</td>
-                    <td className={`px-2 py-1 text-right ${y.dscr < 1.20 ? 'text-danger' : ''}`}>{y.dscr.toFixed(2)}</td>
+                    <td className={`px-2 py-1 text-right ${y.dscr < 1.20 ? 'text-danger' : ''}`}>{Number.isFinite(y.dscr) ? y.dscr.toFixed(2) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -182,14 +191,15 @@ export default function ProjectFinancePage() {
                 <ComposedChart
                   data={pf.schedule.map((y) => ({
                     year: `Y${y.year}`,
-                    dscr: Math.min(y.dscr, 5), // cap visible at 5 to keep chart readable
+                    // cap visible at 5 to keep chart readable; no bar without debt service
+                    dscr: Number.isFinite(y.dscr) ? Math.min(y.dscr, 5) : null,
                   }))}
                   margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
                   <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
-                  <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => v.toFixed(2)} domain={[0, 'auto']} />
-                  <Tooltip formatter={(v: number) => [v.toFixed(2), 'DSCR']} contentStyle={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => v.toFixed(2)} domain={['auto', 'auto']} />
+                  <Tooltip formatter={(v) => [v == null ? '—' : Number(v).toFixed(2), 'DSCR']} contentStyle={{ fontSize: 11 }} />
                   <ReferenceLine y={1.20} stroke={COLORS.danger} strokeDasharray="4,3" label={{ value: 'Target 1.20', fontSize: 10, fill: COLORS.danger }} />
                   <ReferenceLine y={1.30} stroke={COLORS.amber} strokeDasharray="4,3" label={{ value: 'Sweep 1.30', fontSize: 10, fill: COLORS.amber }} />
                   <Bar dataKey="dscr" fill={CHART_POS} />
@@ -214,7 +224,7 @@ export default function ProjectFinancePage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
                   <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
                   <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
-                  <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, 'Closing balance']} contentStyle={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v) => [`$${Number(v).toFixed(1)}M`, 'Closing balance']} contentStyle={{ fontSize: 11 }} />
                   <Area type="monotone" dataKey="closing" stroke={COLORS.danger} fill={COLORS.danger} fillOpacity={0.2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -244,7 +254,7 @@ export default function ProjectFinancePage() {
                 <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
                 <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
                 <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
-                <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
+                <Tooltip formatter={(v) => [`$${Number(v).toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="interest" stackId="a" fill={COLORS.danger} name="Interest" />
                 <Bar dataKey="principal" stackId="a" fill={COLORS.amber} name="Principal" />

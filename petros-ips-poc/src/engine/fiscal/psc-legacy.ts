@@ -19,7 +19,10 @@ import {
   computeCosts,
   computeGovtDeductions,
   computeYearlyBoe,
+  costRecoveryCeilingFromGross,
+  researchCessOnEntitlement,
   DepreciationSchedule,
+  TaxLossPool,
 } from './shared';
 
 // Cost recovery ceilings for legacy PSCs
@@ -72,13 +75,14 @@ export function calculatePscLegacy(inputs: PscLegacyInputs): YearlyCashflow[] {
   let cumulativeDiscountedCF = 0;
   let cumulativeProductionBoe = 0;
   const depreciation = new DepreciationSchedule();
+  const taxLosses = new TaxLossPool();
 
   for (let year = startYear; year <= endYear; year++) {
     const yearIndex = year - startYear;
 
     const rev = computeRevenue(yearlyProduction, priceDeck, year, equityShare);
     const govtDed = computeGovtDeductions(rev, fiscalConfig);
-    const { royalty, exportDuty, researchCess, sarawakSst, revenueAfterRoyalty } = govtDed;
+    const { royalty, exportDuty, sarawakSst, revenueAfterRoyalty } = govtDed;
 
     // Determine cost recovery ceiling as blend of oil vs gas revenue weights
     const oilCondRevenue = rev.grossRevenueOil + rev.grossRevenueCond;
@@ -92,8 +96,10 @@ export function calculatePscLegacy(inputs: PscLegacyInputs): YearlyCashflow[] {
     const cost = computeCosts(yearlyCosts, year);
     const currentYearCosts = cost.totalCapex + cost.totalOpex + cost.abandonmentCost;
     const eligibleCosts = currentYearCosts + unrecoveredCostCF;
-    const costRecoveryCeiling = revenueAfterRoyalty * blendedCeilingPct;
-    const costRecoveryAmount = Math.min(eligibleCosts, Math.max(0, costRecoveryCeiling));
+    const costRecoveryCeiling = costRecoveryCeilingFromGross(
+      rev.totalGrossRevenue, blendedCeilingPct, revenueAfterRoyalty,
+    );
+    const costRecoveryAmount = Math.min(eligibleCosts, costRecoveryCeiling);
     const newUnrecoveredCostCF = eligibleCosts - costRecoveryAmount;
 
     // Volume-based profit split
@@ -105,16 +111,22 @@ export function calculatePscLegacy(inputs: PscLegacyInputs): YearlyCashflow[] {
     const hostProfitShare = profitOilGas * (1 - contractorSharePct);
 
     const contractorEntitlement = costRecoveryAmount + contractorProfitShare;
+    const researchCess = researchCessOnEntitlement(
+      costRecoveryAmount, contractorProfitShare, fiscalConfig.researchCessRate,
+    );
 
     // Tax — deduct OPEX + ABEX per PITA 1967 Section 33. See ASSESSMENT.md F1, F2.
+    // Adjusted losses are carried forward against later income.
     depreciation.addCapex(cost.totalCapex);
     const capitalAllowance = depreciation.computeAllowance();
-    const taxableIncome = contractorEntitlement - capitalAllowance - cost.totalOpex - cost.abandonmentCost;
-    const pitaTax = Math.max(0, taxableIncome * fiscalConfig.pitaRate);
+    const taxableIncome =
+      contractorEntitlement - researchCess - capitalAllowance - cost.totalOpex - cost.abandonmentCost;
+    const { lossRelief, chargeableIncome } = taxLosses.apply(year, taxableIncome);
+    const pitaTax = chargeableIncome * fiscalConfig.pitaRate;
 
     // NCF
     const netCashFlow =
-      costRecoveryAmount + contractorProfitShare - pitaTax -
+      contractorEntitlement - researchCess - pitaTax -
       cost.totalCapex - cost.totalOpex - cost.abandonmentCost;
     cumulativeCashFlow += netCashFlow;
 
@@ -147,6 +159,9 @@ export function calculatePscLegacy(inputs: PscLegacyInputs): YearlyCashflow[] {
       supplementaryPayment: usd(0),
       taxableIncome: usd(taxableIncome),
       capitalAllowance: usd(capitalAllowance),
+      lossRelief: usd(lossRelief),
+      taxAllowanceUsed: usd(0),
+      taxLossCF: usd(taxLosses.balance),
       pitaTax: usd(pitaTax),
       netCashFlow: usd(netCashFlow),
       cumulativeCashFlow: usd(cumulativeCashFlow),

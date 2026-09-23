@@ -2,22 +2,20 @@
 // Balance Sheet Generator — driver-based per MFRS (D14 / D32 / D33 / D34)
 // ════════════════════════════════════════════════════════════════════════
 //
-// Replaces the snapshot-PV / plug-field approach with driver-based
-// mechanics from dedicated MFRS modules:
+//   - PP&E                      — capex + E&E reclassified + capitalised
+//                                  decommissioning asset (IFRIC 1 §5) − DD&A
+//   - E&E assets                — MFRS 6 schedule, reclassified to PP&E at FID
+//   - Cash                      — cumulative net cash flow
+//   - Decommissioning provision — MFRS 137 / IFRIC 1 schedule
+//   - Deferred tax              — MFRS 112 net position (DTL, or DTA in
+//                                  other non-current assets)
+//   - Right-of-use assets       — optional MFRS 16 lease schedule
 //
-//   - PPE                       — accumulated CAPEX − accumulated book DD&A,
-//                                  PLUS initial decommissioning capitalisation
-//                                  per IFRIC 1 §5.
-//   - Decommissioning provision — generateDecommissioningSchedule (IFRIC 1)
-//   - E&E assets                — generateEESchedule (MFRS 6) for projects
-//                                  in exploration phase; reclassified to PPE
-//                                  at FID.
-//   - Right-of-use assets       — buildLeaseSchedule (MFRS 16) for projects
-//                                  with FPSO / equipment leases.
-//   - Deferred tax liability    — generateDeferredTaxSchedule (MFRS 112)
-//
-// The plug field (`otherReserves` / `reconDifference`) is retained as a
-// safety net but should be ≈ 0 once all driver-based pieces are wired.
+// With every movement driven by the same schedules as the income statement
+// (accounting-drivers.ts) the sheet balances by construction.
+// `otherReserves` carries any residual for diagnostics — it is zero unless
+// an MFRS 16 lease is supplied, whose payments are not in the fiscal cash
+// flows.
 // ════════════════════════════════════════════════════════════════════════
 
 import type {
@@ -27,10 +25,8 @@ import type {
   BalanceSheet,
   BalanceSheetLine,
 } from '@/engine/types';
-import { usd, computeCosts } from '@/engine/fiscal/shared';
-import { generateDecommissioningSchedule, DECOMM_DISCOUNT_RATE } from './decommissioning';
-import { generateEESchedule } from './exploration-evaluation';
-import { generateDeferredTaxSchedule } from './deferred-tax';
+import { usd } from '@/engine/fiscal/shared';
+import { accountingDrivers, netDeferredTax, ppeClosingBalances } from './accounting-drivers';
 import { buildLeaseSchedule, type LeaseInputs } from './lease';
 
 export interface BalanceSheetOptions {
@@ -41,8 +37,6 @@ export interface BalanceSheetOptions {
 
 /**
  * Generate balance sheet from income statement, cashflows, and project inputs.
- * Uses driver-based MFRS mechanics — no plug field required when data is
- * complete; reconciliation difference retained for diagnostic purposes.
  */
 export function generateBalanceSheet(
   incomeStatement: IncomeStatement,
@@ -50,92 +44,58 @@ export function generateBalanceSheet(
   project: ProjectInputs,
   options: BalanceSheetOptions = {},
 ): BalanceSheet {
-  const { costProfile, project: proj } = project;
-
-  // Driver-based schedules
-  const decommSchedule = generateDecommissioningSchedule(
-    costProfile,
-    proj.startYear,
-    proj.endYear,
-    DECOMM_DISCOUNT_RATE,
-  );
-  const eeSchedule = generateEESchedule(project);
-  const dtlSchedule = generateDeferredTaxSchedule(
-    costProfile,
-    incomeStatement,
-    proj.startYear,
-    proj.endYear,
-    // Use 38% PITA for upstream PSC; 24% for downstream/CCS
-    proj.fiscalRegime === 'DOWNSTREAM' ? 0.24 : 0.38,
-  );
+  const drivers = accountingDrivers(cashflows, project);
+  const dda = incomeStatement.yearly.map((l) => l.depreciationAmortisation as number);
+  const ppeClosing = ppeClosingBalances(drivers, dda);
+  const deferred = netDeferredTax(drivers, ppeClosing);
   const leaseScheduleRaw = options.lease ? buildLeaseSchedule(options.lease) : null;
 
-  let cumulativeCapex = 0;
-  let cumulativeDda = 0;
   let cumulativeCash = 0;
   let cumulativeRetainedEarnings = 0;
-  let cumulativeAroCapitalisation = 0; // tracks ARO additions to PPE over time
 
-  const yearly: BalanceSheetLine[] = cashflows.map((cf, idx) => {
+  const yearly: BalanceSheetLine[] = drivers.years.map((d, idx) => {
     const isLine = incomeStatement.yearly[idx]!;
-    const cost = computeCosts(costProfile, cf.year);
-
-    cumulativeCapex += cost.totalCapex;
-    cumulativeDda += isLine.depreciationAmortisation as number;
-    cumulativeCash += cf.netCashFlow as number;
+    cumulativeCash += d.netCashFlow;
     cumulativeRetainedEarnings += isLine.profitAfterTax as number;
 
-    // Decommissioning — driver-based per IFRIC 1
-    const decomm = decommSchedule[idx]!;
-    const decommProvision = decomm.closing as number;
-    // Initial recognition capitalisation accumulates onto PPE over time
-    // (additions fire once, but the asset stays on PPE until depreciated /
-    // disposed). Track cumulatively.
-    cumulativeAroCapitalisation += decomm.additions as number;
-
-    // E&E asset — for exploration-phase projects (MFRS 6). For non-E&E
-    // projects this returns 0.
-    const ee = eeSchedule[idx]!;
-    const explorationAssets = ee.closing as number;
-    // E&E balance is excluded from PPE (it sits as its own asset class until FID).
-    const ppeNet = Math.max(0, cumulativeCapex - cumulativeDda + cumulativeAroCapitalisation - explorationAssets);
+    const ppeNet = ppeClosing[idx]!;
+    const explorationAssets = d.eeClosing;
 
     // Right-of-use asset + lease liability per MFRS 16 (D34)
     const leaseEntry = leaseScheduleRaw
-      ? leaseScheduleRaw.schedule.find((e) => e.year === cf.year)
+      ? leaseScheduleRaw.schedule.find((e) => e.year === d.year)
       : null;
     const rightOfUseAssets = (leaseEntry?.rouAssetClosing as number) ?? 0;
     const leaseLiability = (leaseEntry?.liabilityClosing as number) ?? 0;
 
-    // Deferred tax liability per MFRS 112 (D14)
-    const dtl = dtlSchedule[idx]!;
-    const deferredTaxLiability = dtl.deferredTaxLiability as number;
+    // Net deferred tax per MFRS 112 (D14): liability, or asset if negative
+    const deferredTaxLiability = Math.max(0, deferred[idx]!);
+    const deferredTaxAsset = Math.max(0, -deferred[idx]!);
 
     const cash = cumulativeCash;
-    const totalNonCurrentAssets = ppeNet + explorationAssets + rightOfUseAssets;
+    const totalNonCurrentAssets = ppeNet + explorationAssets + rightOfUseAssets + deferredTaxAsset;
     const totalCurrentAssets = cash;
     const totalAssets = totalNonCurrentAssets + totalCurrentAssets;
 
-    // Liabilities
+    const decommProvision = d.provisionClosing;
     const totalNonCurrentLiabilities = decommProvision + leaseLiability + deferredTaxLiability;
     const totalCurrentLiabilities = 0;
     const totalLiabilities = totalNonCurrentLiabilities + totalCurrentLiabilities;
 
     const retainedEarnings = cumulativeRetainedEarnings;
 
-    // Reconciliation difference — should now be ≈ 0 with the proper drivers.
-    // Retained for diagnostic visibility on residual book/cash mismatches.
+    // Residual — zero by construction without a lease (see header).
     const reconDifference = totalAssets - (retainedEarnings + totalLiabilities);
 
     const totalEquity = retainedEarnings + reconDifference;
     const totalEquityAndLiabilities = totalEquity + totalLiabilities;
 
     return {
-      year: cf.year,
+      year: d.year,
       ppeNet: usd(ppeNet),
       explorationAssets: usd(explorationAssets),
       rightOfUseAssets: usd(rightOfUseAssets),
-      otherNonCurrentAssets: usd(0),
+      otherNonCurrentAssets: usd(deferredTaxAsset),
       totalNonCurrentAssets: usd(totalNonCurrentAssets),
       cash: usd(cash),
       tradeReceivables: usd(0),

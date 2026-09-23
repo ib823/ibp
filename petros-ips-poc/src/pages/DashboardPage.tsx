@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui5/Ui5Badge';
 import { Pill } from '@/components/shared/Pill';
 import { EduTooltip } from '@/components/shared/EduTooltip';
 import { SectionHelp } from '@/components/shared/SectionHelp';
-import { fmtPct } from '@/lib/format';
+import { fmtPctOrNa } from '@/lib/format';
+import { headlineReturn } from '@/engine/economics';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
 import { getPageEntries } from '@/lib/educational-content';
@@ -42,26 +43,22 @@ export default function DashboardPage() {
     return map;
   }, [economicsResults, activeScenario]);
 
-  const { totalCapex, weightedIrr, totalProjects } = useMemo(() => {
+  const { totalCapex, totalProjects } = useMemo(() => {
     let capexSum = 0;
-    let irrWeighted = 0;
-    let capexWeightTotal = 0;
     let count = 0;
     for (const [id, r] of projectResults) {
       if (!portfolioSelection.has(id)) continue;
       count++;
       capexSum += r.totalCapex as number;
-      irrWeighted += (r.irr ?? r.mirr) * (r.totalCapex as number);
-      capexWeightTotal += r.totalCapex as number;
     }
     return {
       totalCapex: capexSum,
-      weightedIrr: capexWeightTotal > 0 ? irrWeighted / capexWeightTotal : 0,
       totalProjects: count,
     };
   }, [projectResults, portfolioSelection]);
 
   const portfolioNpv = portfolioResult ? (portfolioResult.totalNpv as number) : 0;
+  const portfolioIrr = portfolioResult ? portfolioResult.portfolioIrr : null;
   const u = useDisplayUnits();
   // Charts below read productionProfile / costProfile directly — feed them
   // override-merged projects so what-if edits propagate to the dashboard.
@@ -91,9 +88,9 @@ export default function DashboardPage() {
           eduEntry={edu['D-02']}
         />
         <KpiCard
-          label="Weighted IRR"
-          value={fmtPct(weightedIrr)}
-          className={weightedIrr >= 0.10 ? 'border-l-2 border-l-success' : 'border-l-2 border-l-danger'}
+          label="Portfolio IRR"
+          value={fmtPctOrNa(portfolioIrr)}
+          className={(portfolioIrr ?? -Infinity) >= 0.10 ? 'border-l-2 border-l-success' : 'border-l-2 border-l-danger'}
           eduEntry={edu['D-03']}
         />
         <KpiCard
@@ -195,7 +192,7 @@ export default function DashboardPage() {
                   <td className={cn('px-2 py-2 text-right font-data font-medium', npvRaw >= 0 ? 'text-success' : 'text-danger')}>
                     {u.money(npvRaw, { accounting: true })}
                   </td>
-                  <td className="px-2 py-2 text-right font-data">{fmtPct(r.isNonInvestmentPattern ? r.mirr : (r.irr ?? 0))}</td>
+                  <td className="px-2 py-2 text-right font-data">{fmtPctOrNa(headlineReturn(r).value)}</td>
                   <td className="px-2 py-2 text-right font-data">{u.money(r.totalCapex as number, { accounting: true })}</td>
                   <td className="px-2 py-2 text-right font-data">{r.paybackYears.toFixed(1)} yr</td>
                 </tr>

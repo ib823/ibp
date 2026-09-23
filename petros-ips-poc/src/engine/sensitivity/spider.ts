@@ -11,6 +11,7 @@ import type {
 import { usd } from '@/engine/fiscal/shared';
 import { calculateProjectEconomics } from '@/engine/economics/cashflow';
 import { applyPriceSensitivity, applyProjectSensitivity, applyFiscalSensitivity } from './apply';
+import { sensitivityDiscountRate } from './tornado';
 
 export interface SpiderPoint {
   readonly percentChange: number;
@@ -62,9 +63,11 @@ export function calculateSpider(
         // Reserves uncertainty proxied as production scaling (D40).
         modifiedProject = applyProjectSensitivity(project, 'production', pct);
       }
-      // discountRate handled at calculateProjectEconomics call site, not here.
+      // discountRate is flexed at the calculateProjectEconomics call site.
 
-      const result = calculateProjectEconomics(modifiedProject, modifiedPriceDeck);
+      const result = calculateProjectEconomics(
+        modifiedProject, modifiedPriceDeck, 'base', sensitivityDiscountRate(variable, pct),
+      );
       points.push({
         percentChange: Math.round(pct * 1e6) / 1e6, // avoid float noise
         npv: usd(result.npv10 as number),

@@ -20,17 +20,19 @@ export function calculateIRR(
   const hasNegative = cashflows.some((cf) => cf < 0);
   if (!hasPositive || !hasNegative) return null;
 
-  // Step 1: Bracket finding — scan from -50% to 200% in 1% increments
+  // Step 1: Bracket finding — scan -50%…200% in 1% steps, then up to
+  // 1,000% in 10% steps so high-return projects (fast payback on small
+  // upfront spend) still resolve instead of reporting "no IRR".
   const brackets: Array<[number, number]> = [];
   const directRoots: number[] = [];
-  const scanMin = -0.50;
-  const scanMax = 2.00;
-  const scanStep = 0.01;
+  const scanRates: number[] = [];
+  for (let i = -50; i <= 200; i++) scanRates.push(i / 100);
+  for (let i = 21; i <= 100; i++) scanRates.push(i / 10);
 
-  let prevRate = scanMin;
+  let prevRate = scanRates[0]!;
   let prevNpv = calculateNPV(cashflows, prevRate);
 
-  for (let rate = scanMin + scanStep; rate <= scanMax + scanStep / 2; rate += scanStep) {
+  for (const rate of scanRates.slice(1)) {
     const npv = calculateNPV(cashflows, rate);
 
     // Direct root detection: NPV ≈ 0 at this rate

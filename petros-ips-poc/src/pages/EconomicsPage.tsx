@@ -16,13 +16,15 @@ import { EmptyState } from '@/components/shared/States';
 import { VersionComparisonView } from '@/components/version/VersionComparisonView';
 import { PhaseComparisonView } from '@/components/phase/PhaseComparisonView';
 import { Tabs } from '@/components/ui5/Ui5Tabs';
-import { fmtPct, fmtYears, fmtNum } from '@/lib/format';
+import { fmtPctOrNa, fmtYears, fmtNum } from '@/lib/format';
+import { headlineReturn } from '@/engine/economics';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { exportEconomicsToExcel } from '@/lib/excel-export';
 import { toast } from '@/lib/toast';
 import { getPageEntries } from '@/lib/educational-content';
 import { Button } from '@/components/ui5/Ui5Button';
 import type { TimeGranularity, YearlyCashflow } from '@/engine/types';
+import { workingInterestCosts } from '@/engine/fiscal/shared';
 
 const edu = getPageEntries('economics');
 
@@ -139,30 +141,26 @@ export default function EconomicsPage() {
                           }}
                         />
                         <KpiCard
-                          label={result.isNonInvestmentPattern ? 'MIRR' : 'IRR'}
-                          value={
-                            result.isNonInvestmentPattern
-                              ? fmtPct(result.mirr)
-                              : fmtPct(result.irr ?? 0)
-                          }
+                          label={headlineReturn(result).label}
+                          value={fmtPctOrNa(headlineReturn(result).value)}
                           className={
-                            (result.isNonInvestmentPattern ? result.mirr : (result.irr ?? 0)) >= 0.15
+                            (headlineReturn(result).value ?? -Infinity) >= 0.15
                               ? 'border-l-2 border-l-success'
-                              : (result.isNonInvestmentPattern ? result.mirr : (result.irr ?? 0)) >= 0.10
+                              : (headlineReturn(result).value ?? -Infinity) >= 0.10
                                 ? 'border-l-2 border-l-amber'
                                 : 'border-l-2 border-l-danger'
                           }
                           eduEntry={edu['E-18']}
                           trace={{
                             formula: result.isNonInvestmentPattern
-                              ? 'MIRR(finance=8%, reinvest=8%) = (FV_positive_CF / |PV_negative_CF|)^(1/N) − 1'
-                              : 'IRR: discount rate r where Σ NCF(t) / (1+r)^t = 0\nSolved with Brent\'s method on bracket [-50%, +200%].',
+                              ? 'MIRR(finance=8%, reinvest=10%) = (FV_positive_CF / |PV_negative_CF|)^(1/N) − 1'
+                              : 'IRR: discount rate r where Σ NCF(t) / (1+r)^t = 0\nSolved with Brent\'s method on brackets in [-50%, +1,000%]; n/a when no real root exists.',
                             engineSrc: result.isNonInvestmentPattern
                               ? 'src/engine/economics/mirr.ts'
                               : 'src/engine/economics/irr.ts',
                             reference: 'tests/lib/excel-export-parity.test.ts',
                             inputs: result.isNonInvestmentPattern
-                              ? { 'finance rate': '8.00 %', 'reinvestment rate': '8.00 %' }
+                              ? { 'finance rate': '8.00 %', 'reinvestment rate': '10.00 %' }
                               : { 'iteration tolerance': '1e-7', 'max iterations': 100 },
                           }}
                         />
@@ -269,7 +267,7 @@ export default function EconomicsPage() {
                             <div className="min-h-[280px]">
                               <AnnualCashFlowChart
                                 cashflows={result.yearlyCashflows}
-                                costProfile={activeProject.costProfile}
+                                costProfile={workingInterestCosts(activeProject)}
                               />
                             </div>
                           </div>

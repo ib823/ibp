@@ -42,7 +42,7 @@ describe('useDisplayUnits', () => {
 
     expect(result.current.currencyCode).toBe('MYR');
     expect(result.current.currencySymbol).toBe('RM');
-    expect(result.current.money(701_000_000)).toBe('RM 3,154.5M');
+    expect(result.current.money(701_000_000)).toBe('RM 2,853.1M');
   });
 
   it('oilFactor updates when oilVolume preference changes', () => {

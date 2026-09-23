@@ -11,9 +11,17 @@
 export type PeriodGranularity = 'year' | 'quarter' | 'month';
 
 /** How a row's annual total maps onto sub-annual periods.
- *  - flow:  divide equally across periods (revenue, tax, cash flow)
- *  - stock: repeat the year-end value across each period (balance-sheet items) */
-export type RowKind = 'flow' | 'stock';
+ *  - flow:    divide equally across periods (revenue, tax, cash flow)
+ *  - stock:   a year-END balance (closing balance, balance-sheet item):
+ *             moves in equal steps from the prior year-end to this year-end,
+ *             so the last period equals the annual figure
+ *  - opening: a year-START balance: moves in equal steps from this value to
+ *             the year's closing balance (pass `closingValues`; otherwise
+ *             the next year's opening is used), so each period's opening
+ *             equals the previous period's closing
+ *  Straight-line flows and linearly-stepped balances reconcile: opening +
+ *  the period's flows = closing, in every sub-period. */
+export type RowKind = 'flow' | 'stock' | 'opening';
 
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 
@@ -39,13 +47,28 @@ export function expandYearLabels(years: readonly number[], g: PeriodGranularity)
   return out;
 }
 
-export function expandValues(values: readonly number[], g: PeriodGranularity, kind: RowKind = 'flow'): number[] {
+export function expandValues(
+  values: readonly number[],
+  g: PeriodGranularity,
+  kind: RowKind = 'flow',
+  closingValues?: readonly number[],
+): number[] {
   if (g === 'year') return [...values];
   const n = periodsPerYear(g);
   const out: number[] = [];
-  for (const v of values) {
-    const per = kind === 'flow' ? v / n : v;
-    for (let i = 0; i < n; i++) out.push(per);
-  }
+  values.forEach((v, y) => {
+    for (let i = 0; i < n; i++) {
+      if (kind === 'flow') {
+        out.push(v / n);
+      } else if (kind === 'stock') {
+        // First year's opening balance is taken as zero (new project).
+        const prev = y > 0 ? values[y - 1]! : 0;
+        out.push(prev + ((v - prev) * (i + 1)) / n);
+      } else {
+        const next = closingValues?.[y] ?? (y < values.length - 1 ? values[y + 1]! : v);
+        out.push(v + ((next - v) * i) / n);
+      }
+    }
+  });
   return out;
 }

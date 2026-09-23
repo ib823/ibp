@@ -315,10 +315,10 @@ describe('TEST 4: SFA uses fixed 80% cost recovery ceiling regardless of profita
     endYear: end,
   });
 
-  it('cost recovery ceiling = 80% of revenue after royalty for all producing years', () => {
+  it('cost recovery ceiling = 80% of gross production (capped by revenue after royalty) for all producing years', () => {
     for (const r of results) {
       if (r.revenueAfterRoyalty > 0) {
-        expect(r.costRecoveryCeiling).toBeCloseTo(r.revenueAfterRoyalty * 0.80, 2);
+        expect(r.costRecoveryCeiling).toBeCloseTo(Math.min(r.totalGrossRevenue * 0.80, r.revenueAfterRoyalty), 2);
       }
     }
   });
@@ -337,7 +337,8 @@ describe('TEST 4: SFA uses fixed 80% cost recovery ceiling regardless of profita
     const taxableYear = results.find((r) => r.taxableIncome > 0);
     expect(taxableYear).toBeDefined();
     if (taxableYear) {
-      const effectiveRate = taxableYear.pitaTax / taxableYear.taxableIncome;
+      // Tax is charged after relieving the pre-production loss carried forward.
+      const effectiveRate = taxableYear.pitaTax / (taxableYear.taxableIncome - taxableYear.lossRelief);
       expect(effectiveRate).toBeCloseTo(0.25, 4);
     }
   });

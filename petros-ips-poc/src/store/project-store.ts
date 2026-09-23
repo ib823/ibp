@@ -357,13 +357,15 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const project = getEffectiveProject(state, projectId);
     if (!project) return;
 
-    // Extended sensitivity variable set per D36/D38/D40/D41 — adds FX,
-    // discount rate, fiscal-rate, and reserves to the classic IOC 5.
-    // PETROS-Sarawak overlay surfaces the additional drivers.
+    // Extended sensitivity variable set per D38 — adds the discount rate and
+    // fiscal rates to the classic IOC 5. 'fx' is not shown: the economics
+    // are USD-denominated, so USD/MYR only moves MYR reporting (it needs a
+    // MYR-denominated cost share to affect NPV — D36). 'reserves' is a
+    // production proxy (D40) and would duplicate the production bar.
     const result = calculateTornado(
       project,
       state.priceDecks[state.activeScenario],
-      ['oilPrice', 'gasPrice', 'production', 'capex', 'opex', 'fx', 'pitaRate', 'sarawakSstRate', 'reserves'],
+      ['oilPrice', 'gasPrice', 'production', 'capex', 'opex', 'discountRate', 'pitaRate', 'sarawakSstRate'],
     );
     const updated = new Map(state.sensitivityResults);
     updated.set(projectId, result);

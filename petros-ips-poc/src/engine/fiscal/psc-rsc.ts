@@ -14,13 +14,15 @@
 //                           costReimbursementPct, ceiling-capped at
 //                           fee revenue × 0.7 (illustrative cap)
 //   3. Performance Bonus  = lump-sum performanceBonus paid in the
-//                           year cumulative oil-equiv production
-//                           crosses 30 MMboe (THV-style threshold).
-//                           Paid once per project life.
+//                           year cumulative field oil-equiv production
+//                           (100% basis) crosses 30 MMboe (THV-style
+//                           threshold). Paid once per project life.
 //   4. Contractor entitlement = Fee + Reimbursement + Bonus
 //   5. Net contractor income = Entitlement − actual costs
-//   6. PITA               = max(0, taxable income) × 0.25
-//                           (RSC reduced rate; PITA standard is 38%)
+//   6. Income tax         = chargeable income × fiscalConfig.pitaRate —
+//                           RSC fees are taxed under the Income Tax Act
+//                           1967 at the corporate rate (24%), not PITA —
+//                           after relief of carried-forward losses
 //
 // Government take is implicit: total revenue (oil/gas at market
 // price) is what the upstream JV produces; the fee + reimbursement +
@@ -46,11 +48,10 @@ import {
   getVal,
   computeRevenue,
   computeCosts,
-  computeYearlyBoe,
   DepreciationSchedule,
+  TaxLossPool,
 } from './shared';
 
-const RSC_PITA_RATE = 0.25;
 const PERFORMANCE_BONUS_THRESHOLD_BOE = 30_000_000; // 30 MMboe cumulative
 const REIMBURSEMENT_CEILING_RATIO = 0.70;          // % of fee revenue
 
@@ -76,6 +77,7 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
   let cumulativeProductionBoe = 0;
   let bonusPaid = false;
   const depreciation = new DepreciationSchedule();
+  const taxLosses = new TaxLossPool();
 
   for (let year = startYear; year <= endYear; year++) {
     const yearIndex = year - startYear;
@@ -98,8 +100,8 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
     const oilDailyBoe = getVal(yearlyProduction.oil, year)
                       + getVal(yearlyProduction.condensate, year);
     const gasDailyBoe = (getVal(yearlyProduction.gas, year) * 1_000_000) / 6_000;
-    const yearBoe = (oilDailyBoe + gasDailyBoe) * 365 * equityShare;
-    const feeRevenue = yearBoe * fiscalConfig.feePerBarrel;
+    const fieldYearBoe = (oilDailyBoe + gasDailyBoe) * 365;
+    const feeRevenue = fieldYearBoe * equityShare * fiscalConfig.feePerBarrel;
 
     // ── Cost reimbursement (capped) ─────────────────────────────────
     const cost = computeCosts(yearlyCosts, year);
@@ -108,16 +110,16 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
     const reimbursementCeiling = feeRevenue * REIMBURSEMENT_CEILING_RATIO;
     const costReimbursement = Math.min(reimbursementUncapped, reimbursementCeiling);
 
-    // ── Performance bonus (one-shot) ────────────────────────────────
+    // ── Performance bonus (one-shot, field-level milestone) ──────────
     const cumulativeBoeBeforeYear = cumulativeProductionBoe;
-    const cumulativeBoeAfterYear = cumulativeProductionBoe + yearBoe;
+    const cumulativeBoeAfterYear = cumulativeProductionBoe + fieldYearBoe;
     let performanceBonus = 0;
     if (
       !bonusPaid
       && cumulativeBoeBeforeYear < PERFORMANCE_BONUS_THRESHOLD_BOE
       && cumulativeBoeAfterYear >= PERFORMANCE_BONUS_THRESHOLD_BOE
     ) {
-      performanceBonus = fiscalConfig.performanceBonus;
+      performanceBonus = fiscalConfig.performanceBonus * equityShare; // field bonus, partner's share
       bonusPaid = true;
     }
 
@@ -132,7 +134,8 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
     // capital allowance for tax purposes.
     const netContractorIncome =
       contractorEntitlement - cost.totalOpex - cost.abandonmentCost - capitalAllowance;
-    const pita = Math.max(0, netContractorIncome) * RSC_PITA_RATE;
+    const { lossRelief, chargeableIncome } = taxLosses.apply(year, netContractorIncome);
+    const pita = chargeableIncome * fiscalConfig.pitaRate;
 
     // Net cash flow to contractor = entitlement − costs − tax
     const netCashFlow = contractorEntitlement - totalCosts - pita;
@@ -143,9 +146,6 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
     cumulativeDiscountedCF += discountedCashFlow;
 
     cumulativeProductionBoe = cumulativeBoeAfterYear;
-
-    const yearBoeForCashflow = computeYearlyBoe(rev.oilBpd, rev.condBpd, rev.gasMMscfd);
-    void yearBoeForCashflow; // already accumulated above; kept for parity hooks
 
     results.push({
       year,
@@ -164,12 +164,18 @@ export function calculateRsc(inputs: RscInputs): YearlyCashflow[] {
       costRecoveryAmount: usd(costReimbursement),
       unrecoveredCostCF: usd(Math.max(0, reimbursementUncapped - costReimbursement)),
       profitOilGas: usd(0),
+      // Fee + performance bonus. The bonus is a receipt of the contractor,
+      // not a Supplementary Payment to the host — reporting it as SP would
+      // count it as government take.
       contractorProfitShare: usd(feeRevenue + performanceBonus),
       hostProfitShare: usd(revenueAfterGovtDeductions - contractorEntitlement),
       contractorEntitlement: usd(contractorEntitlement),
-      supplementaryPayment: usd(performanceBonus),
+      supplementaryPayment: usd(0),
       taxableIncome: usd(netContractorIncome),
       capitalAllowance: usd(capitalAllowance),
+      lossRelief: usd(lossRelief),
+      taxAllowanceUsed: usd(0),
+      taxLossCF: usd(taxLosses.balance),
       pitaTax: usd(pita),
       netCashFlow: usd(netCashFlow),
       cumulativeCashFlow: usd(cumulativeCashFlow),

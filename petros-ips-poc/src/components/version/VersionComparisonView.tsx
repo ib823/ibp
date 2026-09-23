@@ -15,10 +15,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import { GitCompareArrows, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type {
   DataVersion,
@@ -473,9 +472,7 @@ function VarianceWaterfall({
     // Residual captures fiscal/tax variance not explained by price+volume+cost
     const residual = endNcf - running;
     if (Math.abs(residual) > 0.05) {
-      const newRunning = running + residual;
-      out.push({ label: 'Tax & Other Δ', value: residual, start: running, end: newRunning, color: residual >= 0 ? '#2D8A4E' : '#8B5CF6' });
-      running = newRunning;
+      out.push({ label: 'Tax & Other Δ', value: residual, start: running, end: running + residual, color: residual >= 0 ? '#2D8A4E' : '#8B5CF6' });
     }
     out.push({ label: `${VERSION_LABELS[v2]} NCF`, value: endNcf, start: 0, end: endNcf, color: '#254A78', isFinal: true });
     return out;
@@ -569,7 +566,7 @@ function ProductionOverlayChart({
             <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} />
             <Tooltip
               contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-              formatter={(v: number) => [v.toLocaleString() + ' boe/d', '']}
+              formatter={(v) => [Number(v).toLocaleString() + ' boe/d', '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey={v1L} stroke="#1E3A5F" strokeWidth={2} dot={false} isAnimationActive={false} />

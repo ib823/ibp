@@ -8,7 +8,7 @@ import type {
   EconomicsResult,
   ScenarioVersion,
 } from '@/engine/types';
-import { usd } from '@/engine/fiscal/shared';
+import { usd, workingInterestCosts } from '@/engine/fiscal/shared';
 import { calculateFiscalCashflows } from '@/engine/fiscal';
 import { calculateNPV } from './npv';
 import { calculateIRR } from './irr';
@@ -18,6 +18,19 @@ import { calculateIndicators } from './indicators';
 const DEFAULT_DISCOUNT_RATE = 0.10;
 const MIRR_FINANCE_RATE = 0.08;
 const MIRR_REINVEST_RATE = 0.10;
+
+/**
+ * Headline return for display: MIRR for a non-investment cash-flow pattern
+ * (producing asset with no upfront outlay), IRR otherwise. `value` is null
+ * when the IRR is undefined.
+ */
+export function headlineReturn(
+  result: Pick<EconomicsResult, 'irr' | 'mirr' | 'isNonInvestmentPattern'>,
+): { label: 'IRR' | 'MIRR'; value: number | null } {
+  return result.isNonInvestmentPattern
+    ? { label: 'MIRR', value: result.mirr }
+    : { label: 'IRR', value: result.irr };
+}
 
 /**
  * Full project economics calculation.
@@ -41,9 +54,10 @@ export function calculateProjectEconomics(
   // Step 4: Calculate IRR
   // Detect non-investment cash flow pattern (first NCF is positive — e.g. producing asset)
   const isNonInvestmentPattern = ncfArray.length > 0 && (ncfArray[0] ?? 0) > 0;
-  const rawIrr = calculateIRR(ncfArray);
-  // For non-investment patterns, IRR is not economically meaningful
-  const irr = isNonInvestmentPattern ? null : (rawIrr ?? 0);
+  // For non-investment patterns IRR is not economically meaningful; when no
+  // real root exists (e.g. NPV negative at every rate) IRR is undefined —
+  // both surface as null ("n/a"), never as a misleading 0%.
+  const irr = isNonInvestmentPattern ? null : calculateIRR(ncfArray);
 
   // Step 5: Calculate MIRR
   const mirr = calculateMIRR(ncfArray, MIRR_FINANCE_RATE, MIRR_REINVEST_RATE);
@@ -51,7 +65,7 @@ export function calculateProjectEconomics(
   // Step 6: Calculate indicators
   const indicators = calculateIndicators({
     cashflows: yearlyCashflows,
-    costProfile: project.costProfile,
+    costProfile: workingInterestCosts(project),
     discountRate,
   });
 

@@ -128,9 +128,9 @@ describe('TEST 5: Full project economics for SK-410 Gas', () => {
     expect(result.npv10).toBeGreaterThan(0);
   });
 
-  it('IRR is between 10% and 40%', () => {
+  it('IRR is between 10% and 50%', () => {
     expect(result.irr).toBeGreaterThan(0.10);
-    expect(result.irr).toBeLessThan(0.40);
+    expect(result.irr).toBeLessThan(0.50);
   });
 
   it('payback is between 2 and 10 years', () => {

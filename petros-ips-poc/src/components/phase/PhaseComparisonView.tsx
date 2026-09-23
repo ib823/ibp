@@ -2,7 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { Select } from '@/components/ui5/Ui5Select';
 import { Button } from '@/components/ui5/Ui5Button';
 import { useProjectStore } from '@/store/project-store';
-import { fmtPct, fmtYears } from '@/lib/format';
+import { fmtPctOrNa, fmtYears } from '@/lib/format';
+import { headlineReturn } from '@/engine/economics';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
 import { cn } from '@/lib/utils';
 import { COLORS, PHASE_COLORS } from '@/lib/chart-colors';
@@ -14,10 +15,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import { GitBranch, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ChartShell } from '@/components/charts/ChartShell';
 import type {
@@ -303,8 +303,9 @@ function EconomicsKpiTable({ result }: { result: PhaseComparisonResult }) {
   const u = useDisplayUnits();
   const e1 = result.economics1;
   const e2 = result.economics2;
-  const irr1 = e1.isNonInvestmentPattern ? e1.mirr : (e1.irr ?? 0);
-  const irr2 = e2.isNonInvestmentPattern ? e2.mirr : (e2.irr ?? 0);
+  const irr1 = headlineReturn(e1).value;
+  const irr2 = headlineReturn(e2).value;
+  const irrDelta = irr1 !== null && irr2 !== null ? irr2 - irr1 : null;
 
   return (
     <div className="border border-border bg-white p-4">
@@ -332,10 +333,10 @@ function EconomicsKpiTable({ result }: { result: PhaseComparisonResult }) {
             </tr>
             <tr className="border-b border-border/30">
               <td className="px-3 py-2 text-text-secondary">{e1.isNonInvestmentPattern || e2.isNonInvestmentPattern ? 'IRR/MIRR' : 'IRR'}</td>
-              <td className="text-right px-3 py-2 font-data">{fmtPct(irr1)}</td>
-              <td className="text-right px-3 py-2 font-data">{fmtPct(irr2)}</td>
-              <td className={cn('text-right px-3 py-2 font-data font-medium', irr2 - irr1 >= 0 ? 'text-success' : 'text-danger')}>
-                {((irr2 - irr1) * 100).toFixed(2)}pp
+              <td className="text-right px-3 py-2 font-data">{fmtPctOrNa(irr1)}</td>
+              <td className="text-right px-3 py-2 font-data">{fmtPctOrNa(irr2)}</td>
+              <td className={cn('text-right px-3 py-2 font-data font-medium', (irrDelta ?? 0) >= 0 ? 'text-success' : 'text-danger')}>
+                {irrDelta === null ? 'n/a' : `${(irrDelta * 100).toFixed(2)}pp`}
               </td>
             </tr>
             <tr className="border-b border-border/30">
@@ -395,7 +396,7 @@ function ProductionOverlay({ p1, p2 }: { p1: PhaseVersionData; p2: PhaseVersionD
             <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
             <Tooltip
               contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-              formatter={(v: number) => [v.toLocaleString() + ' boe/d', '']}
+              formatter={(v) => [Number(v).toLocaleString() + ' boe/d', '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Area type="monotone" dataKey={p1.label} stroke={PHASE_COLORS.before} fill={PHASE_COLORS.before} fillOpacity={0.25} strokeDasharray="4,2" isAnimationActive={false} />
@@ -441,7 +442,7 @@ function CashFlowOverlay({ result }: { result: PhaseComparisonResult }) {
             <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v) => `${u.currencySymbol}${v}M`} />
             <Tooltip
               contentStyle={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-              formatter={(v: number) => [`${u.currencySymbol}${v.toLocaleString()}M`, '']}
+              formatter={(v) => [`${u.currencySymbol}${Number(v).toLocaleString()}M`, '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey={result.phase1Label} stroke={PHASE_COLORS.before} strokeWidth={2} strokeDasharray="5,3" dot={false} isAnimationActive={false} />

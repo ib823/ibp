@@ -59,14 +59,24 @@ try {
   const dataRows = rows.slice(1);
   const assumptionRows = XLSX.utils.sheet_to_json<unknown[]>(assumptions, { header: 1 }) as unknown[][];
 
-  checkEqual('6.1 Excel: Year column matches engine years', dataRows[0]?.[0] as number, result.yearlyCashflows[0]!.year);
-  checkClose('6.2 Excel: Revenue column matches engine revenue (±0.01)', dataRows[0]?.[4] as number, result.yearlyCashflows[0]!.totalGrossRevenue as number, 0.01);
-  checkClose('6.3 Excel: Royalty column matches engine royalty (±0.01)', dataRows[0]?.[5] as number, result.yearlyCashflows[0]!.royalty as number, 0.01);
-  checkClose('6.4 Excel: Cost Recovery column matches (±0.01)', dataRows[0]?.[8] as number, result.yearlyCashflows[0]!.costRecoveryAmount as number, 0.01);
-  checkClose('6.5 Excel: Profit Split column matches (±0.01)', dataRows[0]?.[11] as number, result.yearlyCashflows[0]!.contractorProfitShare as number, 0.01);
-  checkClose('6.6 Excel: Tax column matches (±0.01)', dataRows[0]?.[17] as number, result.yearlyCashflows[0]!.pitaTax as number, 0.01);
-  checkClose('6.7 Excel: NCF column matches (±0.01)', dataRows[0]?.[18] as number, result.yearlyCashflows[0]!.netCashFlow as number, 0.01);
-  checkClose('6.8 Excel: Cumulative NCF column matches (±0.01)', dataRows[dataRows.length - 1]?.[19] as number, result.yearlyCashflows[result.yearlyCashflows.length - 1]!.cumulativeCashFlow as number, 0.01);
+  // Locate columns by header so the check survives column additions, and
+  // compare a production year (year 0 is pre-production, where most
+  // columns are zero and a wrong index would still pass).
+  const header = (rows[0] ?? []).map((h) => String(h ?? ''));
+  const col = (prefix: string) => header.findIndex((h) => h.startsWith(prefix));
+  const p = result.yearlyCashflows.findIndex((cf) => (cf.totalGrossRevenue as number) > 0 && (cf.pitaTax as number) > 0);
+  const engineP = result.yearlyCashflows[p]!;
+  const excelP = dataRows[p];
+  const last = result.yearlyCashflows.length - 1;
+
+  checkEqual('6.1 Excel: Year column matches engine years', dataRows[0]?.[col('Year')] as number, result.yearlyCashflows[0]!.year);
+  checkClose('6.2 Excel: Revenue column matches engine revenue (±0.01)', excelP?.[col('Total Revenue')] as number, engineP.totalGrossRevenue as number, 0.01);
+  checkClose('6.3 Excel: Royalty column matches engine royalty (±0.01)', excelP?.[col('Royalty')] as number, engineP.royalty as number, 0.01);
+  checkClose('6.4 Excel: Cost Recovery column matches (±0.01)', excelP?.[col('Cost Recovery (')] as number, engineP.costRecoveryAmount as number, 0.01);
+  checkClose('6.5 Excel: Profit Split column matches (±0.01)', excelP?.[col('Contractor Profit Share')] as number, engineP.contractorProfitShare as number, 0.01);
+  checkClose('6.6 Excel: Tax column matches (±0.01)', excelP?.[col('PITA Tax')] as number, engineP.pitaTax as number, 0.01);
+  checkClose('6.7 Excel: NCF column matches (±0.01)', excelP?.[col('NCF')] as number, engineP.netCashFlow as number, 0.01);
+  checkClose('6.8 Excel: Cumulative NCF column matches (±0.01)', dataRows[last]?.[col('Cum NCF')] as number, result.yearlyCashflows[last]!.cumulativeCashFlow as number, 0.01);
   checkClose('6.9 Excel: NPV summary matches engine NPV (±0.1)', cell(summary, 'B8') as number, result.npv10 as number, 0.1);
   checkClose('6.10 Excel: IRR summary matches engine IRR (±0.1%)', cell(summary, 'B9') as number, (result.irr ?? 0) * 100, 0.1);
 

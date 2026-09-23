@@ -21,6 +21,13 @@ export function fmtPct(value: number, decimals: number = 1): string {
   return (value * 100).toFixed(decimals) + '%';
 }
 
+/** Format a rate that can be undefined (e.g. no IRR root): null → "n/a". */
+export function fmtPctOrNa(value: number | null | undefined, decimals: number = 1): string {
+  return value === null || value === undefined || !Number.isFinite(value)
+    ? 'n/a'
+    : fmtPct(value, decimals);
+}
+
 /** Format number with commas */
 export function fmtNum(value: number, decimals: number = 0): string {
   return value.toLocaleString('en-US', {

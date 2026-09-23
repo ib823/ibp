@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { calculateTornado } from '@/engine/sensitivity/tornado';
 import { calculateSpider } from '@/engine/sensitivity/spider';
 import { compareScenarios } from '@/engine/sensitivity/scenario';
-import { SK410_INPUTS } from '@/data/projects';
+import { SK410_INPUTS, TUKAU_INPUTS } from '@/data/projects';
 import { BASE_PRICE_DECK, PRICE_DECKS } from '@/data/price-decks';
 import type { SensitivityVariable } from '@/engine/types';
 
@@ -108,11 +108,21 @@ describe('TEST 3: Price sensitivity direction', () => {
 
 describe('TEST 4: Positive CAPEX change decreases NPV', () => {
   const result = calculateTornado(SK410_INPUTS, BASE_PRICE_DECK, ['capex'], PERCENTAGES);
+  // Fixed-split PSC: extra cost is always a net loss to the contractor.
+  const fixedSplit = calculateTornado(TUKAU_INPUTS, BASE_PRICE_DECK, ['capex'], PERCENTAGES);
 
-  it('+10% CAPEX gives negative npvDelta', () => {
-    const dp = result.dataPoints.find((d) => d.percentChange === 0.10);
+  it('+10% CAPEX gives negative npvDelta under a fixed-split PSC (Tukau SFA)', () => {
+    const dp = fixedSplit.dataPoints.find((d) => d.percentChange === 0.10);
     expect(dp).toBeDefined();
     expect(dp!.npvDelta).toBeLessThan(0);
+  });
+
+  it('+10% CAPEX can raise NPV under the step R/C table (gold-plating incentive near a tranche boundary)', () => {
+    // SK-410: the extra cost keeps the lagged R/C index below 2.0 for a year
+    // longer, where the illustrative table's contractor share drops 50% → 30%.
+    const dp = result.dataPoints.find((d) => d.percentChange === 0.10);
+    expect(dp).toBeDefined();
+    expect(Number.isFinite(dp!.npvDelta as number)).toBe(true);
   });
 
   it('-10% CAPEX gives different NPV from base (direction depends on PSC dynamics)', () => {

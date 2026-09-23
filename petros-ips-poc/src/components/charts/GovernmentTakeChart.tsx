@@ -51,7 +51,7 @@ export function GovernmentTakeChart({ governmentTakePct, contractorTakePct }: Go
               ))}
             </Pie>
             <Tooltip
-              formatter={(v: number) => [v.toFixed(1) + '%', undefined]}
+              formatter={(v) => [Number(v).toFixed(1) + '%', undefined]}
               contentStyle={{ fontSize: 11 }}
             />
           </PieChart>

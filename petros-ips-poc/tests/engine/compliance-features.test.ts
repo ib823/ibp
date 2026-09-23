@@ -7,7 +7,8 @@ import { SK410_INPUTS, SK612_INPUTS, BALINGIAN_INPUTS } from '@/data/projects';
 import { BASE_PRICE_DECK } from '@/data/price-decks';
 import { buildVersionedDataRegistry } from '@/data/versioned-data';
 import { buildPhaseDataRegistry } from '@/data/phase-data';
-import { compareVersions } from '@/engine/economics/version-comparison';
+import { compareVersions, applyVersionData } from '@/engine/economics/version-comparison';
+import { calculateProjectEconomics } from '@/engine/economics/cashflow';
 import { comparePhases } from '@/engine/economics/phase-comparison';
 import {
   DEFAULT_CONVERSIONS,
@@ -35,11 +36,15 @@ describe('Feature 1: Version Comparison (FM-04)', () => {
 
     const result = compareVersions(SK410_INPUTS, BASE_PRICE_DECK, budget, forecast);
 
-    // Forecast has 3% lower production and 8% higher CAPEX vs Budget
-    // → expect npvVariance < 0 (forecast is worse than budget)
+    // Forecast has 3% lower production and 8% higher CAPEX vs Budget. The NPV
+    // variance is the difference of the two full economics runs — its sign is
+    // not fixed under the step R/C table (extra cost can delay a tranche
+    // crossing), so it is checked against an independent recomputation.
+    const npvBudget = calculateProjectEconomics(applyVersionData(SK410_INPUTS, budget), BASE_PRICE_DECK).npv10 as number;
+    const npvForecast = calculateProjectEconomics(applyVersionData(SK410_INPUTS, forecast), BASE_PRICE_DECK).npv10 as number;
     expect(result.version1).toBe('budget');
     expect(result.version2).toBe('forecast');
-    expect(result.npvVariance).toBeLessThan(0);
+    expect(result.npvVariance).toBeCloseTo(npvForecast - npvBudget, 0);
     expect(result.capexVariance).toBeGreaterThan(0);
     expect(result.productionVariance).toBeLessThan(0);
     expect(result.yearlyVariances.length).toBeGreaterThan(0);
@@ -88,9 +93,9 @@ describe('Feature 2: Unit Conversion (DF-01)', () => {
     expect(result).toBeCloseTo(0.158987, 6);
   });
 
-  it('TEST 4: MMscf to MMBtu gives 1.055 factor', () => {
+  it('TEST 4: MMscf to MMBtu gives 1,055 (1,000 Mscf × 1.055 MMBtu/Mscf)', () => {
     const result = convert(1, 'MMscf', 'MMBtu');
-    expect(result).toBeCloseTo(1.055, 4);
+    expect(result).toBeCloseTo(1055, 4);
   });
 
   it('TEST 5: chained conversion bbl → m³ → litres works', () => {

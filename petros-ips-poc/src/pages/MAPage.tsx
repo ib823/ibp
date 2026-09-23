@@ -9,8 +9,9 @@
 import { useMemo, useState } from 'react';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell,
+  ResponsiveContainer, ReferenceLine, Cell,
 } from 'recharts';
+import { Legend, Tooltip } from '@/components/charts/rechartsCompat';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { evaluateAcquisition } from '@/engine/financial/ma';
 import { useDisplayUnits } from '@/lib/useDisplayUnits';
@@ -165,7 +166,7 @@ export default function MAPage() {
               <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
               <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
-              <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, 'Value']} contentStyle={{ fontSize: 11 }} />
+              <Tooltip formatter={(v) => [`$${Number(v).toFixed(1)}M`, 'Value']} contentStyle={{ fontSize: 11 }} />
               <ReferenceLine y={0} stroke={COLORS.textSecondary} />
               <Bar dataKey="value">
                 {(['pos', 'pos', 'neg', 'pos'] as const).map((kind, idx) => (
@@ -195,7 +196,7 @@ export default function MAPage() {
               <CartesianGrid strokeDasharray="3 3" stroke={COLORS.chartGrid} />
               <XAxis dataKey="year" tick={{ fontSize: 11, fill: COLORS.textSecondary }} />
               <YAxis tick={{ fontSize: 11, fill: COLORS.textSecondary }} tickFormatter={(v: number) => `$${v.toFixed(0)}M`} />
-              <Tooltip formatter={(v: number) => [`$${v.toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
+              <Tooltip formatter={(v) => [`$${Number(v).toFixed(1)}M`, '']} contentStyle={{ fontSize: 11 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="target" stroke={COLORS.petrol} strokeWidth={2} name="Target NCF" dot={false} />
               <Line type="monotone" dataKey="netSynergies" stroke={CHART_POS} strokeWidth={2} name="Net synergies (after integration cost)" dot={false} />
