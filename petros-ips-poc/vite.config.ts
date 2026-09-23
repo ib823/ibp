@@ -7,11 +7,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         // Chunk all @ui5/* packages into a single bundle.
         // Splitting them apart causes a TDZ / circular-dependency error at
@@ -19,10 +19,13 @@ export default defineConfig({
         // icon registry in @ui5/webcomponents-base is referenced by the
         // icons package before the base chunk has finished initializing.
         // Keeping them in one chunk ensures the init order is correct.
-        manualChunks(id) {
-          if (id.includes('node_modules/@ui5/')) return 'ui5';
-          if (id.includes('node_modules/recharts')) return 'recharts';
-          return undefined;
+        // (Vite 8 / Rolldown: `codeSplitting.groups` replaces the deprecated
+        // Rollup `manualChunks` function.)
+        codeSplitting: {
+          groups: [
+            { name: 'ui5', test: /node_modules[\\/]@ui5[\\/]/ },
+            { name: 'recharts', test: /node_modules[\\/]recharts/ },
+          ],
         },
       },
     },
