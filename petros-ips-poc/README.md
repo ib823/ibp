@@ -1,73 +1,39 @@
-# React + TypeScript + Vite
+# PETROS IPS — Proof of Concept
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Integrated Planning System proof of concept for PETROS (Tender T260002): petroleum economics under Malaysian fiscal regimes, financial statements, sensitivity / Monte Carlo, reserves (SPE PRMS / SRMS) and portfolio views. React 19 + TypeScript + Vite; the production system is planned on SAP Analytics Cloud (see `SAC_MAPPING.md`).
 
-Currently, two official plugins are available:
+All fiscal parameters, production profiles and project data are illustrative (see `NOTICE`).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Run
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm ci
+npm run dev        # http://localhost:5173
+npm test           # vitest — engine, lib, store and UI tests
+npm run build      # type-check + production build
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Where the logic lives
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Area | Path |
+|---|---|
+| Fiscal engines (R/C, Deepwater R/C, HPHT, EPT, SFA, LLA, 1976/1985, RSC, downstream/CCS) | `src/engine/fiscal/` |
+| Fiscal regime parameters and sources | `src/data/fiscal-regimes.ts` |
+| Price decks (EIA actuals + STEO) and FX | `src/data/price-decks.ts`, `src/engine/utils/unit-conversion.ts` |
+| NPV / IRR / MIRR / indicators / portfolio valuation year | `src/engine/economics/` |
+| Financial statements (MFRS 6/15/16/107/112/116/137) | `src/engine/financial/` (`accounting-drivers.ts` is the shared source) |
+| Sensitivity, Monte Carlo | `src/engine/sensitivity/`, `src/engine/montecarlo/` |
+| Reserves, portfolio | `src/engine/reserves/`, `src/engine/portfolio/` |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Conventions
+
+- Money is USD; project economics are on PETROS's working-interest (equity) basis for both revenue and costs. Volumes are 100% field basis.
+- NPV discounts to the first project year (end-of-year convention). Portfolio totals re-value every project at the 2026 valuation year on forward cash flows.
+- Tax losses and unabsorbed capital allowances are carried forward.
+
+## Reviews and records
+
+- `REASSESSMENT_2026-09.md` — September 2026 formula and parameter reassessment (latest)
+- `ASSESSMENT.md`, `PETROS_DELTAS.md` — April 2026 RFP assessment and PETROS-specific deltas
+- `AUDIT.md` — UI/UX audit; `SAC_MAPPING.md` — SAC translation

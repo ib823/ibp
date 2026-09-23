@@ -1101,6 +1101,20 @@ Independent sampling under-states joint-downside risk and over-states diversific
 | D61 | PETROS-real project magnitudes | 13 | Medium | nil | open |
 | D62 | Malaysian Budget 2024-25 CCS incentives | 13 | Medium | 1.5d | open |
 
+## Update — September 2026 reassessment
+
+See `REASSESSMENT_2026-09.md` for sources and numbers. Status changes against the table below:
+
+| ID | Status | Change |
+|:-:|:-:|---|
+| D4 / D36 | ◐ | FX re-anchored to USD/MYR 4.07. The FX tornado bar was a no-op (USD economics) and is no longer in the default set; it needs a MYR-denominated cost share to move NPV |
+| D18 | ◐ | SP is now configurable per regime (`supplementaryPayment` terms, or `null`) and applies per stream to above-THV production only. Rate still to be confirmed per signed PSC |
+| D19 | ✅ | Deepwater regime replaced by the published MPM Deepwater R/C PSC term (June 2018) plus the 60% PITA investment allowance |
+| D21 / D22 | ✅ | Dedicated LLA engine (`psc-lla.ts`) per MPM terms; HPHT runs on the R/C engine with an investment allowance. Y% and commitment to be confirmed |
+| D23 | ✅ | Mid-year convention corrected (it was discounting an extra half year) |
+| D60 | ✅ | Price decks re-anchored: EIA Brent actuals 2020–25, EIA STEO Sep-2026 for 2026–27. PETROS corporate deck still to be confirmed |
+| D62 | ✅ | CCS incentive corrected to Budget 2023: 100% ITA **or** 70% exemption (not both) |
+
 ## Closure status (post-implementation pass — 2026-04-27)
 
 All 62 deltas have been **addressed** in the codebase per ASSESSMENT.md instructions. Closure modes:
